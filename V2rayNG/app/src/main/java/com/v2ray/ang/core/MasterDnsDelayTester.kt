@@ -91,6 +91,33 @@ object MasterDnsDelayTester {
         }
     }
 
+    /** Runs an independently owned scanner child; the foreground VPN session is never reused or stopped. */
+    suspend fun <T> withIsolatedCore(
+        context: Context,
+        core: MasterDnsCore,
+        startupTimeoutMs: Long = STARTUP_BUDGET_MS,
+        block: suspend () -> T,
+    ): T? {
+        if (!MasterDnsCoreManager.isSupported(context, core.engine)) return null
+        if (withContext(Dispatchers.IO) { MasterDnsCoreManager.checkSessionPort(core.port) } != MasterDnsCoreManager.PortCheck.Free) return null
+        var owned: MasterDnsCoreManager.Session? = null
+        return try {
+            val target = MasterDnsCoreManager.startIsolated(context, core)
+            owned = target
+            if (MasterDnsCoreManager.awaitIsolatedListening(target, startupTimeoutMs)) block() else null
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            LogUtil.e(AppConfig.TAG, "MasterDnsTest: isolated scanner tunnel failed", error)
+            null
+        } finally {
+            owned?.let { target ->
+                MasterDnsCoreManager.stopIsolated(target)
+                withContext(NonCancellable + Dispatchers.IO) { MasterDnsCoreManager.awaitStopped(5_000L) }
+            }
+        }
+    }
+
     private suspend fun awaitLive(port: Int, timeoutMs: Long): Boolean {
         val deadline = deadlineAfter(timeoutMs)
         while (System.nanoTime() < deadline) {

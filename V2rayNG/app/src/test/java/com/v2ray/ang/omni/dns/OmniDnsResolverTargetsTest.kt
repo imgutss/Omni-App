@@ -93,6 +93,9 @@ class OmniDnsResolverTargetsTest {
         val original = dnsCandidateProfile(template, OmniScanTarget("9.9.9.9", 53, OmniTargetKind.IPV4))
         assertEquals("1", original.dnsttResolverAuthorities)
         assertTrue(original.dnsttAuthoritative == true)
+        val bareOriginal = dnsCandidateProfile(template.copy(dnsttResolver = "1.1.1.1,9.9.9.9"), OmniScanTarget("9.9.9.9", 53, OmniTargetKind.IPV4))
+        assertEquals("1", bareOriginal.dnsttResolverAuthorities)
+        assertEquals("9.9.9.9:53", bareOriginal.dnsttResolver)
 
         val newResolver = dnsCandidateProfile(template, OmniScanTarget("8.8.8.8", 53, OmniTargetKind.IPV4))
         assertEquals("0", newResolver.dnsttResolverAuthorities)

@@ -2,6 +2,7 @@ package com.v2ray.ang.core
 
 import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.fmt.DnsttFmt
+import com.v2ray.ang.fmt.SoarProfileFmt
 import java.security.MessageDigest
 
 /** Validated inputs and loopback topology for each supported DNS tunnel engine. */
@@ -119,7 +120,13 @@ data class DnsttCore(
                     maxNumLabels = normalized.vaydnsMaxNumLabels ?: 0,
                     clientIdSize = normalized.vaydnsClientIdSize ?: 0,
                 ),
-                soarSettings = normalized.soarSettings.orEmpty(),
+                soarSettings = if (normalized.dnsttEngine == DnsttFmt.ENGINE_SOAR) {
+                    // Canonicalization also migrates pre-country profiles to the documented
+                    // restricted-network discovery default without changing explicit GLOBAL.
+                    SoarProfileFmt.normalizeSettings(normalized.soarSettings).orEmpty()
+                } else {
+                    normalized.soarSettings.orEmpty()
+                },
                 resolverMode = normalized.dnsttResolverMode ?: "fanout",
                 rrSpreadCount = normalized.dnsttRrSpreadCount ?: 3,
                 socksUsername = if (ssh == null) normalized.dnsttSocksUsername.orEmpty() else "",

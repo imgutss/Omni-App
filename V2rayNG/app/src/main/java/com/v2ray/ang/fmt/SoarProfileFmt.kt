@@ -11,6 +11,7 @@ import java.util.Base64
 internal object SoarProfileFmt {
     private const val MAX_SETTINGS_CHARS = 65_536
     private val defaults = linkedMapOf(
+        "country" to "IR",
         "transport" to "auto",
         "discovery" to true,
         "discoveryWant" to 2,
@@ -77,12 +78,15 @@ internal object SoarProfileFmt {
             runCatching { JsonParser.parseString(raw) }.getOrNull()
                 ?.takeIf { it.isJsonObject }?.asJsonObject ?: return null
         }
+        val country = (if (obj.has("country")) obj.text("country") ?: return null else defaults.getValue("country") as String)
+            .trim().uppercase()
+        if (country !in setOf("", "IR")) return null
         val transport = if (obj.has("transport")) obj.text("transport") ?: return null else defaults.getValue("transport") as String
         if (transport !in setOf("auto", "on", "only", "off")) return null
         val discovery = if (obj.has("discovery")) obj.bool("discovery") ?: return null else defaults.getValue("discovery") as Boolean
         val values = mutableMapOf<String, Int>()
         for ((key, default) in defaults) {
-            if (key == "transport" || key == "discovery") continue
+            if (key == "country" || key == "transport" || key == "discovery") continue
             values[key] = if (obj.has(key)) obj.number(key) ?: return null else default as Int
         }
         val safeQName = values.getValue("safeQName")
@@ -96,6 +100,7 @@ internal object SoarProfileFmt {
             "sessionIdleSeconds" to (15..110), "dialTimeoutSeconds" to (5..120),
         )
         if (bounds.any { (key, range) -> values.getValue(key) !in range }) return null
+        obj.addProperty("country", country)
         obj.addProperty("transport", transport)
         obj.addProperty("discovery", discovery)
         values.forEach { (key, value) -> obj.addProperty(key, value) }

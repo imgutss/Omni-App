@@ -359,10 +359,13 @@
     <string name="omni_dns_scanner_plan">Candidate space: %1$d · sampled: %2$d · invalid inputs: %3$d</string>
     <string name="omni_dns_scanner_start">Scan resolvers</string>
     <string name="omni_dns_scanner_progress">Probed: %1$d · working DNS resolvers: %2$d</string>
-    <string name="omni_dns_scanner_e2e_note">E2E starts the real tunnel for every working resolver and measures HTTP ping after one warm-up. DNS response alone is not tunnel evidence.</string>
+    <string name="omni_dns_scanner_e2e_note">E2E tests only the top candidates through each candidate’s own native DNS tunnel, without Xray or reuse of another active tunnel. A NOERROR DNS reply alone is not tunnel evidence.</string>
     <string name="omni_dns_scanner_e2e_url">E2E HTTP test URL</string>
     <string name="omni_dns_scanner_ping_samples">Tunnel ping samples</string>
-    <string name="omni_dns_scanner_e2e_timeout">Per-resolver E2E timeout (ms)</string>
+    <string name="omni_dns_scanner_e2e_timeout">HTTP sample timeout (ms)</string>
+    <string name="omni_dns_scanner_e2e_limit">E2E candidate limit</string>
+    <string name="omni_dns_scanner_e2e_concurrency">Parallel native tests</string>
+    <string name="omni_dns_scanner_e2e_budget">Total E2E budget (ms)</string>
     <string name="omni_dns_scanner_run_e2e">Run E2E and real ping</string>
     <string name="omni_dns_scanner_e2e_progress">E2E tested: %1$d/%2$d · verified tunnels: %3$d</string>
     <string name="omni_dns_scanner_use_best">Use best verified resolver: %1$s</string>
@@ -370,7 +373,7 @@
     <string name="omni_dns_scanner_choose_profile">Choose a DNS tunnel profile</string>
     <string name="omni_dns_scanner_show_all">Show no-response results too</string>
     <string name="omni_dns_scanner_dns_working">DNS response · RCODE %1$s</string>
-    <string name="omni_dns_scanner_dns_failed">No valid DNS response · RCODE %1$s</string>
+    <string name="omni_dns_scanner_dns_failed">No NOERROR response · RCODE %1$s</string>
     <string name="omni_dns_scanner_e2e_untested">Tunnel E2E: untested</string>
     <string name="omni_dns_scanner_e2e_incomplete">Tunnel E2E incomplete: %1$s</string>
     <string name="omni_dns_scanner_e2e_ping">Tunnel HTTP ping: %1$d/%2$d · median %3$s ms · jitter %4$s ms · loss %5$.1f%%</string>
@@ -378,12 +381,14 @@
     <string name="omni_dns_scanner_no_template">Import or choose a supported DNS tunnel profile first.</string>
     <string name="omni_dns_scanner_no_working">No verified resolver is available yet. Run DNS scan and E2E first.</string>
     <string name="omni_dns_scanner_failed">DNS scan stopped with an error; partial results remain only as measured.</string>
-    <string name="omni_dns_scanner_e2e_complete">Every working resolver passed the real tunnel E2E test.</string>
+    <string name="omni_dns_scanner_scan_timed_out">DNS scan reached its time cap; only completed measurements were kept.</string>
+    <string name="omni_dns_scanner_e2e_complete">Every selected resolver passed the real tunnel E2E test.</string>
     <string name="omni_dns_scanner_e2e_partial">E2E is incomplete or some resolvers failed; only verified results can be selected as best.</string>
+    <string name="omni_dns_scanner_e2e_timed_out">The total E2E budget expired; unfinished candidates remain untested and completed results were kept.</string>
     <string name="omni_dns_scanner_apply_done">The measured resolver was applied to the selected profile.</string>
     <string name="omni_dns_scanner_apply_failed">The profile could not be updated; no resolver change is claimed.</string>
     <string name="soar_lab_settings">Soar tuning JSON (blank = documented defaults)</string>
-    <string name="soar_settings_support">The 16 supported transport, discovery, window and timeout settings are validated before saving.</string>
+    <string name="soar_settings_support">Country plus the 16 supported transport, discovery, window and timeout settings are validated before saving.</string>
     <string name="soar_transport_support">auto/on/only/off control the real Soar TCP transport behavior.</string>
     <string name="soar_lab_discovery">Soar resolver discovery</string>
     <string name="soar_discovery_support">Discovery may start with an empty bootstrap resolver list; no connection is claimed until E2E succeeds.</string>

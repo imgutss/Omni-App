@@ -359,10 +359,13 @@
     <string name="omni_dns_scanner_plan">فضای candidate: %1$d · نمونه: %2$d · ورودی نامعتبر: %3$d</string>
     <string name="omni_dns_scanner_start">اسکن ریزالورها</string>
     <string name="omni_dns_scanner_progress">بررسی‌شده: %1$d · ریزالورهای working: %2$d</string>
-    <string name="omni_dns_scanner_e2e_note">E2E برای هر ریزالور working تونل واقعی را اجرا و پس از یک warm-up، پینگ HTTP می‌گیرد. پاسخ DNS به‌تنهایی اثبات تونل نیست.</string>
+    <string name="omni_dns_scanner_e2e_note">E2E فقط candidateهای برتر را از مسیر تونل بومیِ همان candidate می‌سنجد؛ بدون Xray یا استفاده از تونل فعال دیگر. پاسخ NOERROR به‌تنهایی اثبات تونل نیست.</string>
     <string name="omni_dns_scanner_e2e_url">نشانی تست HTTP برای E2E</string>
     <string name="omni_dns_scanner_ping_samples">نمونه‌های پینگ تونل</string>
-    <string name="omni_dns_scanner_e2e_timeout">Timeout هر E2E (میلی‌ثانیه)</string>
+    <string name="omni_dns_scanner_e2e_timeout">Timeout هر نمونه HTTP (میلی‌ثانیه)</string>
+    <string name="omni_dns_scanner_e2e_limit">سقف candidateهای E2E</string>
+    <string name="omni_dns_scanner_e2e_concurrency">تست‌های بومی هم‌زمان</string>
+    <string name="omni_dns_scanner_e2e_budget">سقف کل زمان E2E (میلی‌ثانیه)</string>
     <string name="omni_dns_scanner_run_e2e">اجرای E2E و پینگ واقعی</string>
     <string name="omni_dns_scanner_e2e_progress">E2E: %1$d/%2$d · تونل‌های تأییدشده: %3$d</string>
     <string name="omni_dns_scanner_use_best">استفاده از بهترین ریزالور تأییدشده: %1$s</string>
@@ -370,7 +373,7 @@
     <string name="omni_dns_scanner_choose_profile">انتخاب profile تونل DNS</string>
     <string name="omni_dns_scanner_show_all">نمایش نتایج بدون پاسخ هم</string>
     <string name="omni_dns_scanner_dns_working">پاسخ DNS · RCODE %1$s</string>
-    <string name="omni_dns_scanner_dns_failed">پاسخ معتبر DNS ندارد · RCODE %1$s</string>
+    <string name="omni_dns_scanner_dns_failed">پاسخ NOERROR ندارد · RCODE %1$s</string>
     <string name="omni_dns_scanner_e2e_untested">E2E تونل: تست‌نشده</string>
     <string name="omni_dns_scanner_e2e_incomplete">E2E تونل ناقص: %1$s</string>
     <string name="omni_dns_scanner_e2e_ping">پینگ HTTP تونل: %1$d/%2$d · median %3$s ms · jitter %4$s ms · loss %5$.1f%%</string>
@@ -378,12 +381,14 @@
     <string name="omni_dns_scanner_no_template">ابتدا یک profile سازگار با DNSTT import یا انتخاب کنید.</string>
     <string name="omni_dns_scanner_no_working">هنوز ریزالور تأییدشده‌ای نیست؛ ابتدا DNS scan و E2E را اجرا کنید.</string>
     <string name="omni_dns_scanner_failed">اسکن DNS با خطا متوقف شد؛ نتایج جزئی فقط با همان اندازه‌گیری باقی ماندند.</string>
-    <string name="omni_dns_scanner_e2e_complete">همهٔ ریزالورهای working تست واقعی E2E را پاس کردند.</string>
+    <string name="omni_dns_scanner_scan_timed_out">اسکن DNS به سقف زمانی رسید؛ فقط اندازه‌گیری‌های کامل‌شده باقی ماندند.</string>
+    <string name="omni_dns_scanner_e2e_complete">همهٔ ریزالورهای انتخاب‌شده تست واقعی E2E را پاس کردند.</string>
     <string name="omni_dns_scanner_e2e_partial">E2E ناقص است یا برخی ریزالورها fail شدند؛ فقط نتیجهٔ تأییدشده می‌تواند best شود.</string>
+    <string name="omni_dns_scanner_e2e_timed_out">سقف کل زمان E2E تمام شد؛ candidateهای ناتمام untested می‌مانند و نتایج کامل‌شده حفظ می‌شوند.</string>
     <string name="omni_dns_scanner_apply_done">ریزالور اندازه‌گیری‌شده روی profile انتخاب‌شده اعمال شد.</string>
     <string name="omni_dns_scanner_apply_failed">profile به‌روز نشد؛ هیچ تغییر ریزالوری ادعا نمی‌شود.</string>
     <string name="soar_lab_settings">JSON تنظیمات Soar (خالی = پیش‌فرض‌های مستند)</string>
-    <string name="soar_settings_support">۱۶ تنظیم transport، discovery، window و timeout پیش از ذخیره اعتبارسنجی می‌شوند.</string>
+    <string name="soar_settings_support">کشور و ۱۶ تنظیم transport، discovery، window و timeout پیش از ذخیره اعتبارسنجی می‌شوند.</string>
     <string name="soar_transport_support">گزینه‌های auto/on/only/off رفتار واقعی TCP در Soar را کنترل می‌کنند.</string>
     <string name="soar_lab_discovery">کشف resolver در Soar</string>
     <string name="soar_discovery_support">Discovery می‌تواند با فهرست resolver اولیهٔ خالی آغاز شود؛ تا موفقیت E2E اتصالی ادعا نمی‌شود.</string>

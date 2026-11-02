@@ -446,6 +446,21 @@ func (c *Client) DialContext(ctx context.Context, network, addr string) (net.Con
 	return &Conn{st: st, local: c.pc.LocalAddr(), remote: tunnelAddr(addr)}, nil
 }
 
+// DialConfirmed opens a stream and waits until the server confirms that it
+// connected to the requested destination. A local SOCKS/HTTP adapter must use
+// this before replying success; DialContext alone only queues the open frame.
+func (c *Client) DialConfirmed(ctx context.Context, network, addr string) (net.Conn, error) {
+	conn, err := c.DialContext(ctx, network, addr)
+	if err != nil {
+		return nil, err
+	}
+	if err := conn.(*Conn).waitOpened(ctx); err != nil {
+		conn.Close()
+		return nil, err
+	}
+	return conn, nil
+}
+
 type tunnelAddr string
 
 func (a tunnelAddr) Network() string { return "soar" }

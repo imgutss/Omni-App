@@ -89,6 +89,36 @@ object DnsttDelayTester {
         }
     }
 
+    /** Runs an independently owned scanner child; the foreground VPN session is never reused or stopped. */
+    suspend fun <T> withIsolatedCore(
+        context: Context,
+        core: DnsttCore,
+        startupTimeoutMs: Long = STARTUP_BUDGET_MS,
+        block: suspend () -> T,
+    ): T? {
+        if (!DnsttCoreManager.isSupported(context, core.engine)) return null
+        core.sessionPorts.forEach { port ->
+            if (withContext(Dispatchers.IO) { DnsttCoreManager.checkSessionPort(port) } != DnsttCoreManager.PortCheck.Free) return null
+        }
+        var owned: DnsttCoreManager.Session? = null
+        return try {
+            val target = DnsttCoreManager.startIsolated(context, core)
+            owned = target
+            val effectiveStartupTimeout = if (core.ssh == null) startupTimeoutMs else maxOf(startupTimeoutMs, SSH_STARTUP_BUDGET_MS)
+            if (DnsttCoreManager.awaitIsolatedListening(target, effectiveStartupTimeout)) block() else null
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            LogUtil.e(AppConfig.TAG, "DnsttTest: isolated scanner tunnel failed", error)
+            null
+        } finally {
+            owned?.let { target ->
+                DnsttCoreManager.stopIsolated(target)
+                withContext(NonCancellable + Dispatchers.IO) { DnsttCoreManager.awaitStopped(5_000L) }
+            }
+        }
+    }
+
     private suspend fun awaitLive(core: DnsttCore, timeoutMs: Long): Boolean {
         val deadline = deadlineAfter(if (core.ssh == null) timeoutMs else maxOf(timeoutMs, SSH_STARTUP_BUDGET_MS))
         while (System.nanoTime() < deadline) {

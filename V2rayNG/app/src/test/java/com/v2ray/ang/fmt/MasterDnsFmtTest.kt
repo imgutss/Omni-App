@@ -88,13 +88,42 @@ class MasterDnsFmtTest {
     }
 
     @Test
-    fun explicitEnginesRejectAnIncompatibleDocumentFormat() {
+    fun rawDocumentsAndUriSchemesUseNativeFormatsAndEngineSpecificFields() {
+        val sharedToml = "DOMAINS = [\"v.example.com\"]\nDATA_ENCRYPTION_METHOD = 1\nENCRYPTION_KEY = \"secret\""
+        val cottenToml = "$sharedToml\nTERMINAL_UI = \"plain\""
+        assertEquals(MasterDnsFmt.ENGINE_MASTERDNS, MasterDnsFmt.parseAny(json)?.masterDnsEngine)
+        assertEquals(MasterDnsFmt.ENGINE_MASTERDNS, MasterDnsFmt.parseAny(sharedToml)?.masterDnsEngine)
+        assertEquals(MasterDnsFmt.ENGINE_COTTENDNS, MasterDnsFmt.parseAny(cottenToml)?.masterDnsEngine)
+        assertEquals("CottenDNS", MasterDnsFmt.parseAny(cottenToml)?.remarks)
+
+        val encodedToml = Base64.getUrlEncoder().withoutPadding().encodeToString(sharedToml.toByteArray(StandardCharsets.UTF_8))
+        val encodedCottenToml = Base64.getUrlEncoder().withoutPadding().encodeToString(cottenToml.toByteArray(StandardCharsets.UTF_8))
+        val encodedJson = Base64.getUrlEncoder().withoutPadding().encodeToString(json.toByteArray(StandardCharsets.UTF_8))
+        assertEquals(MasterDnsFmt.ENGINE_MASTERDNS, MasterDnsFmt.parse("masterdns://?config=$encodedToml")?.masterDnsEngine)
+        assertEquals(MasterDnsFmt.ENGINE_COTTENDNS, MasterDnsFmt.parse("cottendns://?config=$encodedToml")?.masterDnsEngine)
+        assertNull(MasterDnsFmt.parse("masterdns://?config=$encodedCottenToml"))
+        assertNull(MasterDnsFmt.parse("cottendns://?config=$encodedJson"))
+        assertEquals(MasterDnsFmt.ENGINE_COTTENDNS, MasterDnsFmt.parse("cottendns://?config=$encodedCottenToml")?.masterDnsEngine)
+    }
+
+    @Test
+    fun explicitEnginesRejectIncompatibleFormatsAndForeignEngineFields() {
         val jsonProfile = MasterDnsFmt.parseAny(json)!!.apply { masterDnsEngine = MasterDnsFmt.ENGINE_COTTENDNS }
         assertEquals(MasterDnsFmt.Problem.CONFIG_MALFORMED, MasterDnsFmt.normalize(jsonProfile))
-        val tomlProfile = MasterDnsFmt.parseAny("DOMAINS = [\"v.example.com\"]\nENCRYPTION_KEY = \"secret\"")!!.apply {
+
+        val masterToml = MasterDnsFmt.parseAny("DOMAINS = [\"v.example.com\"]\nENCRYPTION_KEY = \"secret\"")!!
+        assertEquals(MasterDnsFmt.ENGINE_MASTERDNS, masterToml.masterDnsEngine)
+        assertNull(MasterDnsFmt.normalize(masterToml))
+
+        val cottenToml = MasterDnsFmt.parseAny("DOMAINS = [\"v.example.com\"]\nENCRYPTION_KEY = \"secret\"\nTERMINAL_UI = \"plain\"")!!.apply {
             masterDnsEngine = MasterDnsFmt.ENGINE_MASTERDNS
         }
-        assertEquals(MasterDnsFmt.Problem.CONFIG_MALFORMED, MasterDnsFmt.normalize(tomlProfile))
+        assertEquals(MasterDnsFmt.Problem.CONFIG_MALFORMED, MasterDnsFmt.normalize(cottenToml))
+        val masterOnlyToml = MasterDnsFmt.parseAny("DOMAINS = [\"v.example.com\"]\nENCRYPTION_KEY = \"secret\"\nSAVE_MTU_SERVERS_TO_FILE = false")!!.apply {
+            masterDnsEngine = MasterDnsFmt.ENGINE_COTTENDNS
+        }
+        assertEquals(MasterDnsFmt.Problem.CONFIG_MALFORMED, MasterDnsFmt.normalize(masterOnlyToml))
+        assertNull(MasterDnsFmt.parseAny("DOMAINS = [\"v.example.com\"]\nENCRYPTION_KEY = \"secret\"\nTERMINAL_UI = \"plain\"\nSAVE_MTU_SERVERS_TO_FILE = false"))
     }
 
     @Test

@@ -117,6 +117,13 @@ jobs:
         cd third_party/masterdnsvpn
         GOTOOLCHAIN=local CGO_ENABLED=0 go test ./...
 
+    - name: Test MasterDNS Android client and Omni profile loopback
+      env:
+        MASTERDNS_E2E_CLIENT_BIN: ${{ github.workspace }}/libs-masterdns/x86_64/libmasterdns.so
+      run: |
+        cd third_party/masterdnsvpn
+        GOTOOLCHAIN=local CGO_ENABLED=0 go test -tags e2e -run '^TestOmniNativeProfilesThroughAndroidClient$' -count=1 -timeout 180s ./test/e2e
+
     - name: Save MasterDnsVPN client
       if: steps.cache-masterdns-restore.outputs.cache-hit != 'true'
       uses: actions/cache/save@v6
@@ -145,7 +152,7 @@ jobs:
         COTTENDNS_E2E_CLIENT_BIN: ${{ github.workspace }}/libs-cottendns/x86_64/libcottendns.so
       run: |
         cd third_party/cottendns
-        GOTOOLCHAIN=local CGO_ENABLED=0 go test -tags e2e -run '^(TestTunnelEndToEndEcho|TestTunnelEndToEndSOCKS5AESGCMProfile)$' -timeout 180s ./test/e2e
+        GOTOOLCHAIN=local CGO_ENABLED=0 go test -tags e2e -count=1 -timeout 300s ./test/e2e
 
     - name: Save CottenDNS client
       if: steps.cache-cottendns-restore.outputs.cache-hit != 'true'

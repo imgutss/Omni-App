@@ -40,6 +40,7 @@ object DnsttCoreManager {
     private const val SOAR_RESOLVERS_FILE = "soar_resolvers.txt"
     private const val SOAR_SETTINGS_FILE = "soar_settings.json"
     private const val SESSION_ENV = "OMNI_DNSTT_SESSION"
+    private const val ISOLATED_ENV = "OMNI_DNSTT_ISOLATED"
     private const val KEY_ENV = "OMNI_DNSTT_KEY"
     private const val PORT_ENV = "OMNI_DNSTT_ENGINE_PORT"
     private const val SOCKS_USER_ENV = "OMNI_DNSTT_SOCKS_USER"
@@ -55,6 +56,7 @@ object DnsttCoreManager {
 
     @Volatile
     private var session: Session? = null
+    private val isolatedSessions = java.util.concurrent.ConcurrentHashMap.newKeySet<Session>()
 
     val isRunning: Boolean get() = session != null
     val currentPort: Int? get() = session?.core?.port
@@ -106,7 +108,7 @@ object DnsttCoreManager {
             val argv = readProcWords(File(entry, "cmdline")) ?: return@forEach
             if (argv.firstOrNull() !in expected) return@forEach
             val environment = readProcWords(File(entry, "environ")).orEmpty()
-            if ("$SESSION_ENV=1" !in environment) return@forEach
+            if ("$SESSION_ENV=1" !in environment || "$ISOLATED_ENV=1" in environment) return@forEach
             val port = environment.firstOrNull { it.startsWith("$PORT_ENV=") }
                 ?.substringAfter('=')?.toIntOrNull()
                 ?: argv.lastOrNull()?.substringAfterLast(':')?.toIntOrNull()
@@ -287,9 +289,32 @@ object DnsttCoreManager {
         lifecycle.execute { finish(current, notifyExit = false) }
     }
 
+    /** Scanner-only process. It never changes the foreground connection's selected Session. */
+    @Synchronized
+    internal fun startIsolated(context: Context, core: DnsttCore, protect: ((Int) -> Boolean)? = null): Session {
+        val next = Session(context.applicationContext, core, onExit = {}, isolated = true)
+        isolatedSessions += next
+        lifecycle.execute { open(next, protect, reapStaleProcesses = false) }
+        return next
+    }
+
+    @Synchronized
+    internal fun stopIsolated(target: Session) {
+        if (!isolatedSessions.remove(target)) return
+        target.stopRequested.set(true)
+        lifecycle.execute { finish(target, notifyExit = false) }
+    }
+
+    private fun owns(target: Session): Boolean = ownsCoreSession(
+        isolated = target.isolated,
+        selected = session === target,
+        registered = isolatedSessions.contains(target),
+        stopRequested = target.stopRequested.get(),
+    )
+
     private fun open(target: Session, protect: ((Int) -> Boolean)?, reapStaleProcesses: Boolean) {
         try {
-            if (session !== target) return
+            if (!owns(target)) return
             if (reapStaleProcesses) reapStale(target.context)
             val directory = sessionDirectory(target)
             target.directory = directory
@@ -305,6 +330,7 @@ object DnsttCoreManager {
                 redirectErrorStream(true)
                 environment().apply {
                     put(SESSION_ENV, "1")
+                    if (target.isolated) put(ISOLATED_ENV, "1")
                     put(KEY_ENV, target.core.key)
                     put("HOME", directory.absolutePath)
                     put("TMPDIR", target.context.cacheDir.absolutePath)
@@ -336,7 +362,7 @@ object DnsttCoreManager {
                 SlipstreamSocksBridge.start(target.core) { error ->
                     LogUtil.e(AppConfig.TAG, "Slipstream SOCKS bridge failed", error)
                     lifecycle.execute {
-                        if (session === target && !target.stopRequested.get()) finish(target, notifyExit = true)
+                        if (owns(target)) finish(target, notifyExit = true)
                     }
                 }
             }
@@ -344,12 +370,12 @@ object DnsttCoreManager {
                 DnsttSshTunnel.start(target.core) { error ->
                     LogUtil.e(AppConfig.TAG, "DNSTT+SSH: chained session failed", error)
                     lifecycle.execute {
-                        if (session === target && !target.stopRequested.get()) finish(target, notifyExit = true)
+                        if (owns(target)) finish(target, notifyExit = true)
                     }
                 }
             }
             LogUtil.i(AppConfig.TAG, "DNSTT: ${target.core.engine} core started on ${AppConfig.LOOPBACK}:${target.core.enginePort}")
-            if (session !== target) finish(target, notifyExit = false)
+            if (!owns(target)) finish(target, notifyExit = false)
         } catch (e: Exception) {
             LogUtil.e(AppConfig.TAG, "DNSTT: core start failed", e)
             finish(target, notifyExit = true)
@@ -483,7 +509,7 @@ object DnsttCoreManager {
                 }
             }
         } catch (e: Exception) {
-            if (session === target) LogUtil.w(AppConfig.TAG, "DNSTT: output reader ended unexpectedly", e)
+            if (owns(target)) LogUtil.w(AppConfig.TAG, "DNSTT: output reader ended unexpectedly", e)
         }
     }
 
@@ -501,6 +527,20 @@ object DnsttCoreManager {
         }
         false
     } ?: false
+
+    internal suspend fun awaitIsolatedListening(target: Session, timeoutMs: Long): Boolean =
+        withTimeoutOrNull(timeoutMs) {
+            while (owns(target)) {
+                val process = target.process
+                if (process != null && !isAlive(process)) return@withTimeoutOrNull false
+                val sshReady = target.core.ssh == null || DnsttSshTunnel.isReady(target.core.key)
+                if (process != null && sshReady && withContext(Dispatchers.IO) { answersSocks(target.core.port) }) {
+                    return@withTimeoutOrNull true
+                }
+                delay(READY_POLL_MS)
+            }
+            false
+        } ?: false
 
     internal fun answersSocks(port: Int): Boolean = try {
         Socket().use { socket ->
@@ -520,8 +560,9 @@ object DnsttCoreManager {
 
     private fun finish(target: Session, notifyExit: Boolean) {
         val current = session === target
-        val shouldNotify = notifyExit && current && !target.stopRequested.get()
-        if (current) session = null
+        val owned = if (target.isolated) isolatedSessions.contains(target) else current
+        val shouldNotify = notifyExit && owned && !target.stopRequested.get()
+        if (target.isolated) isolatedSessions.remove(target) else if (current) session = null
         if (!target.cleaned.compareAndSet(false, true)) {
             if (shouldNotify) target.onExit()
             return
@@ -601,6 +642,7 @@ object DnsttCoreManager {
         val core: DnsttCore,
         val onExit: () -> Unit,
         val id: String = UUID.randomUUID().toString(),
+        val isolated: Boolean = false,
     ) {
         @Volatile var process: Process? = null
         @Volatile var protectServer: MasterDnsProtectServer? = null

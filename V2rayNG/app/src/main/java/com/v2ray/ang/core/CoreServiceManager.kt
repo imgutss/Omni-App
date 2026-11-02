@@ -519,7 +519,7 @@ object CoreServiceManager {
         NotificationManager.setStatusLine(null)
     }
 
-    /** Reports ready only after the official client's SOCKS5 listener answers its greeting. */
+    /** Reports ready only after real HTTP succeeds through this exact native core and Xray outbound. */
     private fun announceMasterDnsWarmUp(service: Service, guid: String, isReload: Boolean) {
         val connecting = service.getString(R.string.masterdns_core_connecting)
         MessageHelper.sendMsg2UI(service, AppConfig.MSG_STATE_RUNNING, "")
@@ -527,10 +527,15 @@ object CoreServiceManager {
         NotificationManager.setStatusLine(connecting)
         masterDnsWarmUpJob = masterDnsScope.launch {
             var listening = false
-            while (isActive && !listening && MasterDnsCoreManager.isRunning) {
-                listening = MasterDnsCoreManager.awaitListening(AETHER_WARM_UP_MS)
+            var reachable = false
+            while (isActive && !reachable && MasterDnsCoreManager.isRunning) {
+                if (!listening) listening = MasterDnsCoreManager.awaitListening(AETHER_WARM_UP_MS)
+                if (listening) {
+                    reachable = confirmNativePath()
+                    if (!reachable) kotlinx.coroutines.delay(1_000L)
+                }
             }
-            when (AetherCoreManager.warmUpOutcome(listening, isActive, isRunning())) {
+            when (AetherCoreManager.warmUpOutcome(reachable, isActive, isRunning())) {
                 AetherCoreManager.WarmUpOutcome.ABANDONED -> Unit
                 AetherCoreManager.WarmUpOutcome.CORE_EXITED -> onMasterDnsExit(guid)
                 AetherCoreManager.WarmUpOutcome.LISTENING -> {
@@ -560,7 +565,7 @@ object CoreServiceManager {
         }
     }
 
-    /** Reports DNSTT ready only after the remote SOCKS5 path answers a real greeting. */
+    /** Reports DNSTT ready only after real HTTP succeeds through this exact native core and Xray outbound. */
     private fun announceDnsttWarmUp(service: Service, guid: String, isReload: Boolean) {
         val connecting = service.getString(R.string.dnstt_core_connecting)
         MessageHelper.sendMsg2UI(service, AppConfig.MSG_STATE_RUNNING, "")
@@ -569,10 +574,15 @@ object CoreServiceManager {
         val startupBudget = if (currentDnstt?.ssh != null) DnsttDelayTester.SSH_STARTUP_BUDGET_MS else AETHER_WARM_UP_MS
         dnsttWarmUpJob = dnsttScope.launch {
             var listening = false
-            while (isActive && !listening && DnsttCoreManager.isRunning) {
-                listening = DnsttCoreManager.awaitListening(startupBudget)
+            var reachable = false
+            while (isActive && !reachable && DnsttCoreManager.isRunning) {
+                if (!listening) listening = DnsttCoreManager.awaitListening(startupBudget)
+                if (listening) {
+                    reachable = confirmNativePath()
+                    if (!reachable) kotlinx.coroutines.delay(1_000L)
+                }
             }
-            when (AetherCoreManager.warmUpOutcome(listening, isActive, isRunning())) {
+            when (AetherCoreManager.warmUpOutcome(reachable, isActive, isRunning())) {
                 AetherCoreManager.WarmUpOutcome.ABANDONED -> Unit
                 AetherCoreManager.WarmUpOutcome.CORE_EXITED -> onDnsttExit(guid)
                 AetherCoreManager.WarmUpOutcome.LISTENING -> {
@@ -588,6 +598,19 @@ object CoreServiceManager {
         dnsttWarmUpJob?.cancel()
         dnsttWarmUpJob = null
         NotificationManager.setStatusLine(null)
+    }
+
+    private suspend fun confirmNativePath(): Boolean {
+        for (alternate in listOf(false, true)) {
+            try {
+                if (coreController.measureDelay(SettingsManager.getDelayTestUrl(alternate)) > 0L) return true
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                LogUtil.w(AppConfig.TAG, "Native DNS readiness HTTP probe failed", error)
+            }
+        }
+        return false
     }
 
     private fun onDnsttExit(guid: String) {

@@ -304,6 +304,34 @@ func TestSOARLauncherThroughRealLoopback(t *testing.T) {
 	if _, err := io.ReadFull(reader, got); err != nil || !bytes.Equal(got, payload) {
 		t.Fatalf("launcher tunnel echo mismatch: %q %v\n%s", got, err, logs.String())
 	}
+
+	// A queued local OPEN must not be reported as a successful remote CONNECT.
+	refusedListener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	refusedPort := refusedListener.Addr().(*net.TCPAddr).Port
+	_ = refusedListener.Close()
+	refused, err := net.DialTimeout("tcp", listenAddress, 5*time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = refused.SetDeadline(time.Now().Add(30 * time.Second))
+	refusedReader := bufio.NewReader(refused)
+	_, _ = refused.Write([]byte{5, 1, 0})
+	if _, err := io.ReadFull(refusedReader, greeting); err != nil || greeting[1] != 0 {
+		t.Fatalf("refusal-check greeting failed: %v %v", greeting, err)
+	}
+	refusedRequest := []byte{5, 1, 0, 1, 127, 0, 0, 1, byte(refusedPort >> 8), byte(refusedPort)}
+	_, _ = refused.Write(refusedRequest)
+	if _, err := io.ReadFull(refusedReader, reply); err != nil {
+		t.Fatalf("refused destination did not receive a definite reply: %v", err)
+	}
+	_ = refused.Close()
+	if reply[1] == 0 {
+		t.Fatal("launcher acknowledged a refused remote destination")
+	}
+
 	select {
 	case count := <-protectSeen:
 		if count != 1 {

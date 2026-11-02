@@ -11,10 +11,10 @@ import java.nio.charset.StandardCharsets
 import java.util.Base64
 
 /**
- * Import and export of the official MasterDnsVPN client configuration. The engine reads the same
- * JSON or TOML document at runtime; Omni only owns the surrounding profile and resolver list.
+ * Import and export of official MasterDnsVPN and CottenDNS client configurations. The selected
+ * engine reads the same JSON/TOML document at runtime; Omni only owns the profile and resolvers.
  *
- * The masterdns:// URI is Omni's own transport for that official document, not a claim of
+ * The URI schemes are Omni's own transport for those official documents, not a claim of
  * compatibility with WhiteDNS's proprietary configuration format.
  */
 object MasterDnsFmt : FmtBase() {
@@ -24,6 +24,52 @@ object MasterDnsFmt : FmtBase() {
     private const val DEFAULT_REMARKS = "MasterDNS"
     private const val DEFAULT_RESOLVERS = "8.8.8.8"
     private const val MAX_CONFIG_CHARS = 1_048_576
+
+    // Engine-specific client fields in the pinned upstream sources distinguish raw TOML
+    // documents. A minimal/shared TOML remains MasterDNS, its native config format; an
+    // explicit cottendns:// scheme always wins without requiring one of these fields.
+    private val MASTER_ONLY_KEYS = setOf(
+        "AUTO_REMOVE_LOW_MTU_SERVERS", "MTU_ADDED_SERVER_LOG_FORMAT",
+        "MTU_REACTIVE_ADDED_SERVER_LOG_FORMAT", "MTU_REMOVED_SERVER_LOG_FORMAT",
+        "MTU_SERVERS_FILE_FORMAT", "MTU_SERVERS_FILE_NAME", "MTU_TEST_PARALLELISM",
+        "MTU_TEST_RETRIES", "MTU_TEST_TIMEOUT", "MTU_USING_SECTION_SEPARATOR_TEXT",
+        "PACKET_DUPLICATION_COUNT", "SAVE_MTU_SERVERS_TO_FILE", "SETUP_PACKET_DUPLICATION_COUNT",
+    )
+    private val COTTEN_ONLY_KEYS = setOf(
+        "ADAPTIVE_DUPLICATION", "ADAPTIVE_DUPLICATION_TARGET_DELIVERY",
+        "AUTO_DISABLE_CHECK_INTERVAL_SECONDS", "AUTO_DISABLE_MIN_OBSERVATIONS", "CONFIG_PRESET",
+        "COTTENMAX_FAILOVER_AFTER_MILLISECONDS", "COTTENMAX_FEC_DATA_SHARDS",
+        "COTTENMAX_FEC_DOWNLOAD_ENABLED", "COTTENMAX_FEC_PARITY_SHARDS",
+        "COTTENMAX_HOLD_MILLISECONDS", "COTTENMAX_MAX_ANSWER", "COTTENMAX_MAX_INFLIGHT",
+        "COTTENMAX_MAX_PATH_WINDOW", "COTTENMAX_MAX_QNAME", "COTTENMAX_QNAME_LOSS_GUARD",
+        "COTTENMAX_SAFE_QNAME", "COTTENMAX_SERVER_PUBLIC_KEY", "COTTENMAX_SESSION_IDLE_MILLISECONDS",
+        "DNS_EDNS_COOKIE", "DNS_PADDING_BLOCK_SIZE", "DNS_QNAME_CASE_RANDOMIZATION",
+        "DNS_RANDOMIZE_QUERY_ID", "DNS_RESPONSE_FRAGMENT_STORE_CAPACITY",
+        "DOWNLOAD_PACKET_DUPLICATION_COUNT", "DOWNLOAD_SETUP_PACKET_DUPLICATION_COUNT",
+        "DUPLICATION_PREFER_DISTINCT_DOMAINS", "EDNS_UDP_SIZE", "FAST_CONNECT", "LEGACY_SESSION_ID",
+        "LOCAL_HANDSHAKE_TIMEOUT_SECONDS", "LOG_BASED_MTU_VERIFY", "LOG_DIR", "LOG_FILE_NAME",
+        "LOG_SCAN_MAX_DAYS", "LOG_SCAN_MAX_RESOLVERS", "LOG_TO_FILE", "MAX_ACTIVE_STREAMS",
+        "MTU_ADAPTIVE_GROUPING", "MTU_BACKGROUND_PARALLELISM", "MTU_GROUP_GAP_RATIO", "MTU_MAX_LOSS",
+        "MTU_PROBE_SAMPLES", "MTU_TEST_PARALLELISM_LOGS", "MTU_TEST_PARALLELISM_RESOLVERS",
+        "MTU_TEST_RETRIES_LOGS", "MTU_TEST_RETRIES_RESOLVERS", "MTU_TEST_TIMEOUT_LOGS",
+        "MTU_TEST_TIMEOUT_RESOLVERS", "MTU_WEIGHTED_MIN_POOL", "ORPHAN_QUEUE_INITIAL_CAPACITY",
+        "PING_WATCHDOG_TIMEOUT_SECONDS", "QNAME_LABEL_COUNT_JITTER", "QNAME_LABEL_LENGTH",
+        "QUERY_RATE_LIMIT_BURST", "QUERY_RATE_LIMIT_PER_DOMAIN_PER_SECOND",
+        "QUERY_RATE_LIMIT_PER_RESOLVER_PER_SECOND", "QUERY_RATE_LIMIT_PER_SECOND", "QUERY_TIMING_JITTER",
+        "QUERY_TYPES", "RECHECK_BATCH_SIZE", "RECHECK_INACTIVE_INTERVAL_SECONDS",
+        "RECHECK_SERVER_INTERVAL_SECONDS", "RESOLVER_DISCOVERY_CACHE_FILE", "RESOLVER_DISCOVERY_CANDIDATES",
+        "RESOLVER_DISCOVERY_CONCURRENCY", "RESOLVER_DISCOVERY_COUNTRY", "RESOLVER_DISCOVERY_ENABLED",
+        "RESOLVER_DISCOVERY_NETWORK_ID", "RESOLVER_DISCOVERY_PACE_MILLISECONDS",
+        "RESOLVER_DISCOVERY_SAMPLE_RANGES", "RESOLVER_DISCOVERY_WANT", "RESOLVER_DOH_PATH",
+        "RESOLVER_DOH_PORT", "RESOLVER_DOQ_PORT", "RESOLVER_DOT_PORT", "RESOLVER_HTTP3_FALLBACK",
+        "RESOLVER_IGNORE_INJECTED_NXDOMAIN", "RESOLVER_IGNORE_INJECTED_NXDOMAIN_IN_PROBES",
+        "RESOLVER_IP_MODE", "RESOLVER_RATE_LIMIT_ENABLED", "RESOLVER_TLS_INSECURE_SKIP_VERIFY",
+        "RESOLVER_TLS_PIN", "RESOLVER_TLS_SERVER_NAME", "RESOLVER_TRANSPORT",
+        "RESOLVER_UDP_CONNECTION_POOL_SIZE", "STANDBY_DOMAINS", "STARTUP_MODE",
+        "STATS_REPORT_INTERVAL_SECONDS", "STREAM_QUEUE_INITIAL_CAPACITY", "TERMINAL_UI",
+        "TUNNEL_MODE", "TX_CHANNEL_SIZE", "UPLOAD_PACKET_DUPLICATION_COUNT",
+        "UPLOAD_SETUP_PACKET_DUPLICATION_COUNT",
+    )
 
     enum class Problem {
         CONFIG_EMPTY,
@@ -43,6 +89,8 @@ object MasterDnsFmt : FmtBase() {
         val encryptionMethod: Int,
         val encryptionKey: String?,
         val socksPass: String?,
+        val hasMasterOnlyFields: Boolean = false,
+        val hasCottenOnlyFields: Boolean = false,
     )
 
     /** Parses an Omni masterdns:// URI. Returns null when its payload is not an official client config. */
@@ -59,7 +107,9 @@ object MasterDnsFmt : FmtBase() {
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
             ?: DEFAULT_REMARKS
-        return fromDocument(raw, remarks, resolvers)
+        // The URI scheme is authoritative; a raw import has no such hint and is
+        // classified from fields that exist in only one of the pinned clients.
+        return fromDocument(raw, remarks, resolvers, scheme)
     }
 
     /**
@@ -79,21 +129,9 @@ object MasterDnsFmt : FmtBase() {
     fun toUri(config: ProfileItem): String {
         val raw = config.masterDnsConfig.orEmpty().trim()
         val resolvers = normalizeResolvers(config.masterDnsResolvers)
-        config.masterDnsEngine?.let { engine ->
-            val document = document(raw) ?: return ""
-            val profile = JsonObject().apply {
-                addProperty("id", "${config.addedTime}:$engine")
-                addProperty("name", config.remarks.ifBlank { engine })
-                addProperty("engine", engine)
-                add("server", JsonObject().apply {
-                    addProperty("domain", document.domains.firstOrNull() ?: return "")
-                    document.encryptionKey?.let { addProperty("encryption_key", it) }
-                    addProperty("encryption_method", document.encryptionMethod)
-                })
-                add("resolvers", WhiteDnsProfileFmt.strings(resolvers.lines().map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith('#') }))
-            }
-            return WhiteDnsProfileFmt.toPayload(profile)
-        }
+        // Share the complete official document. Rebuilding only domain/key/method would
+        // discard SOCKS authentication and other engine options during a round trip.
+        if (document(raw) == null) return ""
         val encodedConfig = encodePayload(raw)
         val encodedResolvers = encodePayload(resolvers)
         val remarks = URLEncoder.encode(config.remarks.ifBlank { DEFAULT_REMARKS }, StandardCharsets.UTF_8.name())
@@ -108,8 +146,13 @@ object MasterDnsFmt : FmtBase() {
         if (raw.isEmpty()) return Problem.CONFIG_EMPTY
         if (raw.length > MAX_CONFIG_CHARS) return Problem.CONFIG_TOO_LARGE
         val document = document(raw) ?: return Problem.CONFIG_MALFORMED
-        if ((engine == ENGINE_MASTERDNS && document.format != Format.JSON) ||
-            (engine == ENGINE_COTTENDNS && document.format != Format.TOML)
+        if (document.hasMasterOnlyFields && document.hasCottenOnlyFields) return Problem.CONFIG_MALFORMED
+        val selectedEngine = engine ?: when {
+            document.format == Format.TOML && document.hasCottenOnlyFields -> ENGINE_COTTENDNS
+            else -> ENGINE_MASTERDNS
+        }
+        if ((selectedEngine == ENGINE_COTTENDNS && (document.format != Format.TOML || document.hasMasterOnlyFields)) ||
+            (selectedEngine == ENGINE_MASTERDNS && document.hasCottenOnlyFields)
         ) return Problem.CONFIG_MALFORMED
         if (document.domains.isEmpty()) return Problem.DOMAINS_MISSING
         if (document.encryptionMethod !in 0..5) return Problem.CONFIG_MALFORMED
@@ -117,7 +160,7 @@ object MasterDnsFmt : FmtBase() {
         val resolvers = config.masterDnsResolvers
         if (!validResolvers(resolvers)) return Problem.RESOLVERS_INVALID
 
-        config.masterDnsEngine = engine
+        config.masterDnsEngine = selectedEngine
         config.masterDnsConfig = raw
         config.masterDnsResolvers = normalizeResolvers(resolvers)
         config.server = document.domains.first()
@@ -126,18 +169,29 @@ object MasterDnsFmt : FmtBase() {
         return null
     }
 
-    /** True when the text is an official config with the fields needed to identify it as MasterDNS. */
-    internal fun fromDocument(raw: String, remarks: String, resolvers: String?): ProfileItem? {
+    /** Parses a supported raw DNS-tunnel client document without discarding its native fields. */
+    internal fun fromDocument(
+        raw: String,
+        remarks: String,
+        resolvers: String?,
+        engine: String? = null,
+    ): ProfileItem? {
         val document = document(raw.trim()) ?: return null
-        // A generic TOML/JSON document is not claimed as MasterDNS merely because it has a domains key.
+        // A generic TOML/JSON document is not claimed merely because it has a domains key.
         if (document.domains.isEmpty() || (document.encryptionKey == null && document.encryptionMethod != 0)) return null
-        return ProfileItem.create(EConfigType.MASTERDNS).also { profile ->
-            profile.remarks = remarks.trim().ifEmpty { DEFAULT_REMARKS }
-            profile.masterDnsConfig = document.raw
-            profile.masterDnsResolvers = normalizeResolvers(resolvers)
-            profile.server = document.domains.first()
-            profile.serverPort = null
-        }.takeIf { normalize(it) == null }
+        val profile = ProfileItem.create(EConfigType.MASTERDNS).also { item ->
+            item.remarks = remarks.trim().ifEmpty { DEFAULT_REMARKS }
+            item.masterDnsConfig = document.raw
+            item.masterDnsResolvers = normalizeResolvers(resolvers)
+            item.masterDnsEngine = engine
+            item.server = document.domains.first()
+            item.serverPort = null
+        }
+        if (normalize(profile) != null) return null
+        if (remarks.isBlank() || remarks == DEFAULT_REMARKS) {
+            profile.remarks = if (profile.masterDnsEngine == ENGINE_COTTENDNS) "CottenDNS" else DEFAULT_REMARKS
+        }
+        return profile
     }
 
     private fun fromProfileEnvelope(uri: URI, scheme: String): ProfileItem? = with(WhiteDnsProfileFmt) {
@@ -165,10 +219,7 @@ object MasterDnsFmt : FmtBase() {
                 key?.let { addProperty("ENCRYPTION_KEY", it) }
             }.toString()
         }
-        return fromDocument(raw, remarks, resolvers)?.also { profile ->
-            profile.masterDnsEngine = engine
-            normalize(profile)
-        }
+        return fromDocument(raw, remarks, resolvers, engine)
     }
 
     internal fun document(raw: String): Document? = when {
@@ -220,6 +271,8 @@ object MasterDnsFmt : FmtBase() {
             encryptionMethod = method,
             encryptionKey = key,
             socksPass = statements["SOCKS5_PASS"]?.let(::tomlString),
+            hasMasterOnlyFields = statements.keys.any(MASTER_ONLY_KEYS::contains),
+            hasCottenOnlyFields = statements.keys.any(COTTEN_ONLY_KEYS::contains),
         )
     }
 

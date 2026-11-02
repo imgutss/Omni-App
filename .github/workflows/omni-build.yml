@@ -120,6 +120,13 @@ jobs:
         cd third_party/masterdnsvpn
         GOTOOLCHAIN=local CGO_ENABLED=0 go test ./...
 
+    - name: Test MasterDNS Android client and Omni profile loopback
+      env:
+        MASTERDNS_E2E_CLIENT_BIN: ${{ github.workspace }}/libs-masterdns/x86_64/libmasterdns.so
+      run: |
+        cd third_party/masterdnsvpn
+        GOTOOLCHAIN=local CGO_ENABLED=0 go test -tags e2e -run '^TestOmniNativeProfilesThroughAndroidClient$' -count=1 -timeout 180s ./test/e2e
+
     - name: Save MasterDnsVPN client
       if: steps.cache-masterdns-restore.outputs.cache-hit != 'true'
       uses: actions/cache/save@v6
@@ -148,7 +155,7 @@ jobs:
         COTTENDNS_E2E_CLIENT_BIN: ${{ github.workspace }}/libs-cottendns/x86_64/libcottendns.so
       run: |
         cd third_party/cottendns
-        GOTOOLCHAIN=local CGO_ENABLED=0 go test -tags e2e -run '^(TestTunnelEndToEndEcho|TestTunnelEndToEndSOCKS5AESGCMProfile)$' -timeout 180s ./test/e2e
+        GOTOOLCHAIN=local CGO_ENABLED=0 go test -tags e2e -count=1 -timeout 300s ./test/e2e
 
     - name: Save CottenDNS client
       if: steps.cache-cottendns-restore.outputs.cache-hit != 'true'
@@ -423,7 +430,7 @@ jobs:
         # build before anything is assembled or signed.
         ./gradlew :app:testPlaystoreDebugUnitTest :app:testFdroidDebugUnitTest
         ./gradlew licenseFdroidReleaseReport
-        ./gradlew assemblePlaystoreRelease -PpattngVersion="${{ inputs.release_tag || '0.10.0' }}" -Pandroid.injected.signing.store.file=${{ steps.android_keystore.outputs.filePath }} -Pandroid.injected.signing.store.password=${{ secrets.OMNI_KEYSTORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.OMNI_KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.OMNI_KEY_PASSWORD }}
+        ./gradlew assemblePlaystoreRelease -PpattngVersion="${{ inputs.release_tag || '0.10.1' }}" -Pandroid.injected.signing.store.file=${{ steps.android_keystore.outputs.filePath }} -Pandroid.injected.signing.store.password=${{ secrets.OMNI_KEYSTORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.OMNI_KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.OMNI_KEY_PASSWORD }}
     
     - name: Check the native libraries in the APKs
       run: |

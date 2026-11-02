@@ -6,6 +6,7 @@ import com.v2ray.ang.fmt.DnsttFmt
 import com.v2ray.ang.fmt.MasterDnsFmt
 import com.v2ray.ang.omni.lab.OmniLatencyStats
 import com.v2ray.ang.omni.lab.OmniScanTarget
+import com.v2ray.ang.omni.lab.OmniTargetParser
 
 data class OmniDnsE2eResult(
     val stats: OmniLatencyStats,
@@ -13,6 +14,14 @@ data class OmniDnsE2eResult(
     val error: String? = null,
 ) {
     val success: Boolean get() = stats.succeeded > 0
+}
+
+fun dnsProfileProbeDomain(profile: ProfileItem): String {
+    if (profile.configType == EConfigType.MASTERDNS) {
+        return profile.server?.trim()?.takeIf { it.isNotEmpty() }
+            ?: MasterDnsFmt.document(profile.masterDnsConfig.orEmpty())?.domains?.firstOrNull().orEmpty()
+    }
+    return profile.dnsttDomain?.trim().orEmpty()
 }
 
 fun dnsCandidateProfile(template: ProfileItem, target: OmniScanTarget): ProfileItem {
@@ -25,7 +34,7 @@ fun dnsCandidateProfile(template: ProfileItem, target: OmniScanTarget): ProfileI
     val engine = template.dnsttEngine?.trim()?.lowercase()?.ifEmpty { DnsttFmt.ENGINE_OFFICIAL } ?: DnsttFmt.ENGINE_OFFICIAL
     val originalEndpoints = DnsttFmt.engineResolver(template.dnsttResolver.orEmpty()).split(',')
     val originalAuthorities = DnsttFmt.resolverAuthorities(template)
-    val matchedIndex = originalEndpoints.indexOfFirst { it == target.endpointId }
+    val matchedIndex = originalEndpoints.indexOfFirst { canonicalDnsResolverEndpoint(it) == target.endpointId }
     val matchedAuthority = originalAuthorities.getOrNull(matchedIndex)
     val hasPerResolverAuthorities = originalEndpoints.isNotEmpty() && originalAuthorities.size == originalEndpoints.size
     val sharedAuthority = originalAuthorities.takeIf { hasPerResolverAuthorities && it.distinct().size == 1 }?.first()
@@ -44,6 +53,13 @@ fun dnsCandidateProfile(template: ProfileItem, target: OmniScanTarget): ProfileI
     return candidate
 }
 
+internal fun canonicalDnsResolverEndpoint(raw: String): String {
+    val parsed = OmniTargetParser.parse(raw.trim())
+    if (!parsed.hasTargets || parsed.invalid.isNotEmpty() || parsed.targetCount != 1L) return raw.trim()
+    val seed = parsed.targets.single()
+    return OmniScanTarget(seed.host, seed.port ?: 53, seed.kind).endpointId
+}
+
 fun bestDnsResolver(
     results: List<OmniDnsResolverResult>,
     e2e: Map<String, OmniDnsE2eResult>,
@@ -53,6 +69,11 @@ fun bestDnsResolver(
         .thenBy { e2e[it.target.endpointId]?.stats?.jitterMs ?: Long.MAX_VALUE }
         .thenBy { it.target.endpointId },
 )
+
+fun dnsE2eShortlist(results: List<OmniDnsResolverResult>, limit: Int): List<OmniDnsResolverResult> {
+    require(limit > 0)
+    return rankDnsResolverResults(results.filter { it.working }, emptyMap()).take(limit)
+}
 
 fun rankDnsResolverResults(
     results: List<OmniDnsResolverResult>,

@@ -30,7 +30,7 @@ data class OmniDnsResolverResult(
     val stats: OmniLatencyStats,
     val responseCode: Int? = null,
 ) {
-    val working: Boolean get() = stats.succeeded > 0
+    val working: Boolean get() = stats.succeeded > 0 && (responseCode == null || responseCode == 0)
 }
 
 class OmniDnsResolverProbe(private val random: SecureRandom = SecureRandom()) {
@@ -57,8 +57,12 @@ class OmniDnsResolverProbe(private val random: SecureRandom = SecureRandom()) {
         repeat(options.warmup + options.samples) { iteration ->
             val attempt = runCatching { query(target, options.domain, options.timeoutMs) }.getOrNull()
             if (iteration >= options.warmup) {
-                samples += attempt?.first
-                if (attempt?.first != null) responseCode = attempt.second
+                val code = attempt?.second
+                // A syntactically valid NXDOMAIN/SERVFAIL is a response, not a working
+                // tunnel candidate. Count only NOERROR replies as successful samples;
+                // E2E still has to prove that the native tunnel carries real HTTP.
+                samples += attempt?.first?.takeIf { code == 0 }
+                if (code != null) responseCode = code
             }
         }
         OmniDnsResolverResult(target, OmniLatencyStats.from(samples, options.samples), responseCode)

@@ -152,6 +152,11 @@ private fun OmniDnsScannerContent(state: OmniDnsScannerUiState, model: OmniDnsSc
                             OmniDnsNumberField(state.e2eSamplesInput, model::updateE2eSamples, !busy, R.string.omni_dns_scanner_ping_samples, Modifier.weight(1f))
                             OmniDnsNumberField(state.e2eTimeoutInput, model::updateE2eTimeout, !busy, R.string.omni_dns_scanner_e2e_timeout, Modifier.weight(1f))
                         }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OmniDnsNumberField(state.e2eMaxTargetsInput, model::updateE2eMaxTargets, !busy, R.string.omni_dns_scanner_e2e_limit, Modifier.weight(1f))
+                            OmniDnsNumberField(state.e2eConcurrencyInput, model::updateE2eConcurrency, !busy, R.string.omni_dns_scanner_e2e_concurrency, Modifier.weight(1f))
+                        }
+                        OmniDnsNumberField(state.e2eBudgetInput, model::updateE2eBudget, !busy, R.string.omni_dns_scanner_e2e_budget, Modifier.fillMaxWidth())
                         if (state.e2eRunning) {
                             OutlinedButton(onClick = model::stopE2e, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.omni_scanner_stop)) }
                             LinearProgressIndicator(progress = { state.e2eCompleted.toFloat() / state.e2eTotal.coerceAtLeast(1) }, modifier = Modifier.fillMaxWidth())
@@ -302,8 +307,10 @@ private fun OmniDnsScannerMessage.resource(): Int = when (this) {
     OmniDnsScannerMessage.NO_TEMPLATE -> R.string.omni_dns_scanner_no_template
     OmniDnsScannerMessage.NO_WORKING -> R.string.omni_dns_scanner_no_working
     OmniDnsScannerMessage.SCAN_FAILED -> R.string.omni_dns_scanner_failed
+    OmniDnsScannerMessage.SCAN_TIMEOUT -> R.string.omni_dns_scanner_scan_timed_out
     OmniDnsScannerMessage.E2E_COMPLETE -> R.string.omni_dns_scanner_e2e_complete
     OmniDnsScannerMessage.E2E_PARTIAL -> R.string.omni_dns_scanner_e2e_partial
+    OmniDnsScannerMessage.E2E_TIMEOUT -> R.string.omni_dns_scanner_e2e_timed_out
     OmniDnsScannerMessage.APPLIED -> R.string.omni_dns_scanner_apply_done
     OmniDnsScannerMessage.APPLY_FAILED -> R.string.omni_dns_scanner_apply_failed
 }

@@ -3,15 +3,17 @@ package com.v2ray.ang.omni.dns
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.v2ray.ang.core.CoreConfigManager
+import com.v2ray.ang.core.DnsttCore
+import com.v2ray.ang.core.DnsttCoreManager
 import com.v2ray.ang.core.DnsttDelayTester
+import com.v2ray.ang.core.MasterDnsCore
+import com.v2ray.ang.core.MasterDnsCoreManager
 import com.v2ray.ang.core.MasterDnsDelayTester
 import com.v2ray.ang.enums.EConfigType
-import com.v2ray.ang.omni.OmniNativeCoreRuntime
 import com.v2ray.ang.omni.OmniScannerTemplate
 import com.v2ray.ang.omni.lab.OmniLatencyStats
 import com.v2ray.ang.omni.lab.OmniTargetParser
-import com.v2ray.ang.omni.lab.OmniTransferLab
+import com.v2ray.ang.util.Utils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -20,12 +22,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
-enum class OmniDnsScannerMessage { INVALID, NO_TEMPLATE, NO_WORKING, SCAN_FAILED, E2E_COMPLETE, E2E_PARTIAL, APPLIED, APPLY_FAILED }
+enum class OmniDnsScannerMessage { INVALID, NO_TEMPLATE, NO_WORKING, SCAN_FAILED, SCAN_TIMEOUT, E2E_COMPLETE, E2E_PARTIAL, E2E_TIMEOUT, APPLIED, APPLY_FAILED }
 
 data class OmniDnsScannerUiState(
     val targetsInput: String = "1.1.1.1\n8.8.8.8",
@@ -42,8 +48,11 @@ data class OmniDnsScannerUiState(
     val concurrencyInput: String = "24",
     val maxTargetsInput: String = "256",
     val e2eUrlInput: String = "http://www.gstatic.com/generate_204",
-    val e2eSamplesInput: String = "5",
+    val e2eSamplesInput: String = "3",
     val e2eTimeoutInput: String = "30000",
+    val e2eMaxTargetsInput: String = "6",
+    val e2eConcurrencyInput: String = "2",
+    val e2eBudgetInput: String = "600000",
     val templates: List<OmniScannerTemplate> = emptyList(),
     val selectedTemplateGuid: String? = null,
     val totalCandidates: Long = 0L,
@@ -69,7 +78,7 @@ class OmniDnsScannerViewModel(application: Application) : AndroidViewModel(appli
     val state: StateFlow<OmniDnsScannerUiState> = mutableState.asStateFlow()
     private var scanJob: Job? = null
     private var e2eJob: Job? = null
-    @Volatile private var activeRuntime: OmniNativeCoreRuntime? = null
+    private val reservedPorts = mutableSetOf<Int>()
 
     init {
         viewModelScope.launch {
@@ -101,6 +110,9 @@ class OmniDnsScannerViewModel(application: Application) : AndroidViewModel(appli
     fun updateE2eUrl(value: String) = updateE2eInput { it.copy(e2eUrlInput = value) }
     fun updateE2eSamples(value: String) = updateE2eInput { it.copy(e2eSamplesInput = value) }
     fun updateE2eTimeout(value: String) = updateE2eInput { it.copy(e2eTimeoutInput = value) }
+    fun updateE2eMaxTargets(value: String) = updateE2eInput { it.copy(e2eMaxTargetsInput = value) }
+    fun updateE2eConcurrency(value: String) = updateE2eInput { it.copy(e2eConcurrencyInput = value) }
+    fun updateE2eBudget(value: String) = updateE2eInput { it.copy(e2eBudgetInput = value) }
 
     fun selectCandidateSource(source: OmniDnsCandidateSource) {
         if (busy()) return
@@ -188,6 +200,10 @@ class OmniDnsScannerViewModel(application: Application) : AndroidViewModel(appli
             mutableState.update { it.copy(message = OmniDnsScannerMessage.NO_TEMPLATE) }
             return
         }
+        if (dnsProfileProbeDomain(template.profile).isBlank()) {
+            mutableState.update { it.copy(message = OmniDnsScannerMessage.INVALID) }
+            return
+        }
         scanJob = viewModelScope.launch {
             val ports = runCatching { OmniTargetParser.parsePorts(mutableState.value.portsInput) }.getOrNull()
             val samples = parseCount(mutableState.value.samplesInput, 1..20)
@@ -220,17 +236,21 @@ class OmniDnsScannerViewModel(application: Application) : AndroidViewModel(appli
                 )
             }
             try {
-                probe.scan(plan.targets, OmniDnsResolverProbeOptions(
-                    domain = template.profile.dnsttDomain.orEmpty(),
-                    samples = samples,
-                    timeoutMs = timeout,
-                    concurrency = concurrency,
-                )).collect { result ->
-                    mutableState.update { state ->
-                        val results = (state.results.filterNot { it.target.endpointId == result.target.endpointId } + result)
-                        state.copy(results = rankDnsResolverResults(results, state.e2eResults), scanCompleted = state.scanCompleted + 1)
+                withTimeout(dnsScanBudgetMs(plan.targets.size, samples, timeout, concurrency)) {
+                    probe.scan(plan.targets, OmniDnsResolverProbeOptions(
+                        domain = dnsProfileProbeDomain(template.profile),
+                        samples = samples,
+                        timeoutMs = timeout,
+                        concurrency = concurrency,
+                    )).collect { result ->
+                        mutableState.update { state ->
+                            val results = (state.results.filterNot { it.target.endpointId == result.target.endpointId } + result)
+                            state.copy(results = rankDnsResolverResults(results, state.e2eResults), scanCompleted = state.scanCompleted + 1)
+                        }
                     }
                 }
+            } catch (_: TimeoutCancellationException) {
+                mutableState.update { it.copy(message = OmniDnsScannerMessage.SCAN_TIMEOUT) }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
@@ -262,17 +282,22 @@ class OmniDnsScannerViewModel(application: Application) : AndroidViewModel(appli
         val url = current.e2eUrlInput.trim().toHttpUrlOrNull()
         val samples = parseCount(current.e2eSamplesInput, 1..20)
         val timeout = parseCount(current.e2eTimeoutInput, 5_000..180_000)?.toLong()
-        if (url == null || url.scheme !in setOf("http", "https") || samples == null || timeout == null) {
+        val maxTargets = parseCount(current.e2eMaxTargetsInput, 1..32)
+        val concurrency = parseCount(current.e2eConcurrencyInput, 1..3)
+        val budget = parseCount(current.e2eBudgetInput, 30_000..1_800_000)?.toLong()
+        if (url == null || url.scheme !in setOf("http", "https") || samples == null || timeout == null ||
+            maxTargets == null || concurrency == null || budget == null) {
             mutableState.update { it.copy(message = OmniDnsScannerMessage.INVALID) }
             return
         }
+        val candidates = dnsE2eShortlist(working, maxTargets)
         e2eJob = viewModelScope.launch {
             mutableState.update {
                 it.copy(
                     e2eRunning = true,
                     e2eResults = emptyMap(),
                     e2eCompleted = 0,
-                    e2eTotal = working.size,
+                    e2eTotal = candidates.size,
                     bestEndpoint = null,
                     appliedEndpoint = null,
                     message = null,
@@ -280,28 +305,39 @@ class OmniDnsScannerViewModel(application: Application) : AndroidViewModel(appli
             }
             var completed = false
             try {
-                working.forEach { targetResult ->
-                    val result = runE2e(template, targetResult, url.toString(), samples, timeout)
-                    mutableState.update { state ->
-                        val e2e = state.e2eResults + (targetResult.target.endpointId to result)
-                        state.copy(
-                            results = rankDnsResolverResults(state.results, e2e),
-                            e2eResults = e2e,
-                            e2eCompleted = state.e2eCompleted + 1,
-                            bestEndpoint = bestDnsResolver(state.results, e2e)?.target?.endpointId,
-                        )
+                withTimeout(budget) {
+                    supervisorScope {
+                        val semaphore = Semaphore(concurrency)
+                        candidates.map { targetResult ->
+                            launch {
+                                semaphore.withPermit {
+                                    val result = runE2e(template, targetResult, url.toString(), samples, timeout)
+                                    mutableState.update { state ->
+                                        val e2e = state.e2eResults + (targetResult.target.endpointId to result)
+                                        state.copy(
+                                            results = rankDnsResolverResults(state.results, e2e),
+                                            e2eResults = e2e,
+                                            e2eCompleted = state.e2eCompleted + 1,
+                                            bestEndpoint = bestDnsResolver(state.results, e2e)?.target?.endpointId,
+                                        )
+                                    }
+                                }
+                            }
+                        }.joinAll()
                     }
                 }
                 completed = true
                 mutableState.update { state ->
                     val passed = state.e2eResults.values.count { it.success }
-                    state.copy(message = if (passed == working.size) OmniDnsScannerMessage.E2E_COMPLETE else OmniDnsScannerMessage.E2E_PARTIAL)
+                    state.copy(message = if (passed == candidates.size) OmniDnsScannerMessage.E2E_COMPLETE else OmniDnsScannerMessage.E2E_PARTIAL)
                 }
+            } catch (_: TimeoutCancellationException) {
+                mutableState.update { it.copy(message = OmniDnsScannerMessage.E2E_TIMEOUT) }
             } catch (cancelled: CancellationException) {
                 throw cancelled
+            } catch (_: Exception) {
+                mutableState.update { it.copy(message = OmniDnsScannerMessage.E2E_PARTIAL) }
             } finally {
-                runCatching { activeRuntime?.stop() }
-                activeRuntime = null
                 mutableState.update { state ->
                     state.copy(
                         e2eRunning = false,
@@ -315,7 +351,6 @@ class OmniDnsScannerViewModel(application: Application) : AndroidViewModel(appli
     fun stopE2e() {
         e2eJob?.cancel()
         e2eJob = null
-        runCatching { activeRuntime?.stop() }
     }
 
     fun applyBest() {
@@ -354,39 +389,83 @@ class OmniDnsScannerViewModel(application: Application) : AndroidViewModel(appli
         url: String,
         samples: Int,
         timeoutMs: Long,
-    ): OmniDnsE2eResult {
-        val candidate = runCatching { dnsCandidateProfile(template.profile, target.target) }.getOrElse { return failedE2e(itMessage(it)) }
-        val config = withContext(Dispatchers.IO) { CoreConfigManager.getV2rayConfig4Speedtest(getApplication(), template.guid, candidate) }
-        val dnsttCore = config.dnsttCore
-        val masterDnsCore = config.masterDnsCore
-        if (!config.status || config.content.isBlank() || (dnsttCore == null && masterDnsCore == null)) {
-            return failedE2e(config.errorMessage.ifBlank { "Native DNS core unavailable" })
+    ): OmniDnsE2eResult = withContext(Dispatchers.IO) {
+        val candidate = runCatching { dnsCandidateProfile(template.profile, target.target) }.getOrElse {
+            return@withContext failedE2e(itMessage(it))
         }
-        val runtime = OmniNativeCoreRuntime(getApplication())
-        activeRuntime = runtime
-        return try {
-            val ping = withTimeout(timeoutMs) {
-                if (dnsttCore != null) {
-                    DnsttDelayTester.withCore(
-                        getApplication(), dnsttCore, DnsttDelayTester.STARTUP_BUDGET_MS, template.guid,
-                    ) { OmniTransferLab(runtime).ping(config.content, url, samples, warmup = 1) }
-                } else {
-                    MasterDnsDelayTester.withCore(
-                        getApplication(), masterDnsCore!!, MasterDnsDelayTester.STARTUP_BUDGET_MS, template.guid,
-                    ) { OmniTransferLab(runtime).ping(config.content, url, samples, warmup = 1) }
+        when (candidate.configType) {
+            EConfigType.DNSTT -> {
+                val allocated = reserveCore(
+                    build = { port -> DnsttCore.of(candidate, port) },
+                    ports = { core -> core.sessionPorts },
+                    free = DnsttCoreManager::portFree,
+                ) ?: return@withContext failedE2e("No free loopback port for isolated test")
+                val core = allocated.first
+                try {
+                    if (!DnsttCoreManager.isSupported(getApplication(), core.engine)) {
+                        return@withContext failedE2e("Native DNS core unavailable")
+                    }
+                    val startup = if (core.ssh == null) DnsttDelayTester.STARTUP_BUDGET_MS else DnsttDelayTester.SSH_STARTUP_BUDGET_MS
+                    val ping = DnsttDelayTester.withIsolatedCore(getApplication(), core, startup) {
+                        OmniDirectSocksLab().ping(core.port, url, samples, warmup = 1, timeoutMs = timeoutMs)
+                    }
+                    if (ping == null) failedE2e("Tunnel did not become ready")
+                    else OmniDnsE2eResult(ping.stats, ping.lastHttpStatus, ping.error)
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    failedE2e(itMessage(error))
+                } finally {
+                    releasePorts(allocated.second)
                 }
-            } ?: return failedE2e("Tunnel did not become ready")
-            OmniDnsE2eResult(ping.stats, ping.lastHttpStatus, ping.error)
-        } catch (timeout: TimeoutCancellationException) {
-            failedE2e("E2E timeout")
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (error: Exception) {
-            failedE2e(error.message ?: error.javaClass.simpleName)
-        } finally {
-            runCatching { runtime.stop() }
-            activeRuntime = null
+            }
+            EConfigType.MASTERDNS -> {
+                val allocated = reserveCore(
+                    build = { port -> MasterDnsCore.of(candidate, port) },
+                    ports = { core -> listOf(core.port) },
+                    free = MasterDnsCoreManager::portFree,
+                ) ?: return@withContext failedE2e("No free loopback port for isolated test")
+                val core = allocated.first
+                try {
+                    if (!MasterDnsCoreManager.isSupported(getApplication(), core.engine)) {
+                        return@withContext failedE2e("Native DNS core unavailable")
+                    }
+                    val ping = MasterDnsDelayTester.withIsolatedCore(getApplication(), core) {
+                        OmniDirectSocksLab().ping(core.port, url, samples, warmup = 1, timeoutMs = timeoutMs)
+                    }
+                    if (ping == null) failedE2e("Tunnel did not become ready")
+                    else OmniDnsE2eResult(ping.stats, ping.lastHttpStatus, ping.error)
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    failedE2e(itMessage(error))
+                } finally {
+                    releasePorts(allocated.second)
+                }
+            }
+            else -> failedE2e("Unsupported DNS tunnel profile")
         }
+    }
+
+    private fun <T> reserveCore(
+        build: (Int) -> T,
+        ports: (T) -> List<Int>,
+        free: (Int) -> Boolean,
+    ): Pair<T, List<Int>>? = synchronized(reservedPorts) {
+        repeat(64) {
+            val port = runCatching { Utils.findRandomFreePort() }.getOrNull() ?: return@repeat
+            val core = runCatching { build(port) }.getOrNull() ?: return@repeat
+            val required = ports(core)
+            if (required.isNotEmpty() && required.all { it !in reservedPorts && free(it) }) {
+                reservedPorts.addAll(required)
+                return core to required
+            }
+        }
+        null
+    }
+
+    private fun releasePorts(ports: List<Int>) = synchronized(reservedPorts) {
+        reservedPorts.removeAll(ports.toSet())
     }
 
     private fun selectedTemplate(state: OmniDnsScannerUiState) = state.templates.firstOrNull { it.guid == state.selectedTemplateGuid }
@@ -419,9 +498,15 @@ class OmniDnsScannerViewModel(application: Application) : AndroidViewModel(appli
     override fun onCleared() {
         scanJob?.cancel()
         e2eJob?.cancel()
-        runCatching { activeRuntime?.stop() }
         super.onCleared()
     }
+}
+
+internal fun dnsScanBudgetMs(targetCount: Int, samples: Int, timeoutMs: Int, concurrency: Int): Long {
+    require(targetCount > 0 && samples > 0 && timeoutMs > 0 && concurrency > 0)
+    val waves = (targetCount.toLong() + concurrency - 1L) / concurrency
+    val estimated = waves * (samples + 1L) * timeoutMs + 5_000L
+    return estimated.coerceIn(30_000L, 180_000L)
 }
 
 private fun clearEvidence(state: OmniDnsScannerUiState) = state.copy(

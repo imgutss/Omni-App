@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"net/netip"
 	"os"
 	"os/signal"
 	"strings"
@@ -25,6 +26,7 @@ import (
 )
 
 type settings struct {
+	Country              string `json:"country"`
 	Transport            string `json:"transport"`
 	Discovery            bool   `json:"discovery"`
 	DiscoveryWant        int    `json:"discoveryWant"`
@@ -45,7 +47,7 @@ type settings struct {
 
 func defaultSettings() settings {
 	return settings{
-		Transport: "auto", Discovery: true, DiscoveryWant: 2,
+		Country: "IR", Transport: "auto", Discovery: true, DiscoveryWant: 2,
 		DiscoveryConcurrency: 2, DiscoveryPaceMs: 1000,
 		SafeQName: 101, MaxQName: 253, MaxAnswer: 1232, HoldMs: 500,
 		MaxInflight: 128, MaxPathWindow: 32, MaxStreams: 128,
@@ -69,6 +71,7 @@ func readSettings(path string) (settings, error) {
 	if err := json.Unmarshal(raw, &s); err != nil {
 		return s, fmt.Errorf("decode Soar settings: %w", err)
 	}
+	s.Country = strings.ToUpper(strings.TrimSpace(s.Country))
 	if err := s.validate(); err != nil {
 		return s, err
 	}
@@ -76,6 +79,9 @@ func readSettings(path string) (settings, error) {
 }
 
 func (s settings) validate() error {
+	if country := strings.ToUpper(strings.TrimSpace(s.Country)); country != "" && country != "IR" {
+		return errors.New("country must be IR or empty for global discovery")
+	}
 	switch s.Transport {
 	case "auto", "on", "only", "off":
 	default:
@@ -133,6 +139,16 @@ func readResolvers(path string) ([]string, error) {
 		if strings.ContainsAny(line, "\x00\r") {
 			return nil, errors.New("invalid resolver entry")
 		}
+		// Panel/profile links carry bare IP addresses, while Soar's Config requires
+		// host:port. Normalize both forms here instead of silently discarding every
+		// configured resolver in addPathLocked.
+		if addr, err := netip.ParseAddr(line); err == nil {
+			line = netip.AddrPortFrom(addr, 53).String()
+		} else if endpoint, err := netip.ParseAddrPort(line); err == nil && endpoint.Port() != 0 {
+			line = endpoint.String()
+		} else {
+			return nil, errors.New("resolver must be an IP address or IP:port")
+		}
 		if !seen[line] {
 			seen[line] = true
 			out = append(out, line)
@@ -174,7 +190,7 @@ func main() {
 	client, err := soar.NewClient(soar.Config{
 		Zone: *domain, ServerKey: key, Resolvers: resolvers,
 		Discovery: soar.Discovery{
-			Enabled: tuning.Discovery, Country: "ir", Want: tuning.DiscoveryWant,
+			Enabled: tuning.Discovery, Country: tuning.Country, Want: tuning.DiscoveryWant,
 			Concurrency: tuning.DiscoveryConcurrency, Pace: time.Duration(tuning.DiscoveryPaceMs) * time.Millisecond,
 		},
 		SafeQName: tuning.SafeQName, MaxQName: tuning.MaxQName,

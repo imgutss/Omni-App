@@ -31,6 +31,7 @@ object MasterDnsCoreManager {
     private const val COTTENDNS_BINARY_NAME = "libcottendns.so"
     private const val OWNER_ENV = "OMNI_MASTERDNS_OWNER"
     private const val SESSION_ENV = "OMNI_MASTERDNS_SESSION"
+    private const val ISOLATED_ENV = "OMNI_MASTERDNS_ISOLATED"
     private const val KEY_ENV = "OMNI_MASTERDNS_KEY"
     private const val READY_POLL_MS = 250L
     private const val EXIT_WAIT_MS = 2_000L
@@ -43,6 +44,7 @@ object MasterDnsCoreManager {
 
     @Volatile
     private var session: Session? = null
+    private val isolatedSessions = java.util.concurrent.ConcurrentHashMap.newKeySet<Session>()
 
     /** True from the accepted start until that session exits or is superseded, including warm-up. */
     val isRunning: Boolean get() = session != null
@@ -62,7 +64,7 @@ object MasterDnsCoreManager {
             val argv = readProcWords(File(entry, "cmdline")) ?: return@forEach
             if (argv.firstOrNull() !in expected) return@forEach
             val environment = readProcWords(File(entry, "environ")).orEmpty()
-            if ("$SESSION_ENV=1" !in environment) return@forEach
+            if ("$SESSION_ENV=1" !in environment || "$ISOLATED_ENV=1" in environment) return@forEach
             val port = argv.firstOrNull { it.startsWith("-listen-port=") }
                 ?.substringAfter('=')?.toIntOrNull() ?: return@forEach
             val key = environment.firstOrNull { it.startsWith("$KEY_ENV=") }?.substringAfter('=')
@@ -154,9 +156,32 @@ object MasterDnsCoreManager {
         lifecycle.execute { finish(current, notifyExit = false) }
     }
 
+    /** Starts a scanner-owned child without replacing the foreground MasterDNS/CottenDNS session. */
+    @Synchronized
+    internal fun startIsolated(context: Context, core: MasterDnsCore, protect: ((Int) -> Boolean)? = null): Session {
+        val next = Session(context.applicationContext, core, onExit = {}, isolated = true)
+        isolatedSessions += next
+        lifecycle.execute { open(next, protect, reapStaleProcesses = false) }
+        return next
+    }
+
+    @Synchronized
+    internal fun stopIsolated(target: Session) {
+        if (!isolatedSessions.remove(target)) return
+        target.stopRequested.set(true)
+        lifecycle.execute { finish(target, notifyExit = false) }
+    }
+
+    private fun owns(target: Session): Boolean = ownsCoreSession(
+        isolated = target.isolated,
+        selected = session === target,
+        registered = isolatedSessions.contains(target),
+        stopRequested = target.stopRequested.get(),
+    )
+
     private fun open(target: Session, protect: ((Int) -> Boolean)?, reapStaleProcesses: Boolean) {
         try {
-            if (session !== target) return
+            if (!owns(target)) return
             if (reapStaleProcesses) reapStale(target.context)
             val directory = sessionDirectory(target)
             target.directory = directory
@@ -175,6 +200,7 @@ object MasterDnsCoreManager {
                 environment().apply {
                     put(OWNER_ENV, android.os.Process.myPid().toString())
                     put(SESSION_ENV, "1")
+                    if (target.isolated) put(ISOLATED_ENV, "1")
                     put(KEY_ENV, target.core.key)
                     put("HOME", directory.absolutePath)
                     put("TMPDIR", target.context.cacheDir.absolutePath)
@@ -194,7 +220,7 @@ object MasterDnsCoreManager {
                 finish(target, notifyExit = true)
             }
             LogUtil.i(AppConfig.TAG, "MasterDNS: official core started on ${AppConfig.LOOPBACK}:${target.core.port}")
-            if (session !== target) finish(target, notifyExit = false)
+            if (!owns(target)) finish(target, notifyExit = false)
         } catch (e: Exception) {
             LogUtil.e(AppConfig.TAG, "MasterDNS: core start failed", e)
             finish(target, notifyExit = true)
@@ -267,7 +293,7 @@ object MasterDnsCoreManager {
                 lines.forEach { line -> relay(target.core, line) }
             }
         } catch (e: Exception) {
-            if (session === target) LogUtil.w(AppConfig.TAG, "MasterDNS: output reader ended unexpectedly", e)
+            if (owns(target)) LogUtil.w(AppConfig.TAG, "MasterDNS: output reader ended unexpectedly", e)
         }
     }
 
@@ -297,6 +323,19 @@ object MasterDnsCoreManager {
         false
     } ?: false
 
+    internal suspend fun awaitIsolatedListening(target: Session, timeoutMs: Long): Boolean =
+        withTimeoutOrNull(timeoutMs) {
+            while (owns(target)) {
+                val process = target.process
+                if (process != null && !isAlive(process)) return@withTimeoutOrNull false
+                if (process != null && withContext(Dispatchers.IO) { answersSocks(target.core.port) }) {
+                    return@withTimeoutOrNull true
+                }
+                delay(READY_POLL_MS)
+            }
+            false
+        } ?: false
+
     internal fun answersSocks(port: Int): Boolean = try {
         Socket().use { socket ->
             socket.connect(InetSocketAddress(AppConfig.LOOPBACK, port), 500)
@@ -315,8 +354,9 @@ object MasterDnsCoreManager {
 
     private fun finish(target: Session, notifyExit: Boolean) {
         val current = session === target
-        val shouldNotify = notifyExit && current && !target.stopRequested.get()
-        if (current) session = null
+        val owned = if (target.isolated) isolatedSessions.contains(target) else current
+        val shouldNotify = notifyExit && owned && !target.stopRequested.get()
+        if (target.isolated) isolatedSessions.remove(target) else if (current) session = null
         if (!target.cleaned.compareAndSet(false, true)) {
             if (shouldNotify) target.onExit()
             return
@@ -386,6 +426,7 @@ object MasterDnsCoreManager {
         val core: MasterDnsCore,
         val onExit: () -> Unit,
         val id: String = UUID.randomUUID().toString(),
+        val isolated: Boolean = false,
     ) {
         @Volatile var process: Process? = null
         @Volatile var protectServer: MasterDnsProtectServer? = null

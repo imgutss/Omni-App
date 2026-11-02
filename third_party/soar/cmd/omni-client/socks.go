@@ -17,6 +17,12 @@ type streamDialer interface {
 	DialContext(ctx context.Context, network, address string) (net.Conn, error)
 }
 
+type confirmedStreamDialer interface {
+	DialConfirmed(ctx context.Context, network, address string) (net.Conn, error)
+}
+
+var socksHandshakeTimeout = 15 * time.Second
+
 type bufferedConn struct {
 	net.Conn
 	reader *bufio.Reader
@@ -28,7 +34,7 @@ func (c *bufferedConn) Read(p []byte) (int, error) { return c.reader.Read(p) }
 // It does not answer CONNECT successfully until Soar has opened the remote stream.
 func serveSOCKS(parent context.Context, conn net.Conn, dialer streamDialer, dialTimeout time.Duration) {
 	defer conn.Close()
-	_ = conn.SetDeadline(time.Now().Add(15 * time.Second))
+	_ = conn.SetDeadline(time.Now().Add(socksHandshakeTimeout))
 	reader := bufio.NewReader(conn)
 	header, err := reader.Peek(2)
 	if err != nil || header[0] != 5 || header[1] == 0 {
@@ -75,9 +81,21 @@ func serveSOCKS(parent context.Context, conn net.Conn, dialer streamDialer, dial
 		return
 	}
 	target := net.JoinHostPort(host, strconv.Itoa(int(port)))
+	// The 15-second bound above is only for the local SOCKS handshake. Leaving
+	// it armed during a censored-network dial broke the connection before the
+	// profile's own (normally 90-second) dial budget could finish.
+	_ = conn.SetDeadline(time.Time{})
 	ctx, cancel := context.WithTimeout(parent, dialTimeout)
 	defer cancel()
-	remote, err := dialer.DialContext(ctx, "tcp", target)
+	var remote net.Conn
+	if confirmed, ok := dialer.(confirmedStreamDialer); ok {
+		remote, err = confirmed.DialConfirmed(ctx, "tcp", target)
+	} else {
+		remote, err = dialer.DialContext(ctx, "tcp", target)
+	}
+	// Always leave enough time to return a definite SOCKS failure after a dial
+	// timeout; otherwise clients see a reset instead of a usable error reply.
+	_ = conn.SetDeadline(time.Now().Add(5 * time.Second))
 	if err != nil {
 		writeSOCKSReply(conn, 5)
 		return

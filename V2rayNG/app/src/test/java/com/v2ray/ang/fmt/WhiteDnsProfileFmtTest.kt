@@ -85,6 +85,7 @@ class WhiteDnsProfileFmtTest {
         assertFalse(args.joinToString(" ").contains("001122334455"))
         val restored = MasterDnsFmt.parse("cottendns://" + MasterDnsFmt.toUri(profile))
         assertEquals(MasterDnsFmt.ENGINE_COTTENDNS, restored?.masterDnsEngine)
+        assertEquals(profile.masterDnsConfig, restored?.masterDnsConfig)
         assertEquals(profile.masterDnsResolvers, restored?.masterDnsResolvers)
     }
 
