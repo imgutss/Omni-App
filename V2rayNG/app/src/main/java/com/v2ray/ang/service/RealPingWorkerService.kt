@@ -21,6 +21,9 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -46,6 +49,27 @@ internal object RealPingExecutionLimiter {
     }
 }
 
+/** The shape of one batch: how many samples each profile runs and how many threads the batch holds. */
+internal object RealPingBatchPlan {
+    /** A native probe blocks its thread and cannot be cancelled from Kotlin, so the threads are bounded. */
+    const val MAX_THREADS = 64
+
+    /** The samples launched for one profile: the requested count, never padded and never hidden. */
+    fun samples(requested: Int): Int = requested.coerceIn(1, 5)
+
+    /**
+     * Every sample of every profile runs at the same time in its own thread until it answers, so the
+     * pool has to hold them all: a smaller pool would queue the samples that run together again.
+     * TCP ping connects one socket per profile and needs no room for samples.
+     */
+    fun threads(concurrency: Int, samples: Int, onlyTcp: Boolean): Int =
+        if (onlyTcp) {
+            (concurrency * 2).coerceIn(1, MAX_THREADS)
+        } else {
+            (concurrency * samples).coerceIn(1, MAX_THREADS)
+        }
+}
+
 /**
  * Worker that runs a batch of real-ping tests independently.
  * Each batch owns its own CoroutineScope/dispatcher and can be cancelled separately.
@@ -58,7 +82,10 @@ class RealPingWorkerService(
 ) {
     private val job = SupervisorJob()
     private val concurrency = SettingsManager.getRealPingConcurrency()
-    private val dispatcher = Executors.newFixedThreadPool(if (onlyTcp) concurrency * 2 else concurrency).asCoroutineDispatcher()
+    private val samples = RealPingBatchPlan.samples(SettingsManager.getRealPingSamples())
+    private val dispatcher = Executors.newFixedThreadPool(
+        RealPingBatchPlan.threads(concurrency, samples, onlyTcp)
+    ).asCoroutineDispatcher()
     private val scope = CoroutineScope(job + dispatcher + CoroutineName("RealPingBatchWorker"))
 
     // Names the measurements of this batch in the native core, so that cancel() ends them and no other batch's
@@ -134,9 +161,10 @@ class RealPingWorkerService(
         // An Aether profile is measured through its core alone, unless its subscription chains it with
         // other hops: then it is measured as the chain it runs in, as every chained profile is.
         if (config.configType == EConfigType.AETHER && !CoreConfigContextBuilder.isChained(config)) {
-            return measureRealSamples {
-                AetherDelayTester.measure(context, guid, config, SettingsManager.getDelayTestUrl())
-            }
+            // One tunnel carries every sample of this profile instead of a tunnel per sample.
+            return summarizeHttp(
+                AetherDelayTester.measureSamples(context, guid, config, SettingsManager.getDelayTestUrl(), samples)
+            )
         }
 
         val configResult = CoreConfigManager.getV2rayConfig4Speedtest(context, guid)
@@ -171,13 +199,13 @@ class RealPingWorkerService(
             // that core: the live session, or a test tunnel on the same port, which its Aether outbounds
             // dial either way, and which dials out through a hop of the chain, as the session's would.
             // Its own server is not probed: it is only reachable through that core.
-            return measureRealSamples {
-                AetherDelayTester.measureVia(context, guid, aether, configResult.content) { _, _ ->
+            return summarizeHttp(
+                AetherDelayTester.measureViaSamples(context, guid, aether, configResult.content, samples) { _, _ ->
                     RealPingExecutionLimiter.run(config.configType) {
                         CoreNativeManager.measureOutboundDelay(configResult.content, SettingsManager.getDelayTestUrl(), batch)
                     }
                 }
-            }
+            )
         }
         if (!config.configType.isComplexType()
             && config.configType != EConfigType.HYSTERIA2
@@ -194,36 +222,36 @@ class RealPingWorkerService(
             }
         }
 
-        return measureRealSamples {
+        return measureRealSamples(samples) {
             RealPingExecutionLimiter.run(config.configType) {
                 CoreNativeManager.measureOutboundDelay(configResult.content, SettingsManager.getDelayTestUrl(), batch)
             }
         }
     }
 
-    /** One warm-up is excluded; every reported number comes from the subsequent real samples. */
-    private suspend fun measureRealSamples(block: suspend () -> Long): OmniPingStats {
-        val attempts = SettingsManager.getRealPingSamples()
-        try {
-            block() // warm up the native/TLS path, never displayed as a result
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (_: Throwable) {
-            // A warm-up failure must not hide the independent, measured attempts below.
+    /**
+     * Launches every sample of one profile at the same time. A native probe blocks its thread for as
+     * long as its own HTTP client takes, so overlapping the samples overlaps their connect and TLS
+     * time instead of adding it up; the batch is still cancellable, which ends them in the native core.
+     * No sample is a hidden warm-up any more: every reported number is a real response.
+     */
+    private suspend fun measureRealSamples(samples: Int, block: suspend () -> Long): OmniPingStats =
+        coroutineScope {
+            val results = List(samples) { async { sampleOf(block) } }.awaitAll()
+            summarizeHttp(results)
         }
-        val samples = mutableListOf<Long>()
-        repeat(attempts) {
-            if (!scope.isActive) return OmniPingStats(0L, samples.size, 0, 0L, OmniPingStatistics.KIND_HTTP)
-            samples += try {
-                block()
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (_: Throwable) {
-                -1L
-            }
-        }
-        return OmniPingStatistics.summarize(samples, OmniPingStatistics.KIND_HTTP)
+
+    /** One real sample: a response in milliseconds, or -1 when this attempt got none. */
+    private suspend fun sampleOf(block: suspend () -> Long): Long = try {
+        block()
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (_: Throwable) {
+        -1L
     }
+
+    private fun summarizeHttp(samples: List<Long>): OmniPingStats =
+        OmniPingStatistics.summarize(samples, OmniPingStatistics.KIND_HTTP)
 
     private fun startTcping(guid: String): OmniPingStats {
         val retFailure = OmniPingStats(-1L, 0, 0, 0L, OmniPingStatistics.KIND_TCP)

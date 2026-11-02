@@ -57,8 +57,10 @@ object AetherDelayTester {
         NOT_READY,
     }
 
-    suspend fun measure(context: Context, guid: String, profile: ProfileItem, url: String): Long =
-        measureVia(context, guid, AetherCore.of(profile)) { port, deadline -> cancellableRequestDelay(port, url, deadline) }
+    suspend fun measureSamples(context: Context, guid: String, profile: ProfileItem, url: String, samples: Int): List<Long> =
+        measureViaSamples(context, guid, AetherCore.of(profile), samples = samples) { port, deadline ->
+            cancellableRequestDelay(port, url, deadline)
+        }
 
     /**
      * Runs [probe] against [core]: the live session when it runs this core, a test tunnel on the
@@ -67,14 +69,16 @@ object AetherDelayTester {
      * chain, a routing target, a policy group or a custom configuration that runs on an Aether core is
      * measured this way, with its own Xray configuration, [configuration], which dials that port. The
      * test tunnel of a core that dials out through a hop of its chain takes that hop from [configuration].
+     * [probe] runs [samples] times on the core it reaches, so one tunnel answers for all of them.
      */
-    suspend fun measureVia(
+    suspend fun measureViaSamples(
         context: Context,
         guid: String,
         core: AetherCore,
         configuration: String? = null,
+        samples: Int = 1,
         probe: suspend (port: Int, deadline: Long) -> Long,
-    ): Long {
+    ): List<Long> {
         val activeGuid = MmkvManager.getSelectServer()
         val session = withContext(Dispatchers.IO) { liveSession(context, activeGuid) }
         // Beside a live session, the exit-node a profile names is told by the content of that profile as well, which
@@ -85,20 +89,41 @@ object AetherDelayTester {
             core
         }
         return when (route(guid, keyed, activeGuid, session)) {
-            Route.ACTIVE_SESSION -> probe(session?.port ?: AetherCoreManager.socksPort, deadlineAfter(TEST_BUDGET_MS))
-            Route.NEW_TUNNEL -> tunnels.withLock { throughNewTunnel(context, guid, core, configuration, probe) }
+            Route.ACTIVE_SESSION -> probeSamples(probe, session?.port ?: AetherCoreManager.socksPort, deadlineAfter(TEST_BUDGET_MS), samples)
+            Route.NEW_TUNNEL -> tunnels.withLock {
+                throughNewTunnel(context, guid, core, configuration, samples, probe)
+            }
             Route.SKIP -> {
                 // The live session's core holds the port every core listens on.
                 LogUtil.i(AppConfig.TAG, "AetherTest: left untested beside the live Aether session, guid=$guid")
-                UNTESTED
+                untestedSamples(samples)
             }
             Route.NOT_READY -> {
                 // The running profile is not a failure before its tunnel is up; it is just not measurable yet.
                 LogUtil.i(AppConfig.TAG, "AetherTest: left untested, the live session is still connecting, guid=$guid")
-                UNTESTED
+                untestedSamples(samples)
             }
         }
     }
+
+    /**
+     * Every sample of one core, one after another: through a SOCKS port that is cheap, and through a
+     * tunnel it is the one connection of the profile, so the samples must not queue behind each other
+     * on the wire and report that waiting as latency.
+     */
+    private suspend fun probeSamples(
+        probe: suspend (port: Int, deadline: Long) -> Long,
+        port: Int,
+        deadline: Long,
+        samples: Int,
+    ): List<Long> {
+        val delays = ArrayList<Long>(samples)
+        repeat(samples) { delays += probe(port, deadline) }
+        return delays
+    }
+
+    /** Nothing was measurable: [UNTESTED] for every sample the caller asked for. */
+    private fun untestedSamples(samples: Int): List<Long> = List(samples) { UNTESTED }
 
     /**
      * The daemon's live Aether session: its arguments when its process could be read, the port of its
@@ -178,13 +203,18 @@ object AetherDelayTester {
         return Route.SKIP
     }
 
+    /**
+     * The samples of one profile through a tunnel of its own. The tunnel is started once and carries
+     * every sample, which is what the samples measure: the profile, not the start of its core again.
+     */
     private suspend fun throughNewTunnel(
         context: Context,
         guid: String,
         core: AetherCore,
         configuration: String?,
+        samples: Int,
         probe: suspend (port: Int, deadline: Long) -> Long,
-    ): Long {
+    ): List<Long> {
         // The clock starts before the spawn: the budget covers the whole test, as it does for every other profile.
         val deadline = deadlineAfter(TEST_BUDGET_MS)
         val arguments = core.arguments
@@ -200,12 +230,12 @@ object AetherDelayTester {
             val needsWord = AetherCoreManager.readyNeedsWord(arguments) && AetherCoreManager.showsInfo(arguments)
             if (!awaitListening(port, output, deadline, needsWord)) {
                 LogUtil.w(AppConfig.TAG, "AetherTest: the tunnel did not come up, guid=$guid")
-                return@withProcess -1L
+                return@withProcess untestedSamples(samples)
             }
-            val delay = probe(port, deadline)
-            if (delay < 0) LogUtil.w(AppConfig.TAG, "AetherTest: no answer through the tunnel, guid=$guid")
-            delay
-        } ?: -1L
+            probeSamples(probe, port, deadline, samples).also { delays ->
+                if (delays.none { it > 0 }) LogUtil.w(AppConfig.TAG, "AetherTest: no answer through the tunnel, guid=$guid")
+            }
+        } ?: untestedSamples(samples)
     }
 
     /**

@@ -30,6 +30,7 @@ import com.v2ray.ang.helper.MessageHelper
 import com.v2ray.ang.service.DialerNativeService
 import com.v2ray.ang.service.DialerWebviewService
 import com.v2ray.ang.service.NetworkMonitor
+import com.v2ray.ang.service.RealPingBatchPlan
 import com.v2ray.ang.util.LogUtil
 import com.v2ray.ang.util.OmniPingStatistics
 import com.v2ray.ang.util.Utils
@@ -38,7 +39,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -48,6 +52,7 @@ import libv2ray.CoreController
 import libv2ray.ProcessFinder
 import java.lang.ref.SoftReference
 import java.net.InetSocketAddress
+import java.util.concurrent.atomic.AtomicReference
 
 object CoreServiceManager {
 
@@ -911,7 +916,7 @@ object CoreServiceManager {
                 return@launch
             }
 
-            var errorStr = ""
+            val errorRef = AtomicReference("")
 
             suspend fun measureOnce(): Long {
                 var value = -1L
@@ -919,7 +924,7 @@ object CoreServiceManager {
                     value = coreController.measureDelay(SettingsManager.getDelayTestUrl())
                 } catch (e: Exception) {
                     LogUtil.e(AppConfig.TAG, "StartCore-Manager: Failed to measure delay", e)
-                    errorStr = e.message?.substringAfter("\":").orEmpty()
+                    errorRef.compareAndSet("", e.message?.substringAfter("\":").orEmpty())
                 }
                 if (value == -1L) {
                     ensureActive()
@@ -927,25 +932,21 @@ object CoreServiceManager {
                         value = coreController.measureDelay(SettingsManager.getDelayTestUrl(true))
                     } catch (e: Exception) {
                         LogUtil.e(AppConfig.TAG, "StartCore-Manager: Failed to measure delay", e)
-                        errorStr = e.message?.substringAfter("\":").orEmpty()
+                        errorRef.compareAndSet("", e.message?.substringAfter("\":").orEmpty())
                     }
                 }
                 return value
             }
 
-            // Exclude one warm-up, then retain every real outcome for an honest median and success count.
-            try {
-                measureOnce()
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (_: Exception) {
-                // The independent samples below still provide evidence after a warm-up error.
+            // Every sample runs at the same time: a native probe blocks for as long as its own HTTP
+            // client takes, so overlapping the samples removes their connect and TLS time from the wall
+            // clock instead of adding it up. Each one is a real response; the median keeps them honest.
+            val samples = coroutineScope {
+                List(RealPingBatchPlan.samples(SettingsManager.getRealPingSamples())) {
+                    async { measureOnce() }
+                }.awaitAll()
             }
-            val samples = mutableListOf<Long>()
-            repeat(SettingsManager.getRealPingSamples()) {
-                ensureActive()
-                samples += measureOnce()
-            }
+            val errorStr = errorRef.get()
             val stats = OmniPingStatistics.summarize(samples, OmniPingStatistics.KIND_HTTP)
             ensureActive()
             val endpoint = if (stats.delayMillis > 0) SpeedtestManager.getRemoteIPInfo() else null

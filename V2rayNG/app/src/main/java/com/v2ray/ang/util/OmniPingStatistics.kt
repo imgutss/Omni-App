@@ -21,6 +21,10 @@ object OmniPingStatistics {
      * calculated over successful responses only, while sampleCount and successfulSamples retain
      * the complete outcome. Jitter is the mean absolute difference between adjacent successful
      * samples, in milliseconds; it is not a second latency estimate.
+     *
+     * The samples of one profile run together, so the order in which they arrive says nothing about
+     * the connection: the spread is read from the sorted samples, which makes jitter independent of
+     * arrival order and of the order the caller collected the results in.
      */
     fun summarize(samples: List<Long>, kind: String): OmniPingStats {
         require(samples.isNotEmpty()) { "At least one real sample is required" }
@@ -32,10 +36,10 @@ object OmniPingStatistics {
             sorted.size % 2 == 1 -> sorted[sorted.size / 2]
             else -> (sorted[sorted.size / 2 - 1] + sorted[sorted.size / 2]) / 2L
         }
-        val jitter = if (successful.size < 2) {
+        val jitter = if (sorted.size < 2) {
             0L
         } else {
-            successful.zipWithNext { first, second -> kotlin.math.abs(second - first) }
+            sorted.zipWithNext { first, second -> second - first }
                 .average()
                 .toLong()
         }

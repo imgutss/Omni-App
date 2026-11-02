@@ -10,7 +10,7 @@ class OmniPingStatisticsTest {
         assertEquals(200L, result.delayMillis)
         assertEquals(3, result.sampleCount)
         assertEquals(3, result.successfulSamples)
-        assertEquals(200L, result.jitterMillis)
+        assertEquals(150L, result.jitterMillis)
     }
 
     @Test
@@ -35,5 +35,13 @@ class OmniPingStatisticsTest {
         assertEquals(2, result.successfulSamples)
         assertEquals(3, result.sampleCount)
         assertEquals(50L, result.jitterMillis)
+    }
+
+    @Test
+    fun jitterDoesNotDependOnTheOrderSamplesArriveIn() {
+        val together = OmniPingStatistics.summarize(listOf(120L, 180L, 150L), OmniPingStatistics.KIND_HTTP)
+        val reversed = OmniPingStatistics.summarize(listOf(150L, 180L, 120L), OmniPingStatistics.KIND_HTTP)
+        assertEquals(150L, together.delayMillis)
+        assertEquals(together, reversed)
     }
 }
