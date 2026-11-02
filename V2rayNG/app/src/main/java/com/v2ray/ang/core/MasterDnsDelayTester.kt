@@ -3,6 +3,7 @@ package com.v2ray.ang.core
 import android.content.Context
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.util.LogUtil
+import com.v2ray.ang.util.OmniPingStatistics
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -20,16 +21,21 @@ object MasterDnsDelayTester {
     private const val POLL_INTERVAL_MS = 200L
     private val tunnels = Mutex()
 
+    /**
+     * The samples of one profile through the engine that carries them: it starts once and answers for
+     * every sample, so the test measures the profile instead of the startup of its engine again.
+     */
     suspend fun measureVia(
         context: Context,
         guid: String,
         core: MasterDnsCore,
+        samples: Int = 1,
         probe: suspend (port: Int, deadline: Long) -> Long,
-    ): Long {
+    ): List<Long> {
         val deadline = deadlineAfter(TEST_BUDGET_MS)
         return withCore(context, core, TEST_BUDGET_MS, guid) {
-            probe(core.port, deadline)
-        } ?: UNTESTED
+            OmniPingStatistics.probeSamples(probe, core.port, deadline, samples)
+        } ?: OmniPingStatistics.untestedSamples(samples)
     }
 
     /**

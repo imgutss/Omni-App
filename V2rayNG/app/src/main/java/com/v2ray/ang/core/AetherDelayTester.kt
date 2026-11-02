@@ -9,6 +9,7 @@ import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.SpeedtestManager
 import com.v2ray.ang.util.LogUtil
+import com.v2ray.ang.util.OmniPingStatistics
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -89,41 +90,22 @@ object AetherDelayTester {
             core
         }
         return when (route(guid, keyed, activeGuid, session)) {
-            Route.ACTIVE_SESSION -> probeSamples(probe, session?.port ?: AetherCoreManager.socksPort, deadlineAfter(TEST_BUDGET_MS), samples)
+            Route.ACTIVE_SESSION -> OmniPingStatistics.probeSamples(probe, session?.port ?: AetherCoreManager.socksPort, deadlineAfter(TEST_BUDGET_MS), samples)
             Route.NEW_TUNNEL -> tunnels.withLock {
                 throughNewTunnel(context, guid, core, configuration, samples, probe)
             }
             Route.SKIP -> {
                 // The live session's core holds the port every core listens on.
                 LogUtil.i(AppConfig.TAG, "AetherTest: left untested beside the live Aether session, guid=$guid")
-                untestedSamples(samples)
+                OmniPingStatistics.untestedSamples(samples)
             }
             Route.NOT_READY -> {
                 // The running profile is not a failure before its tunnel is up; it is just not measurable yet.
                 LogUtil.i(AppConfig.TAG, "AetherTest: left untested, the live session is still connecting, guid=$guid")
-                untestedSamples(samples)
+                OmniPingStatistics.untestedSamples(samples)
             }
         }
     }
-
-    /**
-     * Every sample of one core, one after another: through a SOCKS port that is cheap, and through a
-     * tunnel it is the one connection of the profile, so the samples must not queue behind each other
-     * on the wire and report that waiting as latency.
-     */
-    private suspend fun probeSamples(
-        probe: suspend (port: Int, deadline: Long) -> Long,
-        port: Int,
-        deadline: Long,
-        samples: Int,
-    ): List<Long> {
-        val delays = ArrayList<Long>(samples)
-        repeat(samples) { delays += probe(port, deadline) }
-        return delays
-    }
-
-    /** Nothing was measurable: [UNTESTED] for every sample the caller asked for. */
-    private fun untestedSamples(samples: Int): List<Long> = List(samples) { UNTESTED }
 
     /**
      * The daemon's live Aether session: its arguments when its process could be read, the port of its
@@ -230,12 +212,12 @@ object AetherDelayTester {
             val needsWord = AetherCoreManager.readyNeedsWord(arguments) && AetherCoreManager.showsInfo(arguments)
             if (!awaitListening(port, output, deadline, needsWord)) {
                 LogUtil.w(AppConfig.TAG, "AetherTest: the tunnel did not come up, guid=$guid")
-                return@withProcess untestedSamples(samples)
+                return@withProcess OmniPingStatistics.untestedSamples(samples)
             }
-            probeSamples(probe, port, deadline, samples).also { delays ->
+            OmniPingStatistics.probeSamples(probe, port, deadline, samples).also { delays ->
                 if (delays.none { it > 0 }) LogUtil.w(AppConfig.TAG, "AetherTest: no answer through the tunnel, guid=$guid")
             }
-        } ?: untestedSamples(samples)
+        } ?: OmniPingStatistics.untestedSamples(samples)
     }
 
     /**

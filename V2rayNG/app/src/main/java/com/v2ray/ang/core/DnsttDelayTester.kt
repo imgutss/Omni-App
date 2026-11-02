@@ -3,6 +3,7 @@ package com.v2ray.ang.core
 import android.content.Context
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.util.LogUtil
+import com.v2ray.ang.util.OmniPingStatistics
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -21,17 +22,22 @@ object DnsttDelayTester {
     private const val POLL_INTERVAL_MS = 200L
     private val tunnels = Mutex()
 
+    /**
+     * The samples of one profile through the engine that carries them: it starts once and answers for
+     * every sample, so the test measures the profile instead of the startup of its engine again.
+     */
     suspend fun measureVia(
         context: Context,
         guid: String,
         core: DnsttCore,
+        samples: Int = 1,
         probe: suspend (port: Int, deadline: Long) -> Long,
-    ): Long {
+    ): List<Long> {
         // Startup can take much longer than an individual HTTP probe on a censored DNS path.
         // Start the probe budget only after the real engine and any SSH session are ready.
         return withCore(context, core, STARTUP_BUDGET_MS, guid) {
-            probe(core.port, deadlineAfter(TEST_BUDGET_MS))
-        } ?: UNTESTED
+            OmniPingStatistics.probeSamples(probe, core.port, deadlineAfter(TEST_BUDGET_MS), samples)
+        } ?: OmniPingStatistics.untestedSamples(samples)
     }
 
     suspend fun <T> withCore(

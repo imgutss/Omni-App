@@ -174,24 +174,24 @@ class RealPingWorkerService(
         val masterDns = configResult.masterDnsCore
         if (masterDns != null) {
             // The Xray probe must run beside the real MasterDNS engine, not against its empty port.
-            return measureRealSamples {
-                MasterDnsDelayTester.measureVia(context, guid, masterDns) { _, _ ->
+            return summarizeHttp(
+                MasterDnsDelayTester.measureVia(context, guid, masterDns, samples) { _, _ ->
                     RealPingExecutionLimiter.run(config.configType) {
                         CoreNativeManager.measureOutboundDelay(configResult.content, SettingsManager.getDelayTestUrl(), batch)
                     }
                 }
-            }
+            )
         }
         val dnstt = configResult.dnsttCore
         if (dnstt != null) {
             // The Xray probe runs beside the real DNSTT process and its remote SOCKS5 endpoint.
-            return measureRealSamples {
-                DnsttDelayTester.measureVia(context, guid, dnstt) { _, _ ->
+            return summarizeHttp(
+                DnsttDelayTester.measureVia(context, guid, dnstt, samples) { _, _ ->
                     RealPingExecutionLimiter.run(config.configType) {
                         CoreNativeManager.measureOutboundDelay(configResult.content, SettingsManager.getDelayTestUrl(), batch)
                     }
                 }
-            }
+            )
         }
         val aether = configResult.aetherCore
         if (aether != null) {

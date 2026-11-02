@@ -16,6 +16,28 @@ object OmniPingStatistics {
     const val KIND_HTTP = "HTTP"
     const val KIND_TCP = "TCP"
 
+    /** A sample that could not be measured at all; -1 stays the sample that got no response. */
+    const val UNTESTED_SAMPLE = 0L
+
+    /**
+     * The samples of one profile on the one connection that carries them, one after the other: behind a
+     * SOCKS port a sample is one request, and through a tunnel they are the requests of that tunnel, which
+     * must not queue on the wire and report their waiting as latency.
+     */
+    suspend fun probeSamples(
+        probe: suspend (port: Int, deadline: Long) -> Long,
+        port: Int,
+        deadline: Long,
+        samples: Int,
+    ): List<Long> {
+        val delays = ArrayList<Long>(samples)
+        repeat(samples) { delays += probe(port, deadline) }
+        return delays
+    }
+
+    /** Nothing was measurable: [UNTESTED_SAMPLE] for every sample the caller asked for. */
+    fun untestedSamples(samples: Int): List<Long> = List(samples) { UNTESTED_SAMPLE }
+
     /**
      * Summarizes actual samples without replacing failures with a made-up number. The median is
      * calculated over successful responses only, while sampleCount and successfulSamples retain
