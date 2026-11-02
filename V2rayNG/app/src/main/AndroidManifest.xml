@@ -251,6 +251,8 @@
                 <data android:scheme="wireguard" />
                 <data android:scheme="aether" />
                 <data android:scheme="masterdns" />
+                <data android:scheme="cottendns" />
+                <data android:scheme="soar" />
                 <data android:scheme="omni" />
             </intent-filter>
             <intent-filter>

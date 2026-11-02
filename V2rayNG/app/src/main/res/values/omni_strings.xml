@@ -338,7 +338,21 @@
     <string name="omni_speed_ping_running">Pinging all…</string>
     <string name="omni_speed_elapsed">Total measured time: %1$d ms, including any retry.</string>
     <string name="omni_dns_scanner_title">DNS Scanner</string>
-    <string name="omni_dns_scanner_subtitle">Scan real DNS responses, then verify candidates through the selected DNSTT, NoizDNS, VayDNS or Slipstream profile.</string>
+    <string name="omni_dns_scanner_subtitle">Scan real DNS responses, then verify candidates through the selected DNSTT, NoizDNS, VayDNS, Slipstream, Soar, MasterDNS or CottenDNS profile.</string>
+    <string name="omni_dns_candidates_source">Resolver source: %1$s</string>
+    <string name="omni_dns_candidates_manual">Manual resolver input</string>
+    <string name="omni_dns_candidates_full">Offline Iran ranges · Full</string>
+    <string name="omni_dns_candidates_lite">Offline Iran ranges · Lite</string>
+    <string name="omni_dns_candidates_notice">Offline CIDR sampling creates address candidates only. They remain untested until DNS and tunnel E2E measurements succeed.</string>
+    <string name="omni_dns_candidates_groups">Range groups: %1$d/%2$d selected</string>
+    <string name="omni_dns_candidates_group_title">Select offline range groups</string>
+    <string name="omni_dns_candidates_group_size">%1$d CIDR ranges · %2$d candidate addresses</string>
+    <string name="omni_dns_candidates_all">All</string>
+    <string name="omni_dns_candidates_none">None</string>
+    <string name="omni_dns_candidates_generate">Generate candidates</string>
+    <string name="omni_dns_candidates_generating">Generating candidates…</string>
+    <string name="omni_dns_candidates_auto_scan">Auto Scan after generation</string>
+    <string name="omni_dns_candidates_ready">%1$d unique candidates generated; no connectivity is claimed yet.</string>
     <string name="omni_dns_scanner_targets">Resolver IPs, CIDR or ranges</string>
     <string name="omni_dns_scanner_timeout">DNS timeout (ms)</string>
     <string name="omni_dns_scanner_sample_limit">Random sample limit</string>
@@ -361,11 +375,18 @@
     <string name="omni_dns_scanner_e2e_incomplete">Tunnel E2E incomplete: %1$s</string>
     <string name="omni_dns_scanner_e2e_ping">Tunnel HTTP ping: %1$d/%2$d · median %3$s ms · jitter %4$s ms · loss %5$.1f%%</string>
     <string name="omni_dns_scanner_invalid">Enter a DNS profile, valid resolver inputs, ports, sampling and timeout values.</string>
-    <string name="omni_dns_scanner_no_template">Import or choose a DNSTT-compatible profile first.</string>
+    <string name="omni_dns_scanner_no_template">Import or choose a supported DNS tunnel profile first.</string>
     <string name="omni_dns_scanner_no_working">No verified resolver is available yet. Run DNS scan and E2E first.</string>
     <string name="omni_dns_scanner_failed">DNS scan stopped with an error; partial results remain only as measured.</string>
     <string name="omni_dns_scanner_e2e_complete">Every working resolver passed the real tunnel E2E test.</string>
     <string name="omni_dns_scanner_e2e_partial">E2E is incomplete or some resolvers failed; only verified results can be selected as best.</string>
     <string name="omni_dns_scanner_apply_done">The measured resolver was applied to the selected profile.</string>
     <string name="omni_dns_scanner_apply_failed">The profile could not be updated; no resolver change is claimed.</string>
+    <string name="soar_lab_settings">Soar tuning JSON (blank = documented defaults)</string>
+    <string name="soar_settings_support">The 16 supported transport, discovery, window and timeout settings are validated before saving.</string>
+    <string name="soar_transport_support">auto/on/only/off control the real Soar TCP transport behavior.</string>
+    <string name="soar_lab_discovery">Soar resolver discovery</string>
+    <string name="soar_discovery_support">Discovery may start with an empty bootstrap resolver list; no connection is claimed until E2E succeeds.</string>
+    <string name="soar_engine_notice">Uses the Apache-2.0 Soar engine and local SOCKS5. Imported tuning and resolver authority are retained.</string>
+    <string name="cottendns_engine_notice">Uses the MIT CottenDNS engine with resolver startup mode and Android socket protection.</string>
 </resources>

@@ -3,6 +3,8 @@ package com.v2ray.ang.omni.dns
 import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.fmt.DnsttFmt
+import com.v2ray.ang.fmt.MasterDnsFmt
+import com.v2ray.ang.fmt.SoarProfileFmt
 import com.v2ray.ang.omni.lab.OmniLatencyStats
 import com.v2ray.ang.omni.lab.OmniScanTarget
 import com.v2ray.ang.omni.lab.OmniTargetKind
@@ -95,6 +97,39 @@ class OmniDnsResolverTargetsTest {
         val newResolver = dnsCandidateProfile(template, OmniScanTarget("8.8.8.8", 53, OmniTargetKind.IPV4))
         assertEquals("0", newResolver.dnsttResolverAuthorities)
         assertFalse(newResolver.dnsttAuthoritative == true)
+    }
+
+    @Test
+    fun cottenAndSoarCandidatesPreserveTheirRealEngineConfiguration() {
+        val cotten = ProfileItem(
+            configType = EConfigType.MASTERDNS,
+            remarks = "cotten",
+            masterDnsEngine = MasterDnsFmt.ENGINE_COTTENDNS,
+            masterDnsConfig = "DOMAINS = [\"cot.example\"]\nDATA_ENCRYPTION_METHOD = 5\nENCRYPTION_KEY = \"00112233445566778899aabbccddeeff\"\n",
+            masterDnsResolvers = "1.1.1.1\n",
+        )
+        val cottenCandidate = dnsCandidateProfile(cotten, OmniScanTarget("9.9.9.9", 5353, OmniTargetKind.IPV4))
+        assertEquals("9.9.9.9:5353\n", cottenCandidate.masterDnsResolvers)
+        assertEquals(cotten.masterDnsConfig?.trim(), cottenCandidate.masterDnsConfig)
+        assertEquals(MasterDnsFmt.ENGINE_COTTENDNS, cottenCandidate.masterDnsEngine)
+        assertEquals(null, MasterDnsFmt.normalize(cottenCandidate.copy()))
+
+        val soar = ProfileItem(
+            configType = EConfigType.DNSTT,
+            remarks = "soar",
+            dnsttEngine = DnsttFmt.ENGINE_SOAR,
+            dnsttTransport = "udp",
+            dnsttResolver = "1.1.1.1:53",
+            dnsttDomain = "soar.example",
+            dnsttPublicKey = "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE",
+            soarSettings = SoarProfileFmt.normalizeSettings("{\"transport\":\"only\",\"discovery\":false}"),
+        )
+        val soarCandidate = dnsCandidateProfile(soar, OmniScanTarget("9.9.9.9", 53, OmniTargetKind.IPV4))
+        assertEquals("9.9.9.9:53", soarCandidate.dnsttResolver)
+        assertEquals("tcp", soarCandidate.dnsttTransport)
+        assertEquals(soar.soarSettings, soarCandidate.soarSettings)
+        assertEquals(null, soarCandidate.dnsttResolverAuthorities)
+        assertEquals(null, DnsttFmt.normalize(soarCandidate.copy()))
     }
 
     @Test

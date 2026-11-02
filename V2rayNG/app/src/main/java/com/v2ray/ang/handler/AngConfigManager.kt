@@ -57,6 +57,8 @@ object AngConfigManager {
             AppConfig.HY2 to Hysteria2Fmt::parse,
             EConfigType.AETHER.protocolScheme to AetherFmt::parse,
             EConfigType.MASTERDNS.protocolScheme to MasterDnsFmt::parse,
+            AppConfig.COTTENDNS to MasterDnsFmt::parse,
+            AppConfig.SOAR to DnsttFmt::parse,
             EConfigType.DNSTT.protocolScheme to DnsttFmt::parse,
             AppConfig.SLIPNET to SlipNetFmt::parse,
         )
@@ -166,7 +168,12 @@ object AngConfigManager {
         try {
             val config = MmkvManager.decodeServerConfig(guid) ?: return ""
 
-            return config.configType.protocolScheme + when (config.configType) {
+            val scheme = when {
+                config.configType == EConfigType.MASTERDNS && config.masterDnsEngine == MasterDnsFmt.ENGINE_COTTENDNS -> AppConfig.COTTENDNS
+                config.configType == EConfigType.DNSTT && config.dnsttEngine == DnsttFmt.ENGINE_SOAR -> AppConfig.SOAR
+                else -> config.configType.protocolScheme
+            }
+            return scheme + when (config.configType) {
                 EConfigType.VMESS -> VmessFmt.toUri(config)
                 EConfigType.SHADOWSOCKS -> ShadowsocksFmt.toUri(config)
                 EConfigType.SOCKS -> SocksFmt.toUri(config)

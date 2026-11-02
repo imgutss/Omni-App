@@ -14,6 +14,7 @@ import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.extension.toast
 import com.v2ray.ang.fmt.DnsttFmt
+import com.v2ray.ang.fmt.SoarProfileFmt
 import com.v2ray.ang.ui.compose.FormDropdownField
 import com.v2ray.ang.ui.compose.FormTextField
 import com.v2ray.ang.ui.compose.SettingsSwitchItem
@@ -33,6 +34,7 @@ class ServerDnsttActivity : BaseServerActivity() {
                 DnsttFmt.ENGINE_NOIZDNS -> "NoizDNS"
                 DnsttFmt.ENGINE_VAYDNS -> "VayDNS"
                 DnsttFmt.ENGINE_SLIPSTREAM -> "Slipstream"
+                DnsttFmt.ENGINE_SOAR -> "Soar"
                 else -> stringResource(R.string.dnstt_title)
             },
             onSaveClick = { saveServer(uiState) },
@@ -46,7 +48,7 @@ class ServerDnsttActivity : BaseServerActivity() {
             FormDropdownField(
                 label = stringResource(R.string.dnstt_lab_engine),
                 value = uiState.dnsttEngine,
-                options = listOf(DnsttFmt.ENGINE_OFFICIAL, DnsttFmt.ENGINE_DNSTT, DnsttFmt.ENGINE_NOIZDNS, DnsttFmt.ENGINE_VAYDNS, DnsttFmt.ENGINE_SLIPSTREAM),
+                options = listOf(DnsttFmt.ENGINE_OFFICIAL, DnsttFmt.ENGINE_DNSTT, DnsttFmt.ENGINE_NOIZDNS, DnsttFmt.ENGINE_VAYDNS, DnsttFmt.ENGINE_SLIPSTREAM, DnsttFmt.ENGINE_SOAR),
                 onValueChange = { selected ->
                     uiState.dnsttEngine = selected
                     if (selected == DnsttFmt.ENGINE_OFFICIAL) {
@@ -60,20 +62,36 @@ class ServerDnsttActivity : BaseServerActivity() {
                         uiState.dnsttNoiz = false
                         uiState.dnsttStealth = false
                     }
+                    if (selected == DnsttFmt.ENGINE_SOAR) {
+                        if (uiState.dnsttTransport !in setOf("udp", "tcp")) uiState.dnsttTransport = "udp"
+                        uiState.dnsttNoiz = false
+                        uiState.dnsttStealth = false
+                        uiState.dnsttSshEnabled = false
+                        uiState.dnsttSocksUsername = ""
+                        uiState.dnsttSocksPassword = ""
+                        uiState.dnsttMaxPayload = "0"
+                        uiState.dnsttResolverMode = "fanout"
+                        uiState.dnsttRrSpreadCount = "3"
+                        uiState.dnsttAuthoritative = false
+                        uiState.dnsttUtls = ""
+                    }
                 },
                 supportingText = stringResource(R.string.dnstt_engine_support),
             )
+            if (uiState.dnsttEngine != DnsttFmt.ENGINE_SOAR) {
             FormDropdownField(
                 label = stringResource(R.string.dnstt_lab_transport),
                 value = uiState.dnsttTransport,
                 options = when (uiState.dnsttEngine) {
                     DnsttFmt.ENGINE_SLIPSTREAM -> listOf("udp")
                     DnsttFmt.ENGINE_OFFICIAL -> listOf("doh", "dot", "udp")
+                    DnsttFmt.ENGINE_SOAR -> listOf("udp", "tcp")
                     else -> listOf("doh", "dot", "udp", "tcp")
                 },
                 onValueChange = { uiState.dnsttTransport = it },
                 supportingText = stringResource(R.string.dnstt_transport_support),
             )
+            }
             FormTextField(
                 label = stringResource(R.string.dnstt_lab_resolver),
                 value = uiState.dnsttResolver,
@@ -108,6 +126,8 @@ class ServerDnsttActivity : BaseServerActivity() {
                 supportingText = stringResource(R.string.dnstt_public_key_support),
                 isError = uiState.isDnsttPublicKeyError,
             )
+            }
+            if (uiState.dnsttEngine !in setOf(DnsttFmt.ENGINE_SLIPSTREAM, DnsttFmt.ENGINE_SOAR)) {
             FormTextField(
                 label = stringResource(R.string.dnstt_lab_utls),
                 value = uiState.dnsttUtls,
@@ -138,7 +158,7 @@ class ServerDnsttActivity : BaseServerActivity() {
                     enabled = uiState.dnsttNoiz,
                 )
                 }
-                if (uiState.dnsttEngine != DnsttFmt.ENGINE_VAYDNS) {
+                if (uiState.dnsttEngine !in setOf(DnsttFmt.ENGINE_VAYDNS, DnsttFmt.ENGINE_SOAR)) {
                     SettingsSwitchItem(
                         title = stringResource(R.string.dnstt_lab_authoritative),
                         summary = stringResource(R.string.dnstt_authoritative_support),
@@ -153,7 +173,7 @@ class ServerDnsttActivity : BaseServerActivity() {
                     },
                     )
                 }
-                if (uiState.dnsttEngine != DnsttFmt.ENGINE_SLIPSTREAM) {
+                if (uiState.dnsttEngine !in setOf(DnsttFmt.ENGINE_SLIPSTREAM, DnsttFmt.ENGINE_SOAR)) {
                 FormDropdownField(
                     label = stringResource(R.string.dnstt_lab_resolver_mode),
                     value = uiState.dnsttResolverMode,
@@ -175,7 +195,7 @@ class ServerDnsttActivity : BaseServerActivity() {
                     supportingText = stringResource(R.string.dnstt_max_payload_support),
                 )
                 }
-                if (!uiState.dnsttSshEnabled) {
+                if (!uiState.dnsttSshEnabled && uiState.dnsttEngine != DnsttFmt.ENGINE_SOAR) {
                     FormTextField(
                         label = stringResource(R.string.dnstt_lab_socks_username),
                         value = uiState.dnsttSocksUsername,
@@ -194,6 +214,9 @@ class ServerDnsttActivity : BaseServerActivity() {
             if (uiState.dnsttEngine == DnsttFmt.ENGINE_SLIPSTREAM) {
                 SlipstreamFields(uiState)
             }
+            if (uiState.dnsttEngine == DnsttFmt.ENGINE_SOAR) {
+                SoarFields(uiState)
+            }
             SettingsSwitchItem(
                 title = stringResource(R.string.dnstt_lab_ssh),
                 summary = stringResource(R.string.dnstt_ssh_support),
@@ -202,7 +225,7 @@ class ServerDnsttActivity : BaseServerActivity() {
                     uiState.dnsttSshEnabled = it
                     uiState.isDnsttSshError = false
                 },
-                enabled = uiState.dnsttEngine != DnsttFmt.ENGINE_OFFICIAL,
+                enabled = uiState.dnsttEngine !in setOf(DnsttFmt.ENGINE_OFFICIAL, DnsttFmt.ENGINE_SOAR),
             )
             if (uiState.dnsttSshEnabled) {
                 FormTextField(
@@ -259,6 +282,8 @@ class ServerDnsttActivity : BaseServerActivity() {
                 text = stringResource(
                     if (uiState.dnsttEngine == DnsttFmt.ENGINE_SLIPSTREAM) {
                         R.string.slipstream_engine_notice
+                    } else if (uiState.dnsttEngine == DnsttFmt.ENGINE_SOAR) {
+                        R.string.soar_engine_notice
                     } else if (uiState.dnsttEngine == DnsttFmt.ENGINE_VAYDNS) {
                         R.string.vaydns_engine_notice
                     } else if (uiState.dnsttSshEnabled) {
@@ -311,6 +336,35 @@ class ServerDnsttActivity : BaseServerActivity() {
     }
 }
 
+
+@Composable
+private fun SoarFields(uiState: ServerUiState) {
+    FormDropdownField(
+        label = stringResource(R.string.dnstt_lab_transport),
+        value = SoarProfileFmt.settingsTransport(uiState.soarSettings) ?: "auto",
+        options = listOf("auto", "on", "only", "off"),
+        onValueChange = { selected ->
+            uiState.soarSettings = SoarProfileFmt.updateSettings(uiState.soarSettings, transport = selected)
+            uiState.dnsttTransport = if (selected == "only") "tcp" else "udp"
+        },
+        supportingText = stringResource(R.string.soar_transport_support),
+    )
+    SettingsSwitchItem(
+        title = stringResource(R.string.soar_lab_discovery),
+        summary = stringResource(R.string.soar_discovery_support),
+        checked = SoarProfileFmt.discoveryEnabled(uiState.soarSettings),
+        onCheckedChange = { checked ->
+            uiState.soarSettings = SoarProfileFmt.updateSettings(uiState.soarSettings, discovery = checked)
+        },
+    )
+    FormTextField(
+        label = stringResource(R.string.soar_lab_settings),
+        value = uiState.soarSettings,
+        onValueChange = { uiState.soarSettings = it },
+        supportingText = stringResource(R.string.soar_settings_support),
+        maxLines = 14,
+    )
+}
 
 @Composable
 private fun SlipstreamFields(uiState: ServerUiState) {

@@ -338,7 +338,21 @@
     <string name="omni_speed_ping_running">در حال ping همه…</string>
     <string name="omni_speed_elapsed">زمان کل اندازه‌گیری: %1$d ms، با احتساب تلاش مجدد.</string>
     <string name="omni_dns_scanner_title">DNS Scanner</string>
-    <string name="omni_dns_scanner_subtitle">پاسخ واقعی DNS را اسکن کنید و سپس candidateها را با profile انتخاب‌شدهٔ DNSTT، NoizDNS، VayDNS یا Slipstream از سر تا سر بسنجید.</string>
+    <string name="omni_dns_scanner_subtitle">پاسخ واقعی DNS را اسکن کنید و سپس candidateها را با profile انتخاب‌شدهٔ DNSTT، NoizDNS، VayDNS، Slipstream، Soar، MasterDNS یا CottenDNS از سر تا سر بسنجید.</string>
+    <string name="omni_dns_candidates_source">منبع resolver: %1$s</string>
+    <string name="omni_dns_candidates_manual">ورود دستی resolver</string>
+    <string name="omni_dns_candidates_full">بازه‌های آفلاین ایران · کامل</string>
+    <string name="omni_dns_candidates_lite">بازه‌های آفلاین ایران · سبک</string>
+    <string name="omni_dns_candidates_notice">نمونه‌گیری آفلاین CIDR فقط candidate می‌سازد. تا موفقیت سنجش DNS و E2E تونل، این موارد آزمایش‌نشده‌اند.</string>
+    <string name="omni_dns_candidates_groups">گروه‌های بازه: %1$d از %2$d انتخاب شده</string>
+    <string name="omni_dns_candidates_group_title">انتخاب گروه‌های بازهٔ آفلاین</string>
+    <string name="omni_dns_candidates_group_size">%1$d بازهٔ CIDR · %2$d آدرس candidate</string>
+    <string name="omni_dns_candidates_all">همه</string>
+    <string name="omni_dns_candidates_none">هیچ‌کدام</string>
+    <string name="omni_dns_candidates_generate">ساخت candidateها</string>
+    <string name="omni_dns_candidates_generating">در حال ساخت candidateها…</string>
+    <string name="omni_dns_candidates_auto_scan">Auto Scan پس از ساخت</string>
+    <string name="omni_dns_candidates_ready">%1$d candidate یکتا ساخته شد؛ هنوز اتصالی ادعا نمی‌شود.</string>
     <string name="omni_dns_scanner_targets">IP، CIDR یا range ریزالورها</string>
     <string name="omni_dns_scanner_timeout">Timeout دی‌ان‌اس (میلی‌ثانیه)</string>
     <string name="omni_dns_scanner_sample_limit">سقف نمونه‌گیری تصادفی</string>
@@ -368,4 +382,11 @@
     <string name="omni_dns_scanner_e2e_partial">E2E ناقص است یا برخی ریزالورها fail شدند؛ فقط نتیجهٔ تأییدشده می‌تواند best شود.</string>
     <string name="omni_dns_scanner_apply_done">ریزالور اندازه‌گیری‌شده روی profile انتخاب‌شده اعمال شد.</string>
     <string name="omni_dns_scanner_apply_failed">profile به‌روز نشد؛ هیچ تغییر ریزالوری ادعا نمی‌شود.</string>
+    <string name="soar_lab_settings">JSON تنظیمات Soar (خالی = پیش‌فرض‌های مستند)</string>
+    <string name="soar_settings_support">۱۶ تنظیم transport، discovery، window و timeout پیش از ذخیره اعتبارسنجی می‌شوند.</string>
+    <string name="soar_transport_support">گزینه‌های auto/on/only/off رفتار واقعی TCP در Soar را کنترل می‌کنند.</string>
+    <string name="soar_lab_discovery">کشف resolver در Soar</string>
+    <string name="soar_discovery_support">Discovery می‌تواند با فهرست resolver اولیهٔ خالی آغاز شود؛ تا موفقیت E2E اتصالی ادعا نمی‌شود.</string>
+    <string name="soar_engine_notice">از موتور Apache-2.0 Soar و SOCKS5 محلی استفاده می‌کند. تنظیمات و resolverهای ورودی حفظ می‌شوند.</string>
+    <string name="cottendns_engine_notice">از موتور MIT CottenDNS با startup مبتنی بر resolver و محافظت socket اندروید استفاده می‌کند.</string>
 </resources>

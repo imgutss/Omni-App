@@ -44,7 +44,7 @@ object MasterDnsDelayTester {
         guid: String? = null,
         block: suspend () -> T,
     ): T? = tunnels.withLock {
-        if (!MasterDnsCoreManager.isSupported(context)) return@withLock null
+        if (!MasterDnsCoreManager.isSupported(context, core.engine)) return@withLock null
         val live = withContext(Dispatchers.IO) { MasterDnsCoreManager.liveProcess(context) }
         if (live != null) {
             if (live.key != core.key || live.port != core.port) {

@@ -16,6 +16,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
+import java.io.FileOutputStream
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
@@ -35,6 +36,9 @@ object DnsttCoreManager {
     private const val NOIZDNS_BINARY_NAME = "libnoizdns.so"
     private const val VAYDNS_BINARY_NAME = "libvaydns.so"
     private const val SLIPSTREAM_BINARY_NAME = "libslipstream.so"
+    private const val SOAR_BINARY_NAME = "libsoar.so"
+    private const val SOAR_RESOLVERS_FILE = "soar_resolvers.txt"
+    private const val SOAR_SETTINGS_FILE = "soar_settings.json"
     private const val SESSION_ENV = "OMNI_DNSTT_SESSION"
     private const val KEY_ENV = "OMNI_DNSTT_KEY"
     private const val PORT_ENV = "OMNI_DNSTT_ENGINE_PORT"
@@ -94,6 +98,7 @@ object DnsttCoreManager {
             binary(context, DnsttFmt.ENGINE_NOIZDNS).absolutePath,
             binary(context, DnsttFmt.ENGINE_VAYDNS).absolutePath,
             binary(context, DnsttFmt.ENGINE_SLIPSTREAM).absolutePath,
+            binary(context, DnsttFmt.ENGINE_SOAR).absolutePath,
         )
         File("/proc").listFiles()?.forEach { entry ->
             val pid = entry.name.toIntOrNull() ?: return@forEach
@@ -135,6 +140,7 @@ object DnsttCoreManager {
             DnsttFmt.ENGINE_NOIZDNS, DnsttFmt.ENGINE_DNSTT -> NOIZDNS_BINARY_NAME
             DnsttFmt.ENGINE_VAYDNS -> VAYDNS_BINARY_NAME
             DnsttFmt.ENGINE_SLIPSTREAM -> SLIPSTREAM_BINARY_NAME
+            DnsttFmt.ENGINE_SOAR -> SOAR_BINARY_NAME
             else -> OFFICIAL_BINARY_NAME
         }
         return File(context.applicationInfo.nativeLibraryDir, name)
@@ -287,6 +293,7 @@ object DnsttCoreManager {
             if (reapStaleProcesses) reapStale(target.context)
             val directory = sessionDirectory(target)
             target.directory = directory
+            if (target.core.engine == DnsttFmt.ENGINE_SOAR) writeSoarSessionFiles(target.core, directory)
             if (protect != null) {
                 val socketName = "omni-dnstt-${android.os.Process.myPid()}-${target.id}"
                 target.protectServer = MasterDnsProtectServer(socketName, protect) { error ->
@@ -403,6 +410,13 @@ object DnsttCoreManager {
                 add("-resolver-mode=${core.resolverMode}")
                 add("-rr-spread=${core.rrSpreadCount}")
             }
+            DnsttFmt.ENGINE_SOAR -> {
+                add("-domain=${core.domain}")
+                add("-public-key=${core.publicKey}")
+                add("-resolvers=$SOAR_RESOLVERS_FILE")
+                add("-settings=$SOAR_SETTINGS_FILE")
+                add("-listen=${AppConfig.LOOPBACK}:${core.tunnelPort}")
+            }
             DnsttFmt.ENGINE_NOIZDNS, DnsttFmt.ENGINE_DNSTT -> {
                 val engineResolver = DnsttFmt.engineResolver(core.resolver)
                 if (core.resolverAuthorities.isNotEmpty()) {
@@ -433,10 +447,24 @@ object DnsttCoreManager {
         if (protectAddress != null && core.engine != DnsttFmt.ENGINE_SLIPSTREAM) {
             add("-fd-control-unix-socket=$protectAddress")
         }
-        if (core.engine != DnsttFmt.ENGINE_VAYDNS && core.engine != DnsttFmt.ENGINE_SLIPSTREAM) {
+        if (core.engine != DnsttFmt.ENGINE_VAYDNS && core.engine != DnsttFmt.ENGINE_SLIPSTREAM && core.engine != DnsttFmt.ENGINE_SOAR) {
             add(core.domain)
             add("${AppConfig.LOOPBACK}:${core.tunnelPort}")
         }
+    }
+
+    private fun writeSoarSessionFiles(core: DnsttCore, directory: File) {
+        val resolvers = core.resolver.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+        writePrivate(File(directory, SOAR_RESOLVERS_FILE), resolvers.joinToString("\n").let { if (it.isEmpty()) "" else it + "\n" })
+        writePrivate(File(directory, SOAR_SETTINGS_FILE), core.soarSettings + "\n")
+    }
+
+    private fun writePrivate(file: File, text: String) {
+        FileOutputStream(file, false).use { output ->
+            output.write(text.toByteArray(Charsets.UTF_8))
+            output.fd.sync()
+        }
+        Os.chmod(file.absolutePath, OsConstants.S_IRUSR or OsConstants.S_IWUSR)
     }
 
     private fun sessionDirectory(target: Session): File {
@@ -546,6 +574,7 @@ object DnsttCoreManager {
             binary(context, DnsttFmt.ENGINE_NOIZDNS).absolutePath,
             binary(context, DnsttFmt.ENGINE_VAYDNS).absolutePath,
             binary(context, DnsttFmt.ENGINE_SLIPSTREAM).absolutePath,
+            binary(context, DnsttFmt.ENGINE_SOAR).absolutePath,
         )
         val stale = mutableListOf<Int>()
         File("/proc").listFiles()?.forEach { entry ->

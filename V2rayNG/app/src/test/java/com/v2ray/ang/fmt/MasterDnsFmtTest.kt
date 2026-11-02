@@ -88,6 +88,16 @@ class MasterDnsFmtTest {
     }
 
     @Test
+    fun explicitEnginesRejectAnIncompatibleDocumentFormat() {
+        val jsonProfile = MasterDnsFmt.parseAny(json)!!.apply { masterDnsEngine = MasterDnsFmt.ENGINE_COTTENDNS }
+        assertEquals(MasterDnsFmt.Problem.CONFIG_MALFORMED, MasterDnsFmt.normalize(jsonProfile))
+        val tomlProfile = MasterDnsFmt.parseAny("DOMAINS = [\"v.example.com\"]\nENCRYPTION_KEY = \"secret\"")!!.apply {
+            masterDnsEngine = MasterDnsFmt.ENGINE_MASTERDNS
+        }
+        assertEquals(MasterDnsFmt.Problem.CONFIG_MALFORMED, MasterDnsFmt.normalize(tomlProfile))
+    }
+
+    @Test
     fun malformedOrUnrelatedDocumentsAreNotClaimedAsMasterDns() {
         assertNull(MasterDnsFmt.parseAny("""{"DOMAINS":["v.example.com"]}"""))
         assertNull(MasterDnsFmt.parseAny("""{"DOMAINS":"v.example.com","ENCRYPTION_KEY":"x"}"""))

@@ -20,6 +20,7 @@ data class DnsttCore(
     val maxPayload: Int = 0,
     val vaydns: VayDnsConfig = VayDnsConfig(),
     val slipstream: SlipstreamConfig = SlipstreamConfig(),
+    val soarSettings: String = "",
     val resolverMode: String = "fanout",
     val rrSpreadCount: Int = 3,
     val socksUsername: String = "",
@@ -30,7 +31,7 @@ data class DnsttCore(
         val needsAdjacentPort = ssh != null || engine == DnsttFmt.ENGINE_SLIPSTREAM ||
             engine == DnsttFmt.ENGINE_VAYDNS
         require(port in 1..65535 && (!needsAdjacentPort || port < 65535)) { "Invalid DNSTT listen port" }
-        require(engine in setOf(DnsttFmt.ENGINE_OFFICIAL, DnsttFmt.ENGINE_NOIZDNS, DnsttFmt.ENGINE_DNSTT, DnsttFmt.ENGINE_VAYDNS, DnsttFmt.ENGINE_SLIPSTREAM)) {
+        require(engine in setOf(DnsttFmt.ENGINE_OFFICIAL, DnsttFmt.ENGINE_NOIZDNS, DnsttFmt.ENGINE_DNSTT, DnsttFmt.ENGINE_VAYDNS, DnsttFmt.ENGINE_SLIPSTREAM, DnsttFmt.ENGINE_SOAR)) {
             "Unknown DNSTT engine"
         }
         require(resolverMode == "fanout" || resolverMode == "roundrobin") {
@@ -60,6 +61,7 @@ data class DnsttCore(
             authoritative.toString(), resolverAuthorities.joinToString(","), noiz.toString(), stealth.toString(), maxPayload.toString(),
             if (engine == DnsttFmt.ENGINE_VAYDNS) vaydns.identityValues().joinToString(",") else "",
             if (engine == DnsttFmt.ENGINE_SLIPSTREAM) slipstream.identityValues().joinToString(",") else "",
+            if (engine == DnsttFmt.ENGINE_SOAR) soarSettings else "",
             resolverMode, rrSpreadCount.toString(), socksUsername, socksPassword,
         ).plus(ssh?.identityValues().orEmpty()).forEach {
             digest.update(it.toByteArray(Charsets.UTF_8))
@@ -117,6 +119,7 @@ data class DnsttCore(
                     maxNumLabels = normalized.vaydnsMaxNumLabels ?: 0,
                     clientIdSize = normalized.vaydnsClientIdSize ?: 0,
                 ),
+                soarSettings = normalized.soarSettings.orEmpty(),
                 resolverMode = normalized.dnsttResolverMode ?: "fanout",
                 rrSpreadCount = normalized.dnsttRrSpreadCount ?: 3,
                 socksUsername = if (ssh == null) normalized.dnsttSocksUsername.orEmpty() else "",

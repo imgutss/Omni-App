@@ -283,6 +283,8 @@ object AppConfig {
     const val V2RAYNFMTS = "v2rayn://"
     const val AETHER = "aether://"
     const val MASTERDNS = "masterdns://"
+    const val COTTENDNS = "cottendns://"
+    const val SOAR = "soar://"
     const val DNSTT = "dnstt://"
     const val SLIPNET = "slipnet://"
 

@@ -1,0 +1,1 @@
+CottenDNS additional notices are in QPACK_LICENSE.txt, QUIC_GO_LICENSE.txt, SOAR_LICENSE.txt and THIRD_PARTY_NOTICES.md. Soar uses golang.org/x/crypto v0.52.0; its license and patent notice are included beside this file.

@@ -8,6 +8,7 @@ import java.security.MessageDigest
 data class MasterDnsCore(
     val config: String,
     val resolvers: String,
+    val engine: String = MasterDnsFmt.ENGINE_MASTERDNS,
     val port: Int = DEFAULT_SOCKS_PORT,
 ) {
     init {
@@ -17,6 +18,8 @@ data class MasterDnsCore(
     /** Stable identity for lifecycle matching; the secret configuration itself is never logged. */
     val key: String by lazy {
         val digest = MessageDigest.getInstance("SHA-256")
+        digest.update(engine.toByteArray(Charsets.UTF_8))
+        digest.update(0)
         digest.update(config.toByteArray(Charsets.UTF_8))
         digest.update(0)
         digest.update(resolvers.toByteArray(Charsets.UTF_8))
@@ -37,6 +40,7 @@ data class MasterDnsCore(
             return MasterDnsCore(
                 config = normalized.masterDnsConfig.orEmpty(),
                 resolvers = MasterDnsFmt.normalizeResolvers(normalized.masterDnsResolvers),
+                engine = normalized.masterDnsEngine ?: MasterDnsFmt.ENGINE_MASTERDNS,
                 port = listenPort,
             )
         }

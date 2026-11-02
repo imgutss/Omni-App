@@ -52,6 +52,7 @@ import com.v2ray.ang.ui.settings.SettingsActivity
 import com.v2ray.ang.ui.subscription.SubSettingActivity
 import com.v2ray.ang.omni.OmniDoctorActivity
 import com.v2ray.ang.omni.OmniHubActivity
+import com.v2ray.ang.omni.dns.OmniDnsScannerActivity
 import com.v2ray.ang.omni.OmniScannerActivity
 import com.v2ray.ang.ui.userasset.UserAssetActivity
 import com.v2ray.ang.util.LogUtil
@@ -172,6 +173,7 @@ class MainActivity : HelperBaseComponentActivity() {
             MainDestination.OmniPanel -> Intent(this, OmniHubActivity::class.java)
             MainDestination.OmniDoctor -> Intent(this, OmniDoctorActivity::class.java)
             MainDestination.OmniScanner -> Intent(this, OmniScannerActivity::class.java)
+            MainDestination.OmniDnsScanner -> Intent(this, OmniDnsScannerActivity::class.java)
         }
         settingsActivityLauncher.launch(intent)
     }

@@ -127,6 +127,66 @@ jobs:
         path: ${{ github.workspace }}/libs-masterdns
         key: masterdns-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-masterdns.sh', 'third_party/masterdnsvpn/**') }}
 
+    - name: Restore cached CottenDNS client
+      id: cache-cottendns-restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ github.workspace }}/libs-cottendns
+        key: cottendns-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-cottendns.sh', 'third_party/cottendns/**') }}
+
+    - name: Build CottenDNS client
+      if: steps.cache-cottendns-restore.outputs.cache-hit != 'true'
+      run: bash compile-cottendns.sh
+
+    - name: Test CottenDNS packages
+      run: |
+        cd third_party/cottendns
+        GOTOOLCHAIN=local CGO_ENABLED=0 go test ./...
+
+    - name: Test CottenDNS Android client and real SOCKS5 profile loopback
+      env:
+        COTTENDNS_E2E_CLIENT_BIN: ${{ github.workspace }}/libs-cottendns/x86_64/libcottendns.so
+      run: |
+        cd third_party/cottendns
+        GOTOOLCHAIN=local CGO_ENABLED=0 go test -tags e2e -run '^(TestTunnelEndToEndEcho|TestTunnelEndToEndSOCKS5AESGCMProfile)$' -timeout 180s ./test/e2e
+
+    - name: Save CottenDNS client
+      if: steps.cache-cottendns-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ github.workspace }}/libs-cottendns
+        key: cottendns-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-cottendns.sh', 'third_party/cottendns/**') }}
+
+    - name: Restore cached Soar client
+      id: cache-soar-restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ github.workspace }}/libs-soar
+        key: soar-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-soar.sh', 'third_party/soar/**') }}
+
+    - name: Build Soar client
+      if: steps.cache-soar-restore.outputs.cache-hit != 'true'
+      run: bash compile-soar.sh
+
+    - name: Test Soar packages
+      run: |
+        cd third_party/soar
+        GOTOOLCHAIN=local CGO_ENABLED=0 go test ./...
+
+    - name: Test packaged Soar Android launcher loopback
+      env:
+        SOAR_E2E_CLIENT_BIN: ${{ github.workspace }}/libs-soar/x86_64/libsoar.so
+      run: |
+        cd third_party/soar
+        GOTOOLCHAIN=local CGO_ENABLED=0 go test ./cmd/omni-client -run '^TestSOARLauncherThroughRealLoopback$' -count=1 -timeout 120s
+
+    - name: Save Soar client
+      if: steps.cache-soar-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ github.workspace }}/libs-soar
+        key: soar-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-soar.sh', 'third_party/soar/**') }}
+
     - name: Restore cached DNSTT client
       id: cache-dnstt-restore
       uses: actions/cache/restore@v6
@@ -226,7 +286,7 @@ jobs:
         RUSTFLAGS: -C link-arg=-Wl,-z,max-page-size=16384 -C link-arg=-Wl,-z,separate-loadable-segments
       run: bash compile-slipstream.sh
 
-    - name: Audit VayDNS and Slipstream native binaries
+    - name: Audit DNS tunnel native binaries
       run: |
         READELF="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
         audit_elf() {
@@ -250,6 +310,8 @@ jobs:
             x86) machine='Intel 80386' ;;
             x86_64) machine='Advanced Micro Devices X86-64' ;;
           esac
+          audit_elf "libs-cottendns/$abi/libcottendns.so" EXEC "$machine"
+          audit_elf "libs-soar/$abi/libsoar.so" EXEC "$machine"
           audit_elf "libs-vaydns/$abi/libvaydns.so" EXEC "$machine"
           audit_elf "libs-slipstream/$abi/libslipstream.so" DYN "$machine"
         done
@@ -310,6 +372,8 @@ jobs:
         cp -r ${{ github.workspace }}/libs-psiphon/. ${{ github.workspace }}/V2rayNG/app/libs/
         cp -r ${{ github.workspace }}/libs-pt/. ${{ github.workspace }}/V2rayNG/app/libs/
         cp -r ${{ github.workspace }}/libs-masterdns/. ${{ github.workspace }}/V2rayNG/app/libs/
+        cp -r ${{ github.workspace }}/libs-cottendns/. ${{ github.workspace }}/V2rayNG/app/libs/
+        cp -r ${{ github.workspace }}/libs-soar/. ${{ github.workspace }}/V2rayNG/app/libs/
         cp -r ${{ github.workspace }}/libs-dnstt/. ${{ github.workspace }}/V2rayNG/app/libs/
         cp -r ${{ github.workspace }}/libs-noizdns/. ${{ github.workspace }}/V2rayNG/app/libs/
         cp -r ${{ github.workspace }}/libs-vaydns/. ${{ github.workspace }}/V2rayNG/app/libs/
@@ -359,7 +423,7 @@ jobs:
         # build before anything is assembled or signed.
         ./gradlew :app:testPlaystoreDebugUnitTest :app:testFdroidDebugUnitTest
         ./gradlew licenseFdroidReleaseReport
-        ./gradlew assemblePlaystoreRelease -PpattngVersion="${{ inputs.release_tag || '0.9.0' }}" -Pandroid.injected.signing.store.file=${{ steps.android_keystore.outputs.filePath }} -Pandroid.injected.signing.store.password=${{ secrets.OMNI_KEYSTORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.OMNI_KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.OMNI_KEY_PASSWORD }}
+        ./gradlew assemblePlaystoreRelease -PpattngVersion="${{ inputs.release_tag || '0.10.0' }}" -Pandroid.injected.signing.store.file=${{ steps.android_keystore.outputs.filePath }} -Pandroid.injected.signing.store.password=${{ secrets.OMNI_KEYSTORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.OMNI_KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.OMNI_KEY_PASSWORD }}
     
     - name: Check the native libraries in the APKs
       run: |
@@ -393,7 +457,7 @@ jobs:
               echo "::error::$(basename "$apk") lacks lib/$abi/libnoizdns.so"
               status=1
             fi
-            for lib in libvaydns.so libslipstream.so; do
+            for lib in libvaydns.so libslipstream.so libcottendns.so libsoar.so; do
               if ! echo "$entries" | grep -qx "lib/$abi/$lib"; then
                 echo "::error::$(basename "$apk") lacks lib/$abi/$lib"
                 status=1

@@ -21,21 +21,25 @@ import java.net.URLDecoder
 
 class UrlSchemeActivity : BaseComponentActivity() {
 
-    private val OmniSchemes = setOf(
-        "vless", "vmess", "trojan", "ss", "hysteria2", "hy2", "tuic", "wireguard", "aether", "omni"
+    private val omniSchemes = setOf(
+        "vless", "vmess", "trojan", "ss", "hysteria2", "hy2", "tuic", "wireguard", "aether",
+        "masterdns", "cottendns", "soar", "omni",
     )
+    private val opaqueProfileSchemes = setOf("masterdns", "cottendns", "soar")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         try {
-            intent.apply {
-                if (action == Intent.ACTION_SEND) {
-                    if ("text/plain" == type) {
-                        intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
-                            parseUri(it, null)
-                        }
+            when (intent.action) {
+                Intent.ACTION_SEND -> {
+                    if (intent.type == "text/plain") {
+                        parseUri(intent.getStringExtra(Intent.EXTRA_TEXT), null)
+                    } else {
+                        failAndClose()
                     }
-                } else if (action == Intent.ACTION_VIEW) {
+                }
+
+                Intent.ACTION_VIEW -> {
                     val uri: Uri? = intent.data
                     when {
                         uri?.scheme == "v2rayng" && uri.host == "install-config" -> {
@@ -50,20 +54,20 @@ class UrlSchemeActivity : BaseComponentActivity() {
                             parseUri(uri.getQueryParameter("url").orEmpty(), uri.fragment)
                         }
 
-                        uri != null && uri.scheme in OmniSchemes -> {
-                            // vless://, aether://, ... go through the same batch importer as QR/clipboard.
+                        uri != null && uri.scheme?.lowercase() in omniSchemes -> {
+                            // Open config links through the same batch importer as QR/clipboard.
                             parseUri(uri.toString(), null)
                         }
 
-                        else -> toastError(R.string.toast_failure)
+                        else -> failAndClose()
                     }
                 }
-            }
 
-            startActivity(Intent(this, MainActivity::class.java))
-            finish()
+                else -> failAndClose()
+            }
         } catch (e: Exception) {
             LogUtil.e(AppConfig.TAG, "Error processing URL scheme", e)
+            failAndClose()
         }
     }
 
@@ -73,29 +77,42 @@ class UrlSchemeActivity : BaseComponentActivity() {
 
     private fun parseUri(uriString: String?, fragment: String?) {
         if (uriString.isNullOrEmpty()) {
+            failAndClose()
             return
         }
-        LogUtil.i(AppConfig.TAG, uriString)
-
-        var decodedUrl = URLDecoder.decode(uriString, "UTF-8")
+        val inputUri = Uri.parse(uriString)
+        val opaqueProfile = inputUri.scheme?.lowercase() in opaqueProfileSchemes
+        // A form URL decoder turns '+' in a standard Base64 profile into a space.
+        // These schemes carry an opaque payload, so preserve every character exactly.
+        var decodedUrl = if (opaqueProfile) uriString else URLDecoder.decode(uriString, "UTF-8")
         val uri = Uri.parse(decodedUrl)
-        if (uri != null) {
-            if (uri.fragment.isNullOrEmpty() && !fragment.isNullOrEmpty()) {
-                decodedUrl += "#${fragment}"
-            }
-            LogUtil.i(AppConfig.TAG, decodedUrl)
-            lifecycleScope.launch(Dispatchers.IO) {
-                val (count, countSub) = AngConfigManager.importBatchConfig(decodedUrl, "", false)
-                // An open main screen reloads its tabs
-                if (count + countSub > 0) MessageHelper.sendMsg2UI(applicationContext, AppConfig.MSG_SERVERS_CHANGED, "")
-                withContext(Dispatchers.Main) {
-                    if (count + countSub > 0) {
-                        toast(R.string.import_subscription_success)
-                    } else {
-                        toast(R.string.import_subscription_failure)
-                    }
-                }
-            }
+        if (uri.fragment.isNullOrEmpty() && !fragment.isNullOrEmpty()) {
+            decodedUrl += "#${fragment}"
         }
+        // Profile links can contain server keys. Never write the payload to logcat.
+        LogUtil.i(AppConfig.TAG, "Importing ${inputUri.scheme ?: "shared"} configuration")
+        lifecycleScope.launch {
+            val (count, countSub) = withContext(Dispatchers.IO) {
+                runCatching { AngConfigManager.importBatchConfig(decodedUrl, "", false) }
+                    .getOrElse {
+                        LogUtil.e(AppConfig.TAG, "Configuration import failed", it)
+                        0 to 0
+                    }
+            }
+            // An open main screen reloads its tabs.
+            if (count + countSub > 0) MessageHelper.sendMsg2UI(applicationContext, AppConfig.MSG_SERVERS_CHANGED, "")
+            toast(if (count + countSub > 0) R.string.import_subscription_success else R.string.import_subscription_failure)
+            finishToMain()
+        }
+    }
+
+    private fun failAndClose() {
+        toastError(R.string.toast_failure)
+        finishToMain()
+    }
+
+    private fun finishToMain() {
+        startActivity(Intent(this, MainActivity::class.java))
+        finish()
     }
 }

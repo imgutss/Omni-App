@@ -1,0 +1,12 @@
+Offline Iranian DNS candidate packs
+
+iran_full.cidr and iran_lite.cidr are unmodified CIDR data snapshots from
+anonvector/SlipNet commit 37c669f815fa8c9a7a83968bba5d21c9b07574f5,
+app/src/main/assets/geo/ir_dns.cidr and ir_dns_lite.cidr.
+SlipNet is licensed under GNU AGPL v3; its license is included beside this
+notice. Omni does not copy SlipNet's UI or scanner implementation.
+
+These are address-space candidates, not a claim that each address runs DNS,
+not measured resolvers, and not a guarantee of complete Iranian coverage.
+Every generated address remains untested until Omni's real DNS probe and,
+when requested, native end-to-end tunnel test measures it.

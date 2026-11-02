@@ -20,6 +20,7 @@ object DnsttFmt : FmtBase() {
     const val ENGINE_DNSTT = "dnstt"
     const val ENGINE_VAYDNS = "vaydns"
     const val ENGINE_SLIPSTREAM = "slipstream"
+    const val ENGINE_SOAR = "soar"
     private const val DEFAULT_REMARKS = "DNSTT"
     private val VAY_RECORD_TYPES = setOf("txt", "cname", "a", "aaaa", "mx", "ns", "srv", "null", "caa")
 
@@ -45,6 +46,7 @@ object DnsttFmt : FmtBase() {
 
     fun parse(str: String): ProfileItem? {
         val uri = runCatching { URI(str.trim()) }.getOrNull() ?: return null
+        if (uri.scheme.equals("soar", true)) return SoarProfileFmt.parse(str)
         if (!uri.scheme.equals("dnstt", true)) return null
         val query = queryParameters(uri.rawQuery.orEmpty())
         val transport = Transport.from(query["transport"])
@@ -106,6 +108,7 @@ object DnsttFmt : FmtBase() {
     fun parseAny(str: String): ProfileItem? = parse(str)
 
     fun toUri(config: ProfileItem): String {
+        if (config.dnsttEngine == ENGINE_SOAR) return SoarProfileFmt.toUri(config)
         val normalized = config.copy()
         normalize(normalized)
         val query = linkedMapOf(
@@ -188,9 +191,10 @@ object DnsttFmt : FmtBase() {
                 Problem.DOMAIN_INVALID
             }
         val engine = config.dnsttEngine?.trim()?.lowercase()?.ifEmpty { ENGINE_OFFICIAL } ?: ENGINE_OFFICIAL
-        if (engine !in setOf(ENGINE_OFFICIAL, ENGINE_NOIZDNS, ENGINE_DNSTT, ENGINE_VAYDNS, ENGINE_SLIPSTREAM)) return Problem.TRANSPORT_INVALID
+        if (engine !in setOf(ENGINE_OFFICIAL, ENGINE_NOIZDNS, ENGINE_DNSTT, ENGINE_VAYDNS, ENGINE_SLIPSTREAM, ENGINE_SOAR)) return Problem.TRANSPORT_INVALID
         val transport = Transport.from(config.dnsttTransport) ?: return Problem.TRANSPORT_INVALID
         if (engine == ENGINE_SLIPSTREAM && transport != Transport.UDP) return Problem.TRANSPORT_INVALID
+        if (engine == ENGINE_SOAR && transport !in setOf(Transport.UDP, Transport.TCP)) return Problem.TRANSPORT_INVALID
         val noiz = config.dnsttNoiz == true
         val stealth = config.dnsttStealth == true
         val maxPayload = config.dnsttMaxPayload ?: 0
@@ -207,16 +211,30 @@ object DnsttFmt : FmtBase() {
                 (!resolverMode.isNullOrBlank() && resolverMode != "fanout") || rrSpread != 3 ||
                 !config.dnsttSocksUsername.isNullOrEmpty() || !config.dnsttSocksPassword.isNullOrEmpty())
         ) return Problem.TRANSPORT_INVALID
+        val soarSettings = if (engine == ENGINE_SOAR) {
+            SoarProfileFmt.normalizeSettings(config.soarSettings) ?: return Problem.TRANSPORT_INVALID
+        } else null
         val rawResolver = config.dnsttResolver?.trim().orEmpty()
-        if (rawResolver.isEmpty()) return Problem.RESOLVER_MISSING
-        val resolver = normalizeResolver(transport, rawResolver, allowMultiple = engine != ENGINE_OFFICIAL)
-            ?: return Problem.RESOLVER_INVALID
+        if (rawResolver.isEmpty() && (engine != ENGINE_SOAR || !SoarProfileFmt.discoveryEnabled(soarSettings))) {
+            return Problem.RESOLVER_MISSING
+        }
+        val resolver = if (rawResolver.isEmpty() && engine == ENGINE_SOAR) {
+            ""
+        } else {
+            normalizeResolver(transport, rawResolver, allowMultiple = engine != ENGINE_OFFICIAL)
+                ?: return Problem.RESOLVER_INVALID
+        }
         val resolverCount = resolver.split(',').size
         val storedAuthorities = authorityFlags(config.dnsttResolverAuthorities, resolverCount)
         val legacyAuthorities = resolverAuthorities(rawResolver).takeIf { it.size == resolverCount }
         val key = config.dnsttPublicKey?.trim().orEmpty()
         if (engine != ENGINE_SLIPSTREAM && key.isEmpty()) return Problem.PUBLIC_KEY_MISSING
-        if (engine != ENGINE_SLIPSTREAM && !key.matches(Regex("(?i)[0-9a-f]{64}"))) return Problem.PUBLIC_KEY_INVALID
+        val soarKey = if (engine == ENGINE_SOAR) SoarProfileFmt.normalizePublicKey(key) else null
+        if (engine == ENGINE_SOAR && soarKey == null) return Problem.PUBLIC_KEY_INVALID
+        if (engine != ENGINE_SLIPSTREAM && engine != ENGINE_SOAR && !key.matches(Regex("(?i)[0-9a-f]{64}"))) return Problem.PUBLIC_KEY_INVALID
+        if (engine == ENGINE_SOAR && (config.dnsttSshEnabled == true || noiz || stealth || maxPayload != 0 ||
+                !config.dnsttSocksUsername.isNullOrEmpty() || !config.dnsttSocksPassword.isNullOrEmpty())
+        ) return Problem.TRANSPORT_INVALID
 
         val vayRecordType = config.vaydnsRecordType?.trim()?.lowercase()?.ifEmpty { "txt" } ?: "txt"
         val vayMaxQname = config.vaydnsMaxQnameLen ?: 101
@@ -289,22 +307,31 @@ object DnsttFmt : FmtBase() {
         }
 
         config.dnsttDomain = domain
-        config.dnsttTransport = transport.type
+        config.dnsttTransport = if (engine == ENGINE_SOAR) {
+            if (SoarProfileFmt.settingsTransport(soarSettings) == "only") Transport.TCP.type else Transport.UDP.type
+        } else {
+            transport.type
+        }
         config.dnsttResolver = resolver
-        config.dnsttResolverAuthorities = if (engine == ENGINE_OFFICIAL || transport == Transport.DOH) {
+        config.dnsttResolverAuthorities = if (engine == ENGINE_OFFICIAL || engine == ENGINE_SOAR || transport == Transport.DOH) {
             null
         } else {
             (storedAuthorities ?: legacyAuthorities)?.joinToString(",") { if (it) "1" else "0" }
         }
-        config.dnsttPublicKey = if (engine == ENGINE_SLIPSTREAM) "" else key.lowercase()
-        config.dnsttUtls = utls
+        config.dnsttPublicKey = when (engine) {
+            ENGINE_SLIPSTREAM -> ""
+            ENGINE_SOAR -> soarKey
+            else -> key.lowercase()
+        }
+        config.soarSettings = soarSettings
+        config.dnsttUtls = if (engine == ENGINE_SOAR) "" else utls
         config.dnsttEngine = engine
-        config.dnsttAuthoritative = config.dnsttAuthoritative == true
+        config.dnsttAuthoritative = engine != ENGINE_SOAR && config.dnsttAuthoritative == true
         config.dnsttNoiz = noiz
         config.dnsttStealth = stealth
         config.dnsttMaxPayload = if (engine == ENGINE_SLIPSTREAM) 0 else maxPayload
-        config.dnsttResolverMode = if (engine == ENGINE_SLIPSTREAM) "fanout" else resolverMode?.takeIf { it.isNotBlank() } ?: "fanout"
-        config.dnsttRrSpreadCount = if (engine == ENGINE_SLIPSTREAM) 3 else rrSpread
+        config.dnsttResolverMode = if (engine == ENGINE_SLIPSTREAM || engine == ENGINE_SOAR) "fanout" else resolverMode?.takeIf { it.isNotBlank() } ?: "fanout"
+        config.dnsttRrSpreadCount = if (engine == ENGINE_SLIPSTREAM || engine == ENGINE_SOAR) 3 else rrSpread
         if (engine == ENGINE_SLIPSTREAM) {
             config.slipstreamKeepAlive = slipKeepAlive
             config.slipstreamCongestionControl = slipCongestionControl

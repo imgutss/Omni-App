@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -22,6 +24,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,6 +38,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.v2ray.ang.R
+import com.v2ray.ang.dto.entities.ProfileItem
+import com.v2ray.ang.enums.EConfigType
+import com.v2ray.ang.fmt.DnsttFmt
+import com.v2ray.ang.fmt.MasterDnsFmt
 import com.v2ray.ang.ui.base.BaseComponentActivity
 import com.v2ray.ang.ui.compose.AppTopBar
 
@@ -55,7 +62,7 @@ fun OmniDnsScannerScreen(state: OmniDnsScannerUiState, model: OmniDnsScannerView
 
 @Composable
 private fun OmniDnsScannerContent(state: OmniDnsScannerUiState, model: OmniDnsScannerViewModel, onBack: () -> Unit) {
-    val busy = state.scanning || state.e2eRunning || state.applying
+    val busy = state.scanning || state.e2eRunning || state.applying || state.generating
     var showAll by remember { mutableStateOf(false) }
     val noResponse = stringResource(R.string.omni_scanner_no_response)
     Scaffold(topBar = { AppTopBar(title = stringResource(R.string.omni_dns_scanner_title), onBackClick = onBack) }) { padding ->
@@ -69,11 +76,36 @@ private fun OmniDnsScannerContent(state: OmniDnsScannerUiState, model: OmniDnsSc
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(stringResource(R.string.omni_dns_scanner_subtitle), style = MaterialTheme.typography.bodyMedium)
                         OmniDnsTemplatePicker(state, model::selectTemplate, busy)
-                        OutlinedTextField(
-                            value = state.targetsInput, onValueChange = model::updateTargets, enabled = !busy,
-                            modifier = Modifier.fillMaxWidth(), minLines = 3,
-                            label = { Text(stringResource(R.string.omni_dns_scanner_targets)) },
-                        )
+                        OmniDnsCandidateSourceControls(state, model, busy)
+                        if (state.candidateSource == OmniDnsCandidateSource.MANUAL) {
+                            OutlinedTextField(
+                                value = state.targetsInput, onValueChange = model::updateTargets, enabled = !busy,
+                                modifier = Modifier.fillMaxWidth(), minLines = 3,
+                                label = { Text(stringResource(R.string.omni_dns_scanner_targets)) },
+                            )
+                        } else {
+                            Text(stringResource(R.string.omni_dns_candidates_notice), style = MaterialTheme.typography.bodySmall)
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                listOf(6_000, 10_000, 60_000, 100_000).forEach { count ->
+                                    OutlinedButton(
+                                        onClick = { model.updateMaxTargets(count.toString()) },
+                                        enabled = !busy, modifier = Modifier.weight(1f),
+                                    ) { Text(if (count == 100_000) "100K" else "${count / 1000}K") }
+                                }
+                            }
+                            Button(
+                                onClick = model::generateCandidates,
+                                enabled = !busy && state.selectedRangeGroups.isNotEmpty(),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) { Text(stringResource(if (state.generating) R.string.omni_dns_candidates_generating else R.string.omni_dns_candidates_generate)) }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(stringResource(R.string.omni_dns_candidates_auto_scan), Modifier.weight(1f))
+                                Switch(checked = state.autoScanAfterGenerate, onCheckedChange = model::updateAutoScanAfterGenerate, enabled = !busy)
+                            }
+                            if (state.generatedCount > 0) {
+                                Text(stringResource(R.string.omni_dns_candidates_ready, state.generatedCount), color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
                         OutlinedTextField(
                             value = state.portsInput, onValueChange = model::updatePorts, enabled = !busy,
                             modifier = Modifier.fillMaxWidth(), singleLine = true,
@@ -94,7 +126,12 @@ private fun OmniDnsScannerContent(state: OmniDnsScannerUiState, model: OmniDnsSc
                             OutlinedButton(onClick = model::stopScan, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.omni_scanner_stop)) }
                             LinearProgressIndicator(progress = { state.scanCompleted.toFloat() / state.sampledTargets.coerceAtLeast(1) }, modifier = Modifier.fillMaxWidth())
                         } else {
-                            Button(onClick = model::startScan, enabled = !busy && state.templates.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
+                            Button(
+                                onClick = model::startScan,
+                                enabled = !busy && state.templates.isNotEmpty() &&
+                                    (state.candidateSource == OmniDnsCandidateSource.MANUAL || state.generatedCount > 0),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
                                 Text(stringResource(R.string.omni_dns_scanner_start))
                             }
                         }
@@ -148,6 +185,65 @@ private fun OmniDnsScannerContent(state: OmniDnsScannerUiState, model: OmniDnsSc
     }
 }
 
+
+@Composable
+private fun OmniDnsCandidateSourceControls(state: OmniDnsScannerUiState, model: OmniDnsScannerViewModel, busy: Boolean) {
+    var sourceExpanded by remember { mutableStateOf(false) }
+    var groupsExpanded by remember { mutableStateOf(false) }
+    val sourceLabel = when (state.candidateSource) {
+        OmniDnsCandidateSource.MANUAL -> R.string.omni_dns_candidates_manual
+        OmniDnsCandidateSource.IR_FULL -> R.string.omni_dns_candidates_full
+        OmniDnsCandidateSource.IR_LITE -> R.string.omni_dns_candidates_lite
+    }
+    OutlinedButton(onClick = { sourceExpanded = true }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.omni_dns_candidates_source, stringResource(sourceLabel)))
+    }
+    DropdownMenu(expanded = sourceExpanded, onDismissRequest = { sourceExpanded = false }) {
+        OmniDnsCandidateSource.entries.forEach { source ->
+            val label = when (source) {
+                OmniDnsCandidateSource.MANUAL -> R.string.omni_dns_candidates_manual
+                OmniDnsCandidateSource.IR_FULL -> R.string.omni_dns_candidates_full
+                OmniDnsCandidateSource.IR_LITE -> R.string.omni_dns_candidates_lite
+            }
+            DropdownMenuItem(text = { Text(stringResource(label)) }, onClick = {
+                sourceExpanded = false
+                model.selectCandidateSource(source)
+            })
+        }
+    }
+    if (state.candidateSource != OmniDnsCandidateSource.MANUAL) {
+        OutlinedButton(onClick = { groupsExpanded = true }, enabled = !busy && state.rangeGroups.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.omni_dns_candidates_groups, state.selectedRangeGroups.size, state.rangeGroups.size))
+        }
+    }
+    if (groupsExpanded) {
+        AlertDialog(
+            onDismissRequest = { groupsExpanded = false },
+            title = { Text(stringResource(R.string.omni_dns_candidates_group_title)) },
+            text = {
+                LazyColumn(Modifier.fillMaxWidth()) {
+                    item {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TextButton(onClick = { model.selectAllRangeGroups(true) }) { Text(stringResource(R.string.omni_dns_candidates_all)) }
+                            TextButton(onClick = { model.selectAllRangeGroups(false) }) { Text(stringResource(R.string.omni_dns_candidates_none)) }
+                        }
+                    }
+                    itemsIndexed(state.rangeGroups, key = { _, group -> group.key }) { _, group ->
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(checked = group.key in state.selectedRangeGroups, onCheckedChange = { model.toggleRangeGroup(group.key) })
+                            Column {
+                                Text(group.label)
+                                Text(stringResource(R.string.omni_dns_candidates_group_size, group.ranges.size, group.totalIps), style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { groupsExpanded = false }) { Text(stringResource(android.R.string.ok)) } },
+        )
+    }
+}
+
 @Composable
 private fun OmniDnsNumberField(value: String, onChange: (String) -> Unit, enabled: Boolean, label: Int, modifier: Modifier) {
     OutlinedTextField(
@@ -161,16 +257,24 @@ private fun OmniDnsTemplatePicker(state: OmniDnsScannerUiState, onSelect: (Strin
     var expanded by remember { mutableStateOf(false) }
     val selected = state.templates.firstOrNull { it.guid == state.selectedTemplateGuid }
     OutlinedButton(onClick = { expanded = true }, enabled = !busy && state.templates.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
-        Text(selected?.let { "${it.profile.remarks.ifBlank { it.guid }} · ${it.profile.dnsttEngine}" } ?: stringResource(R.string.omni_dns_scanner_choose_profile))
+        Text(selected?.let { "${it.profile.remarks.ifBlank { it.guid }} · ${omniDnsEngineLabel(it.profile)}" } ?: stringResource(R.string.omni_dns_scanner_choose_profile))
     }
     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
         state.templates.forEach { template ->
             DropdownMenuItem(
-                text = { Text("${template.profile.remarks.ifBlank { template.guid }} · ${template.profile.dnsttEngine}") },
+                text = { Text("${template.profile.remarks.ifBlank { template.guid }} · ${omniDnsEngineLabel(template.profile)}") },
                 onClick = { onSelect(template.guid); expanded = false },
             )
         }
     }
+}
+
+
+private fun omniDnsEngineLabel(profile: ProfileItem): String = when {
+    profile.configType == EConfigType.MASTERDNS && profile.masterDnsEngine == MasterDnsFmt.ENGINE_COTTENDNS -> "CottenDNS"
+    profile.configType == EConfigType.MASTERDNS -> "MasterDNS"
+    profile.dnsttEngine == DnsttFmt.ENGINE_SOAR -> "Soar"
+    else -> profile.dnsttEngine ?: "DNSTT"
 }
 
 @Composable

@@ -244,7 +244,7 @@ object CoreServiceManager {
         }
         val masterDns = result.masterDnsCore
         if (masterDns != null) {
-            if (!MasterDnsCoreManager.isSupported(service)) {
+            if (!MasterDnsCoreManager.isSupported(service, masterDns.engine)) {
                 throw StartFailure(service.getString(R.string.masterdns_unsupported_abi))
             }
             if (AetherDependency.inboundListensOn(result.content, masterDns.port)) {

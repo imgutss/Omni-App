@@ -32,6 +32,7 @@ import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.enums.NetworkType
 import com.v2ray.ang.extension.nullIfBlank
 import com.v2ray.ang.fmt.DnsttFmt
+import com.v2ray.ang.fmt.MasterDnsFmt
 import com.v2ray.ang.util.JsonUtil
 
 class ServerUiState(
@@ -119,6 +120,7 @@ class ServerUiState(
     aetherCommand: String = "",
     masterDnsConfig: String = "",
     masterDnsResolvers: String = "8.8.8.8",
+    masterDnsEngine: String = MasterDnsFmt.ENGINE_MASTERDNS,
     dnsttTransport: String = "doh",
     dnsttResolver: String = "https://cloudflare-dns.com/dns-query",
     dnsttResolverAuthorities: String = "",
@@ -126,6 +128,7 @@ class ServerUiState(
     dnsttPublicKey: String = "",
     dnsttUtls: String = DnsttFmt.DEFAULT_UTLS,
     dnsttEngine: String = DnsttFmt.ENGINE_OFFICIAL,
+    soarSettings: String = "",
     dnsttAuthoritative: Boolean = false,
     dnsttNoiz: Boolean = false,
     dnsttStealth: Boolean = false,
@@ -253,6 +256,7 @@ class ServerUiState(
     var aetherCommand by mutableStateOf(aetherCommand)
     var masterDnsConfig by mutableStateOf(masterDnsConfig)
     var masterDnsResolvers by mutableStateOf(masterDnsResolvers)
+    var masterDnsEngine by mutableStateOf(masterDnsEngine)
     var dnsttTransport by mutableStateOf(dnsttTransport)
     var dnsttResolver by mutableStateOf(dnsttResolver)
     var dnsttResolverAuthorities by mutableStateOf(dnsttResolverAuthorities)
@@ -260,6 +264,7 @@ class ServerUiState(
     var dnsttPublicKey by mutableStateOf(dnsttPublicKey)
     var dnsttUtls by mutableStateOf(dnsttUtls)
     var dnsttEngine by mutableStateOf(dnsttEngine)
+    var soarSettings by mutableStateOf(soarSettings)
     var dnsttAuthoritative by mutableStateOf(dnsttAuthoritative)
     var dnsttNoiz by mutableStateOf(dnsttNoiz)
     var dnsttStealth by mutableStateOf(dnsttStealth)
@@ -447,6 +452,7 @@ class ServerUiState(
             aetherCommand = null,
             masterDnsConfig = if (isMasterDns) masterDnsConfig.trim() else null,
             masterDnsResolvers = if (isMasterDns) masterDnsResolvers.trim() else null,
+            masterDnsEngine = if (isMasterDns) masterDnsEngine else null,
             dnsttTransport = if (isDnstt) dnsttTransport else null,
             dnsttResolver = if (isDnstt) dnsttResolver.trim() else null,
             dnsttResolverAuthorities = if (isDnstt) dnsttResolverAuthorities.nullIfBlank() else null,
@@ -454,6 +460,7 @@ class ServerUiState(
             dnsttPublicKey = if (isDnstt) dnsttPublicKey.trim() else null,
             dnsttUtls = if (isDnstt) dnsttUtls.trim() else null,
             dnsttEngine = if (isDnstt) dnsttEngine else null,
+            soarSettings = if (isDnstt && dnsttEngine == DnsttFmt.ENGINE_SOAR) soarSettings.nullIfBlank() else null,
             dnsttAuthoritative = if (isDnstt) dnsttAuthoritative else null,
             dnsttNoiz = if (isDnstt) dnsttNoiz else null,
             dnsttStealth = if (isDnstt) dnsttStealth else null,
@@ -590,6 +597,7 @@ class ServerUiState(
                 aetherCommand = initialConfig.aetherCommand ?: "",
                 masterDnsConfig = initialConfig.masterDnsConfig ?: "",
                 masterDnsResolvers = initialConfig.masterDnsResolvers ?: "8.8.8.8",
+                masterDnsEngine = initialConfig.masterDnsEngine ?: MasterDnsFmt.ENGINE_MASTERDNS,
                 dnsttTransport = initialConfig.dnsttTransport ?: "doh",
                 dnsttResolver = initialConfig.dnsttResolver ?: "https://cloudflare-dns.com/dns-query",
                 dnsttResolverAuthorities = initialConfig.dnsttResolverAuthorities ?: "",
@@ -597,6 +605,7 @@ class ServerUiState(
                 dnsttPublicKey = initialConfig.dnsttPublicKey ?: "",
                 dnsttUtls = initialConfig.dnsttUtls ?: DnsttFmt.DEFAULT_UTLS,
                 dnsttEngine = initialConfig.dnsttEngine ?: DnsttFmt.ENGINE_OFFICIAL,
+                soarSettings = initialConfig.soarSettings ?: "",
                 dnsttAuthoritative = initialConfig.dnsttAuthoritative == true,
                 dnsttNoiz = initialConfig.dnsttNoiz == true,
                 dnsttStealth = initialConfig.dnsttStealth == true,

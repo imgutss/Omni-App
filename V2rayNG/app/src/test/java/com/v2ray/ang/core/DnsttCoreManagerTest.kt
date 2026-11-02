@@ -164,6 +164,25 @@ class DnsttCoreManagerTest {
     }
 
     @Test
+    fun soarUsesTheRealLauncherAndIncludesTuningInSessionIdentity() {
+        val soar = core.copy(
+            engine = DnsttFmt.ENGINE_SOAR,
+            publicKey = "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE",
+            utls = "",
+            soarSettings = "{\"discovery\":false,\"transport\":\"off\"}",
+        )
+        val arguments = DnsttCoreManager.processArguments(File("/data/app/lib/libsoar.so"), soar, "@omni-test")
+        assertTrue("-domain=t.example.com" in arguments)
+        assertTrue("-public-key=${soar.publicKey}" in arguments)
+        assertTrue("-resolvers=soar_resolvers.txt" in arguments)
+        assertTrue("-settings=soar_settings.json" in arguments)
+        assertTrue("-listen=127.0.0.1:18001" in arguments)
+        assertTrue("-fd-control-unix-socket=@omni-test" in arguments)
+        assertFalse(arguments.any { it.startsWith("-pubkey=") || it.startsWith("-udp=") })
+        assertFalse(soar.key == soar.copy(soarSettings = "{\"discovery\":true,\"transport\":\"off\"}").key)
+    }
+
+    @Test
     fun proxyAndRootModesDoNotInventAProtectEndpoint() {
         val arguments = DnsttCoreManager.processArguments(File("/bin/libdnstt.so"), core, null)
         assertFalse(arguments.any { it.startsWith("-fd-control-unix-socket=") })

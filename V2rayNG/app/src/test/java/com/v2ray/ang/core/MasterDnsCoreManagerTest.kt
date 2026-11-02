@@ -1,5 +1,6 @@
 package com.v2ray.ang.core
 
+import com.v2ray.ang.fmt.MasterDnsFmt
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -34,6 +35,24 @@ class MasterDnsCoreManagerTest {
         assertTrue("-local-dns-enabled=false" in arguments)
         assertTrue("-fd-control-unix-socket=@omni-test" in arguments)
         assertFalse(arguments.joinToString(" ").contains("secret"))
+    }
+
+    @Test
+    fun cottenUsesItsOwnBinaryAndNonInteractiveFlags() {
+        val cotten = core.copy(
+            engine = MasterDnsFmt.ENGINE_COTTENDNS,
+            config = "DOMAINS = [\"v.example.com\"]\nDATA_ENCRYPTION_METHOD = 5\nENCRYPTION_KEY = \"00112233445566778899aabbccddeeff\"",
+        )
+        val arguments = MasterDnsCoreManager.processArguments(
+            File("/data/app/lib/libcottendns.so"), File("/private/client_config.toml"),
+            File("/private/client_resolvers.txt"), cotten, "@omni-test",
+        )
+        assertEquals("/data/app/lib/libcottendns.so", arguments.first())
+        assertTrue("-startup-mode=resolvers" in arguments)
+        assertTrue("-terminal-ui=plain" in arguments)
+        assertTrue("-log-to-file=false" in arguments)
+        assertFalse(arguments.any { it.startsWith("-save-mtu-servers-to-file=") })
+        assertFalse(cotten.key == cotten.copy(engine = MasterDnsFmt.ENGINE_MASTERDNS).key)
     }
 
     @Test

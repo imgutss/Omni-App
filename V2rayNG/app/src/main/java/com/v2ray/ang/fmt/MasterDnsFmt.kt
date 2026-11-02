@@ -19,6 +19,8 @@ import java.util.Base64
  */
 object MasterDnsFmt : FmtBase() {
 
+    const val ENGINE_MASTERDNS = "masterdns"
+    const val ENGINE_COTTENDNS = "cottendns"
     private const val DEFAULT_REMARKS = "MasterDNS"
     private const val DEFAULT_RESOLVERS = "8.8.8.8"
     private const val MAX_CONFIG_CHARS = 1_048_576
@@ -46,9 +48,10 @@ object MasterDnsFmt : FmtBase() {
     /** Parses an Omni masterdns:// URI. Returns null when its payload is not an official client config. */
     fun parse(str: String): ProfileItem? {
         val uri = runCatching { URI(str.trim()) }.getOrNull() ?: return null
-        if (!uri.scheme.equals("masterdns", ignoreCase = true)) return null
+        val scheme = uri.scheme?.lowercase() ?: return null
+        if (scheme !in setOf(ENGINE_MASTERDNS, ENGINE_COTTENDNS)) return null
         val query = queryParameters(uri.rawQuery.orEmpty())
-        val encoded = query["config"] ?: return null
+        val encoded = query["config"] ?: return fromProfileEnvelope(uri, scheme)
         val raw = decodePayload(encoded) ?: return null
         val resolvers = query["resolvers"]?.let(::decodePayload) ?: DEFAULT_RESOLVERS
         val remarks = uri.rawFragment
@@ -76,6 +79,21 @@ object MasterDnsFmt : FmtBase() {
     fun toUri(config: ProfileItem): String {
         val raw = config.masterDnsConfig.orEmpty().trim()
         val resolvers = normalizeResolvers(config.masterDnsResolvers)
+        config.masterDnsEngine?.let { engine ->
+            val document = document(raw) ?: return ""
+            val profile = JsonObject().apply {
+                addProperty("id", "${config.addedTime}:$engine")
+                addProperty("name", config.remarks.ifBlank { engine })
+                addProperty("engine", engine)
+                add("server", JsonObject().apply {
+                    addProperty("domain", document.domains.firstOrNull() ?: return "")
+                    document.encryptionKey?.let { addProperty("encryption_key", it) }
+                    addProperty("encryption_method", document.encryptionMethod)
+                })
+                add("resolvers", WhiteDnsProfileFmt.strings(resolvers.lines().map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith('#') }))
+            }
+            return WhiteDnsProfileFmt.toPayload(profile)
+        }
         val encodedConfig = encodePayload(raw)
         val encodedResolvers = encodePayload(resolvers)
         val remarks = URLEncoder.encode(config.remarks.ifBlank { DEFAULT_REMARKS }, StandardCharsets.UTF_8.name())
@@ -84,16 +102,22 @@ object MasterDnsFmt : FmtBase() {
 
     /** Normalizes the profile and returns the first problem the editor or importer must show. */
     fun normalize(config: ProfileItem): Problem? {
+        val engine = config.masterDnsEngine?.trim()?.lowercase()
+        if (engine != null && engine !in setOf(ENGINE_MASTERDNS, ENGINE_COTTENDNS)) return Problem.CONFIG_MALFORMED
         val raw = config.masterDnsConfig?.trim().orEmpty()
         if (raw.isEmpty()) return Problem.CONFIG_EMPTY
         if (raw.length > MAX_CONFIG_CHARS) return Problem.CONFIG_TOO_LARGE
         val document = document(raw) ?: return Problem.CONFIG_MALFORMED
+        if ((engine == ENGINE_MASTERDNS && document.format != Format.JSON) ||
+            (engine == ENGINE_COTTENDNS && document.format != Format.TOML)
+        ) return Problem.CONFIG_MALFORMED
         if (document.domains.isEmpty()) return Problem.DOMAINS_MISSING
         if (document.encryptionMethod !in 0..5) return Problem.CONFIG_MALFORMED
         if (document.encryptionMethod != 0 && document.encryptionKey.isNullOrBlank()) return Problem.KEY_MISSING
         val resolvers = config.masterDnsResolvers
         if (!validResolvers(resolvers)) return Problem.RESOLVERS_INVALID
 
+        config.masterDnsEngine = engine
         config.masterDnsConfig = raw
         config.masterDnsResolvers = normalizeResolvers(resolvers)
         config.server = document.domains.first()
@@ -114,6 +138,37 @@ object MasterDnsFmt : FmtBase() {
             profile.server = document.domains.first()
             profile.serverPort = null
         }.takeIf { normalize(it) == null }
+    }
+
+    private fun fromProfileEnvelope(uri: URI, scheme: String): ProfileItem? = with(WhiteDnsProfileFmt) {
+        val envelope = fromUri(uri) ?: return null
+        val engine = envelope.text("engine")?.trim()?.lowercase() ?: scheme
+        if (engine != scheme || engine !in setOf(ENGINE_MASTERDNS, ENGINE_COTTENDNS)) return null
+        val server = envelope.get("server")?.takeIf { it.isJsonObject }?.asJsonObject ?: return null
+        val domain = server.text("domain")?.trim()?.lowercase()?.removeSuffix(".") ?: return null
+        val key = server.text("encryption_key")
+        val method = server.number("encryption_method") ?: 1
+        if (method !in 0..5 || (method != 0 && key.isNullOrBlank())) return null
+        val remarks = envelope.text("name")?.trim().takeUnless { it.isNullOrEmpty() }
+            ?: if (engine == ENGINE_COTTENDNS) "CottenDNS" else DEFAULT_REMARKS
+        val resolvers = envelope.stringArray("resolvers")?.joinToString("\n") ?: DEFAULT_RESOLVERS
+        val raw = if (engine == ENGINE_COTTENDNS) {
+            buildString {
+                append("DOMAINS = [\"").append(domain).append("\"]\n")
+                append("DATA_ENCRYPTION_METHOD = ").append(method).append('\n')
+                if (key != null) append("ENCRYPTION_KEY = \"").append(key.replace("\\", "\\\\").replace("\"", "\\\"")).append("\"\n")
+            }
+        } else {
+            JsonObject().apply {
+                add("DOMAINS", WhiteDnsProfileFmt.strings(listOf(domain)))
+                addProperty("DATA_ENCRYPTION_METHOD", method)
+                key?.let { addProperty("ENCRYPTION_KEY", it) }
+            }.toString()
+        }
+        return fromDocument(raw, remarks, resolvers)?.also { profile ->
+            profile.masterDnsEngine = engine
+            normalize(profile)
+        }
     }
 
     internal fun document(raw: String): Document? = when {

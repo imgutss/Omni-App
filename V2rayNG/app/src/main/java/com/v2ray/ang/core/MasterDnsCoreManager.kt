@@ -28,6 +28,7 @@ import kotlin.concurrent.thread
 object MasterDnsCoreManager {
 
     private const val BINARY_NAME = "libmasterdns.so"
+    private const val COTTENDNS_BINARY_NAME = "libcottendns.so"
     private const val OWNER_ENV = "OMNI_MASTERDNS_OWNER"
     private const val SESSION_ENV = "OMNI_MASTERDNS_SESSION"
     private const val KEY_ENV = "OMNI_MASTERDNS_KEY"
@@ -54,12 +55,12 @@ object MasterDnsCoreManager {
 
     /** Finds the app's official client without mistaking an unrelated loopback listener for it. */
     internal fun liveProcess(context: Context): LiveProcess? {
-        val expected = binary(context).absolutePath
+        val expected = listOf(binary(context).absolutePath, binary(context, MasterDnsFmt.ENGINE_COTTENDNS).absolutePath)
         File("/proc").listFiles()?.forEach { entry ->
             val pid = entry.name.toIntOrNull() ?: return@forEach
             if (pid == android.os.Process.myPid()) return@forEach
             val argv = readProcWords(File(entry, "cmdline")) ?: return@forEach
-            if (argv.firstOrNull() != expected) return@forEach
+            if (argv.firstOrNull() !in expected) return@forEach
             val environment = readProcWords(File(entry, "environ")).orEmpty()
             if ("$SESSION_ENV=1" !in environment) return@forEach
             val port = argv.firstOrNull { it.startsWith("-listen-port=") }
@@ -89,9 +90,12 @@ object MasterDnsCoreManager {
         }
     }
 
-    private fun binary(context: Context): File = File(context.applicationInfo.nativeLibraryDir, BINARY_NAME)
+    private fun binary(context: Context, engine: String = MasterDnsFmt.ENGINE_MASTERDNS): File = File(
+        context.applicationInfo.nativeLibraryDir,
+        if (engine == MasterDnsFmt.ENGINE_COTTENDNS) COTTENDNS_BINARY_NAME else BINARY_NAME,
+    )
 
-    fun isSupported(context: Context): Boolean = binary(context).canExecute()
+    fun isSupported(context: Context, engine: String = MasterDnsFmt.ENGINE_MASTERDNS): Boolean = binary(context, engine).canExecute()
 
     internal sealed interface PortCheck {
         data object Free : PortCheck
@@ -199,7 +203,7 @@ object MasterDnsCoreManager {
 
     /** Deterministic command line; the encryption key remains only in the private config file. */
     internal fun processArguments(target: Session): List<String> = processArguments(
-        binary = binary(target.context),
+        binary = binary(target.context, target.core.engine),
         config = File(target.directory, configFileName(target.core.config)),
         resolvers = File(target.directory, RESOLVERS_FILE),
         core = target.core,
@@ -212,19 +216,25 @@ object MasterDnsCoreManager {
         resolvers: File,
         core: MasterDnsCore,
         protectAddress: String?,
-    ): List<String> = listOf(
-        binary.absolutePath,
-        "-config=${config.absolutePath}",
-        "-resolvers=${resolvers.absolutePath}",
-        "-protocol-type=SOCKS5",
-        "-listen-ip=${AppConfig.LOOPBACK}",
-        "-listen-port=${core.port}",
-        "-socks5-auth=false",
-        "-local-dns-enabled=false",
-        "-local-dns-cache-persist-to-file=false",
-        "-save-mtu-servers-to-file=false",
-        "-fd-control-unix-socket=${protectAddress.orEmpty()}",
-    )
+    ): List<String> = buildList {
+        add(binary.absolutePath)
+        add("-config=${config.absolutePath}")
+        add("-resolvers=${resolvers.absolutePath}")
+        add("-protocol-type=SOCKS5")
+        add("-listen-ip=${AppConfig.LOOPBACK}")
+        add("-listen-port=${core.port}")
+        add("-socks5-auth=false")
+        add("-local-dns-enabled=false")
+        add("-local-dns-cache-persist-to-file=false")
+        if (core.engine == MasterDnsFmt.ENGINE_COTTENDNS) {
+            add("-startup-mode=resolvers")
+            add("-terminal-ui=plain")
+            add("-log-to-file=false")
+        } else {
+            add("-save-mtu-servers-to-file=false")
+        }
+        add("-fd-control-unix-socket=${protectAddress.orEmpty()}")
+    }
 
     private const val RESOLVERS_FILE = "client_resolvers.txt"
 
@@ -354,7 +364,7 @@ object MasterDnsCoreManager {
 
     /** Reaps only processes whose executable is this app's exact MasterDnsVPN binary. */
     private fun reapStale(context: Context) {
-        val expected = binary(context).absolutePath
+        val expected = listOf(binary(context).absolutePath, binary(context, MasterDnsFmt.ENGINE_COTTENDNS).absolutePath)
         val stale = mutableListOf<Int>()
         File("/proc").listFiles()?.forEach { entry ->
             val pid = entry.name.toIntOrNull() ?: return@forEach
@@ -363,7 +373,7 @@ object MasterDnsCoreManager {
                 String(File(entry, "cmdline").readBytes(), Charsets.UTF_8).substringBefore('\u0000')
             }.getOrNull() ?: return@forEach
             val environment = readProcWords(File(entry, "environ")).orEmpty()
-            if (command == expected && "$SESSION_ENV=1" in environment) stale += pid
+            if (command in expected && "$SESSION_ENV=1" in environment) stale += pid
         }
         stale.forEach { pid -> runCatching { android.os.Process.sendSignal(pid, OsConstants.SIGTERM) } }
         if (stale.isEmpty()) return

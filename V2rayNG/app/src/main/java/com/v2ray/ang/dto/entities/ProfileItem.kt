@@ -164,7 +164,10 @@ data class ProfileItem(
     /** The command line of this profile's core, written by hand in place of the one built from the settings; null follows the settings. */
     var aetherCommand: String? = null,
 
-    /** Official MasterDnsVPN client JSON or TOML, kept as imported for its own Go engine. */
+    /** Real DNS engine used with masterDnsConfig: official MasterDNS or CottenDNS. */
+    var masterDnsEngine: String? = null,
+
+    /** Official MasterDnsVPN/CottenDNS client JSON or TOML, kept for its own Go engine. */
     var masterDnsConfig: String? = null,
 
     /** Official client_resolvers.txt content; blank means the documented sample default. */
@@ -213,6 +216,9 @@ data class ProfileItem(
     var vaydnsUdpTimeout: Int? = null,
     var vaydnsMaxNumLabels: Int? = null,
     var vaydnsClientIdSize: Int? = null,
+
+    /** Canonical Soar profile tuning JSON; interpreted by the real Soar client launcher. */
+    var soarSettings: String? = null,
 
     /** Slipstream QUIC keepalive, congestion control, and segmentation offload. */
     var slipstreamKeepAlive: Int? = null,
