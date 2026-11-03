@@ -31,8 +31,11 @@ build_one() {
     cd "$SOURCE_DIR"
     export CGO_ENABLED=0 GOOS=linux GOARCH="$goarch"
     if [[ -n "$goarm" ]]; then export GOARM="$goarm"; else unset GOARM || true; fi
+    # -R=16384 asks Go's own linker to align every segment to 16 KiB: Android 15 runs on devices with
+    # 16 KiB pages, and their kernel will not load a program whose segments assume 4 KiB. The other
+    # engines here are built the same way, and the build audit in CI refuses one that is not.
     "$GO_BIN" build -trimpath -buildvcs=false \
-      -ldflags='-s -w -buildid=' \
+      -ldflags='-s -w -buildid= -R=16384' \
       -o "$target" ./cmd/gutsclient
   )
   chmod 755 "$target"
