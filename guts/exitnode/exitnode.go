@@ -150,6 +150,7 @@ type Node struct {
 
 	mu       sync.Mutex
 	sessions map[string]*session
+	muxes    map[string]*muxSession
 }
 
 // New builds an exit node that answers calls signed with key.
@@ -157,7 +158,7 @@ func New(key string) *Node {
 	if key == "" {
 		panic("guts: an exit node needs a shared key")
 	}
-	n := &Node{key: key, sessions: map[string]*session{}}
+	n := &Node{key: key, sessions: map[string]*session{}, muxes: map[string]*muxSession{}}
 	go n.janitor()
 	return n
 }
@@ -194,18 +195,22 @@ func (n *Node) drop(sid string) {
 func (n *Node) LiveSessions() int {
 	n.mu.Lock()
 	defer n.mu.Unlock()
-	return len(n.sessions)
+	return len(n.sessions) + len(n.muxes)
 }
 
 // Close ends every session.
 func (n *Node) Close() {
 	n.mu.Lock()
-	sids := make([]string, 0, len(n.sessions))
+	sids := make([]string, 0, len(n.sessions)+len(n.muxes))
 	for sid := range n.sessions {
+		sids = append(sids, sid)
+	}
+	for sid := range n.muxes {
 		sids = append(sids, sid)
 	}
 	n.mu.Unlock()
 	for _, sid := range sids {
+		n.dropMux(sid)
 		n.drop(sid)
 	}
 }
@@ -214,17 +219,27 @@ func (n *Node) janitor() {
 	ticker := time.NewTicker(janitorInterval)
 	defer ticker.Stop()
 	for range ticker.C {
-		var drop []string
+		var drop, dropMux []string
 		n.mu.Lock()
 		for sid, s := range n.sessions {
 			if s.idle(proto.SessionIdleSecs * time.Second) {
 				drop = append(drop, sid)
 			}
 		}
+		for sid, m := range n.muxes {
+			// A multiplexed session carries many connections, so it may sit quiet longer.
+			if m.idle(2 * proto.SessionIdleSecs * time.Second) {
+				dropMux = append(dropMux, sid)
+			}
+		}
 		n.mu.Unlock()
 		for _, sid := range drop {
 			log.Printf("exit: closing idle session %s", sid)
 			n.drop(sid)
+		}
+		for _, sid := range dropMux {
+			log.Printf("exit: closing idle mux session %s", sid)
+			n.dropMux(sid)
 		}
 	}
 }
@@ -262,6 +277,10 @@ func (n *Node) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		n.handleOpen(w, req)
 
 	case proto.OpPush:
+		if req.MU {
+			n.serveMuxPush(w, req)
+			return
+		}
 		s := n.get(req.Sid)
 		if s == nil {
 			writeJSON(w, proto.Response{Error: "no session"})
@@ -279,6 +298,10 @@ func (n *Node) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, proto.Response{OK: true})
 
 	case proto.OpPoll:
+		if req.MU {
+			n.serveMuxPoll(w, req)
+			return
+		}
 		s := n.get(req.Sid)
 		if s == nil {
 			writeJSON(w, proto.Response{Error: "no session"})
@@ -307,6 +330,10 @@ func (n *Node) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 	case proto.OpClose:
+		if req.MU {
+			n.serveMuxClose(w, req)
+			return
+		}
 		n.drop(req.Sid)
 		writeJSON(w, proto.Response{OK: true})
 
@@ -316,6 +343,10 @@ func (n *Node) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (n *Node) handleOpen(w http.ResponseWriter, req proto.Request) {
+	if req.MU {
+		n.handleOpenMux(w, req)
+		return
+	}
 	if req.Host == "" || req.Port <= 0 || req.Port > 65535 {
 		writeJSON(w, proto.Response{Error: "bad destination"})
 		return

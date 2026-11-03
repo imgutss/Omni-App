@@ -251,6 +251,8 @@ type Proxy struct {
 	mu       sync.Mutex
 	listener net.Listener
 	closed   bool
+	useMux   bool
+	mux      *Mux
 }
 
 // NewProxy builds a SOCKS5 server that carries its connections through door.
@@ -259,6 +261,24 @@ func NewProxy(door Door, listen string, logf func(string, ...any)) *Proxy {
 		logf = func(string, ...any) {}
 	}
 	return &Proxy{door: door, listen: listen, log: logf}
+}
+
+// UseMux carries every connection of this proxy as a stream of one door session, which is what
+// keeps a busy phone to one poll per interval instead of one per connection.
+func (p *Proxy) UseMux(enabled bool) {
+	p.mu.Lock()
+	p.useMux = enabled
+	p.mu.Unlock()
+}
+
+// muxer returns the session multiplexer, building it on first use.
+func (p *Proxy) muxer() *Mux {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.mux == nil {
+		p.mux = NewMux(p.door, p.log)
+	}
+	return p.mux
 }
 
 // Listen binds the SOCKS5 port and returns the address it holds. Call Serve after it.
@@ -301,7 +321,11 @@ func (p *Proxy) Close() error {
 	p.mu.Lock()
 	p.closed = true
 	ln := p.listener
+	mux := p.mux
 	p.mu.Unlock()
+	if mux != nil {
+		mux.Close()
+	}
 	if ln != nil {
 		return ln.Close()
 	}
@@ -318,6 +342,15 @@ func (p *Proxy) handle(c net.Conn) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	p.mu.Lock()
+	muxed := p.useMux
+	p.mu.Unlock()
+	if muxed && p.handleMux(c, ctx, host, port) {
+		return
+	}
+	// Either multiplexing is off, or the exit node cannot do it: this connection goes the old way,
+	// one session of its own.
+
 	sess, err := Open(ctx, p.door, host, port)
 	if err != nil {
 		p.log("socks: open %s:%d: %v", host, port, err)
@@ -332,6 +365,42 @@ func (p *Proxy) handle(c net.Conn) {
 
 	go p.pipeUp(ctx, c, sess, stop)
 	p.pipeDown(ctx, c, sess, stop)
+}
+
+// handleMux carries one SOCKS connection as a stream of the shared session, and reports whether it
+// did: the caller falls back to a session of its own when the exit node cannot multiplex.
+func (p *Proxy) handleMux(c net.Conn, ctx context.Context, host string, port int) bool {
+	st, err := p.muxer().Dial(ctx, host, port)
+	if errors.Is(err, ErrNoMux) {
+		p.UseMux(false)
+		p.log("socks: the exit node does not multiplex; this phone pays one call per connection until it is redeployed")
+		return false
+	}
+	if err != nil {
+		p.log("socks: open %s:%d: %v", host, port, err)
+		_, _ = c.Write([]byte{5, 5, 0, 1, 0, 0, 0, 0, 0, 0})
+		return true
+	}
+	defer st.Close()
+	_, _ = c.Write([]byte{5, 0, 0, 1, 0, 0, 0, 0, 0, 0})
+
+	done := make(chan struct{}, 2)
+	go func() {
+		// The read deadline the handshake set must not end a long-lived upload.
+		_ = c.SetDeadline(time.Time{})
+		_, _ = io.Copy(st, c)
+		done <- struct{}{}
+	}()
+	go func() {
+		_, _ = io.Copy(c, st)
+		done <- struct{}{}
+	}()
+	<-done
+	// One side ended: end the other, so a closed stream does not keep the connection open.
+	_ = c.Close()
+	_ = st.Close()
+	<-done
+	return true
 }
 
 // pipeUp carries what the app writes into the session, one push per read.

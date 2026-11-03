@@ -63,6 +63,7 @@ func main() {
 	importURI := flag.String("import", "", "start from a guts:// URI")
 	pick := flag.Bool("pick", false, "ping every door, print the latencies, then continue")
 	timeout := flag.Duration("timeout", 4*time.Second, "per-address timeout of a scan")
+	mux := flag.Bool("mux", true, "carry every connection as a stream of one session (one door call per interval)")
 	controlSocket := flag.String(
 		"fd-control-unix-socket",
 		os.Getenv("OMNI_FD_CONTROL_UNIX_SOCKET"),
@@ -187,6 +188,10 @@ func main() {
 	}
 
 	proxy := relay.NewProxy(door, *listen, func(format string, args ...any) { log.Printf(format, args...) })
+	// One session for every connection: the difference between one door call per interval and one
+	// per connection, which is what an Apps Script quota counts.
+	proxy.UseMux(*mux)
+	log.Printf("gutsclient: multiplexing %v", *mux)
 	addr, err := proxy.Listen()
 	if err != nil {
 		log.Fatalf("gutsclient: %v", err)
