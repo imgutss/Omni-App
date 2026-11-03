@@ -92,3 +92,4 @@ V2rayNG/app/src/main/assets/psiphon_servers.stamp
 # Generated CottenDNS and Soar Android executables
 /libs-cottendns/
 /libs-soar/
+libs-guts/
