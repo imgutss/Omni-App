@@ -99,3 +99,45 @@ func TestBestPrefersTheFastestFrontedAddress(t *testing.T) {
 		t.Fatalf("best of nothing is %q", got)
 	}
 }
+
+func TestReachableStopsAtTheFirstWorkingEdge(t *testing.T) {
+	host, port, srv := localServer(t)
+	roots := srv.Client().Transport.(*http.Transport).TLSClientConfig.RootCAs
+
+	res, ok := gip.Reachable(context.Background(), gip.Options{
+		SNI:       "example.com",
+		FrontHost: "script.google.com",
+		Timeout:   5 * time.Second,
+		RootCAs:   roots,
+		// A dead address first: the scan must walk past it rather than give up on the network.
+		Only: []string{"127.0.0.1:1", net.JoinHostPort(host, strconv.Itoa(port))},
+	})
+	if !ok {
+		t.Fatalf("a working edge was missed: %+v", res)
+	}
+	if res.Status != http.StatusFound {
+		t.Fatalf("status = %d, want 302", res.Status)
+	}
+}
+
+func TestReachableSaysNoWhenNothingAnswers(t *testing.T) {
+	if _, ok := gip.Reachable(context.Background(), gip.Options{
+		Timeout: 300 * time.Millisecond,
+		Only:    []string{"127.0.0.1:1", "127.0.0.1:2"},
+	}); ok {
+		t.Fatal("a network with no edge was called reachable")
+	}
+}
+
+func TestReachableHonoursTheDeadline(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancel()
+	start := time.Now()
+	gip.Reachable(ctx, gip.Options{
+		Timeout: 10 * time.Second,
+		Only:    []string{"192.0.2.1:443", "192.0.2.2:443", "192.0.2.3:443"},
+	})
+	if elapsed := time.Since(start); elapsed > 3*time.Second {
+		t.Fatalf("the deadline was not honoured: %v", elapsed)
+	}
+}

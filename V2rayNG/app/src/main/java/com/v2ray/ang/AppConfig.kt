@@ -67,6 +67,9 @@ object AppConfig {
     const val PREF_SOCKS_ENABLE_UDP = "pref_socks_enable_udp"
 
     /** PattNG: the loopback port every Aether core listens on, whatever its profile; see SettingsManager.getAetherListenPort. */
+    /** The «national network ⇄ normal» switch: ask the edge before opening a GUTS tunnel. */
+    const val PREF_GUTS_AUTO_SWITCH = "pref_guts_auto_switch"
+
     const val PREF_AETHER_LISTEN_PORT = "pref_aether_listen_port"
 
     /** PattNG: the settings of the page that gets new WARP keys, which no profile shares; see AetherKeysSettings. */

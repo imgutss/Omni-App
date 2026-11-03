@@ -59,6 +59,7 @@ type Options struct {
 	Extra       []string       // addresses to try besides Pool and DNS
 	ResolveHost string         // hostname whose addresses join the pool, e.g. www.google.com
 	RootCAs     *x509.CertPool // nil means the system pool
+	Only        []string       // when set, these addresses and no others
 	Insecure    bool           // tests only
 }
 
@@ -111,6 +112,32 @@ func Candidates(ctx context.Context, opts Options) []string {
 		}
 	}
 	return out
+}
+
+// Reachable answers the one question a phone asks before it tries: does this network let me reach
+// the Google edge at all? It walks the candidates and returns as soon as one carries a fronted
+// request, so a healthy network costs one handshake and a dead one costs the caller's deadline.
+// Nothing here touches Apps Script, so the answer is free of quota.
+func Reachable(ctx context.Context, opts Options) (Result, bool) {
+	opts.withDefaults()
+	addrs := opts.Only
+	if len(addrs) == 0 {
+		addrs = Candidates(ctx, opts)
+	}
+	var last Result
+	for _, addr := range addrs {
+		if ctx.Err() != nil {
+			break
+		}
+		last = Probe(ctx, addr, opts)
+		if last.Fronted {
+			return last, true
+		}
+	}
+	if last.IP == "" {
+		last.Err = "no address answered"
+	}
+	return last, false
 }
 
 // Scan probes every candidate and returns the results with the working ones first, fastest first.

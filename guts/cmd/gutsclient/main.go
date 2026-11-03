@@ -57,6 +57,8 @@ func main() {
 	direct := flag.Bool("direct", false, "post straight to the exit node at -door, no fronting")
 	check := flag.Bool("check", false, "ping the door and exit without starting the proxy")
 	scan := flag.Bool("scan", false, "scan the Google frontend addresses and exit")
+	probe := flag.Bool("probe", false, "ask whether this network reaches the Google edge at all, print JSON, exit 0 if it does and 3 if it does not")
+	probeBudget := flag.Duration("probe-budget", 5*time.Second, "how long a probe may take")
 	scanJSON := flag.Bool("scan-json", false, "print the scan as JSON")
 	asJSON := flag.Bool("export-json", false, "print the setup as JSON")
 	asURI := flag.Bool("export", false, "print the setup as a guts:// URI")
@@ -100,6 +102,33 @@ func main() {
 		if *listen == "127.0.0.1:1080" && cfg.Listen != "" {
 			*listen = cfg.Listen
 		}
+	}
+
+	if *probe {
+		// The one question a phone asks before it tries: does this network reach Google at all?
+		// Nothing here touches Apps Script, so the answer costs no quota.
+		ctx, cancel := context.WithTimeout(context.Background(), *probeBudget)
+		defer cancel()
+		opts := gip.Options{SNI: *sni, FrontHost: *frontHost, Timeout: *timeout}
+		if ip := strings.TrimSpace(*googleIP); ip != "" && ip != "auto" {
+			if host, err := gip.Host(ip); err == nil {
+				opts.Only = []string{host}
+			}
+		}
+		res, reachable := gip.Reachable(ctx, opts)
+		out := struct {
+			Probe string `json:"probe"`
+			OK    bool   `json:"ok"`
+			IP    string `json:"ip,omitempty"`
+			RTTMs int64  `json:"rtt_ms,omitempty"`
+			Error string `json:"e,omitempty"`
+		}{Probe: "edge", OK: reachable, IP: res.IP, RTTMs: res.RTTMs, Error: res.Err}
+		enc := json.NewEncoder(os.Stdout)
+		_ = enc.Encode(out)
+		if !reachable {
+			os.Exit(3)
+		}
+		os.Exit(0)
 	}
 
 	if *scan || *scanJSON || *googleIP == "auto" {

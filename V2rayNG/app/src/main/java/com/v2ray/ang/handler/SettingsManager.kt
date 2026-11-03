@@ -527,6 +527,16 @@ object SettingsManager {
     }
 
     /**
+     * The «national network ⇄ normal» switch for GUTS profiles.
+     *
+     * On by default: on a network whose international gateway is cut, opening the tunnel cannot
+     * work, so asking first spares the user a connect that hangs and then fails. Turn it off where
+     * the extra probe before each connect is not wanted.
+     */
+    fun isGutsAutoSwitch(): Boolean =
+        MmkvManager.decodeSettingsBool(AppConfig.PREF_GUTS_AUTO_SWITCH, true)
+
+    /**
      * Check if VPN mode is enabled.
      * @return True if VPN mode is enabled, false otherwise.
      */

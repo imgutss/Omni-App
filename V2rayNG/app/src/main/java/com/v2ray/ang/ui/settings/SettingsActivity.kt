@@ -109,6 +109,7 @@ fun SettingsScreen(
     var uiSettingsExpanded by rememberSaveable { mutableStateOf(true) }
     var vpnSettingsExpanded by rememberSaveable { mutableStateOf(true) }
     var coreSettingsExpanded by rememberSaveable { mutableStateOf(true) }
+    var gutsSettingsExpanded by rememberSaveable { mutableStateOf(true) }
     var muxSettingsExpanded by rememberSaveable { mutableStateOf(false) }
     var observatorySettingsExpanded by rememberSaveable { mutableStateOf(false) }
     var advancedSettingsExpanded by rememberSaveable { mutableStateOf(true) }
@@ -150,6 +151,7 @@ fun SettingsScreen(
     var proxySharing by rememberMmkvBool(AppConfig.PREF_PROXY_SHARING, false)
 
     var speedEnabled by rememberMmkvBool(AppConfig.PREF_SPEED_ENABLED, false)
+    var gutsAutoSwitch by rememberMmkvBool(AppConfig.PREF_GUTS_AUTO_SWITCH, true)
     var confirmRemove by rememberMmkvBool(AppConfig.PREF_CONFIRM_REMOVE, false)
     var doubleColumnDisplay by rememberMmkvBool(AppConfig.PREF_DOUBLE_COLUMN_DISPLAY, false)
     var groupAllDisplay by rememberMmkvBool(AppConfig.PREF_GROUP_ALL_DISPLAY, false)
@@ -503,6 +505,20 @@ fun SettingsScreen(
                     values = outboundResolveValues,
                     selectedValue = outboundResolveMethod,
                     onSelected = { outboundResolveMethod = it }
+                )
+            }
+
+            CollapsiblePreferenceGroupHeader(
+                title = stringResource(R.string.title_guts_settings),
+                expanded = gutsSettingsExpanded,
+                onExpandedChange = { gutsSettingsExpanded = it }
+            )
+            if (gutsSettingsExpanded) {
+                SettingsSwitchItem(
+                    title = stringResource(R.string.title_pref_guts_auto_switch),
+                    summary = stringResource(R.string.summary_pref_guts_auto_switch),
+                    checked = gutsAutoSwitch,
+                    onCheckedChange = { gutsAutoSwitch = it }
                 )
             }
 

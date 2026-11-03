@@ -76,8 +76,47 @@ object LauncherManager {
             || Utils.isPureIpAddress(config.server.orEmpty())
             || Utils.isValidUrl(config.server)
 
+    /**
+     * Starts the service on behalf of [NetworkGate], which has already asked the network.
+     *
+     * It exists so the gate can decide exactly once per attempt: going through [startService] again
+     * would ask the network again and could loop.
+     */
+    internal fun startServiceFromGate(context: Context) {
+        try {
+            startContextService(context, gated = false)
+        } catch (e: Exception) {
+            LogUtil.e(AppConfig.TAG, "LauncherManager: ${e.message}", e)
+            context.toast(e.message ?: e.javaClass.simpleName)
+        }
+    }
+
+    /**
+     * The «national network ⇄ normal» switch, run before a GUTS tunnel is opened.
+     *
+     * On a network whose international gateway is cut, the Google edge that carries every GUTS call
+     * is simply not there: the tunnel would hang, fail, and look broken while the phone is fine.
+     * The gate asks the edge — a handshake, not an Apps Script call, so no quota — and keeps the
+     * phone on the plain network when the answer is no.
+     */
+    private fun askTheNetworkFirst(context: Context, config: ProfileItem): Boolean {
+        if (!SettingsManager.isGutsAutoSwitch()) return false
+        val core = runCatching { GutsCore.of(config) }.getOrNull() ?: return false
+        NetworkGate.begin(context, core) { plan ->
+            when (plan.decision) {
+                TunnelDecision.START -> startServiceFromGate(context)
+                TunnelDecision.STAY_DIRECT -> {
+                    context.toast(R.string.guts_network_national)
+                    NetworkGate.watch(context, core, plan.recheckMs) { startServiceFromGate(context) }
+                }
+                TunnelDecision.WAIT_FOR_NETWORK -> context.toast(R.string.guts_network_none)
+            }
+        }
+        return true
+    }
+
     @Throws(Exception::class)
-    private fun startContextService(context: Context) {
+    private fun startContextService(context: Context, gated: Boolean = true) {
         // Note: isRunning check is removed here to avoid loading Native libraries in the UI process.
         // The check is performed in CoreServiceManager when the service starts in the daemon process.
 
@@ -99,6 +138,11 @@ object LauncherManager {
         }
 
         SettingsManager.refreshRuntimeSocksPort()
+
+        // A GUTS profile asks the network before it asks the door; see askTheNetworkFirst.
+        if (gated && config.configType == EConfigType.GUTS && askTheNetworkFirst(context, config)) {
+            return
+        }
 
         if (config.insecure == true && config.pinnedCA256.isNullOrEmpty()) {
             context.toastError(R.string.toast_allow_insecure_deprecated)

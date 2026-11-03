@@ -876,4 +876,10 @@
     <string name="dnstt_core_stopped">موتور DNSTT متوقف شد.</string>
     <string name="dnstt_port_taken">پورت محلی %1$d از قبل در استفاده است و DNSTT نمی‌تواند از آن استفاده کند.</string>
     <string name="dnstt_unsupported_combination">DNSTT فعلاً فقط به‌عنوان پروفایل اصلی مستقل کار می‌کند و داخل chain یا policy-group پشتیبانی نمی‌شود.</string>
+    <string name="title_guts_settings">GUTS</string>
+    <string name="title_pref_guts_auto_switch">روی شبکه‌ای که گوگل در دسترس نیست، تونل باز نشود</string>
+    <string name="summary_pref_guts_auto_switch">در «شبکه ملی»، لبه‌ی گوگلی که همه‌ی تماس‌های GUTS را می‌برد وجود ندارد. پیش از باز کردن تونل، یک دست‌دادن (بدون هیچ تماس Apps Script و بدون مصرف سهمیه) می‌پرسد که گوگل از این شبکه در دسترس است یا نه؛ اگر نه، گوشی روی شبکه‌ی عادی می‌ماند و هر دقیقه دوباره می‌پرسد، به‌جای اینکه یک اتصال تا ته شکست بخورد.</string>
+    <string name="guts_network_national">گوگل از این شبکه در دسترس نیست، پس تونل GUTS نمی‌تواند حتی یک بایت ببرد. گوشی روی شبکه‌ی عادی می‌ماند و هر دقیقه دوباره بررسی می‌شود.</string>
+    <string name="guts_network_none">همین حالا هیچ شبکه‌ای روی گوشی نیست؛ چیزی نیست که تونل GUTS رویش سوار شود.</string>
+    <string name="guts_network_coming_back">گوگل دوباره جواب می‌دهد: تونل GUTS باز می‌شود.</string>
 </resources>
