@@ -932,6 +932,8 @@
     <string name="guts_scan_none">No Google edge answered from this network: nothing was changed.</string>
     <string name="guts_scan_unchanged">unchanged</string>
     <string name="guts_scan_done">Edge %1$s, name %2$s. Save the profile to use them.</string>
+    <string name="guts_scan_routes_found">Working pairs on this network, fastest first — the first is filled in above:</string>
+    <string name="guts_scan_routes_none">What this network answered (nothing carried a fronted call):</string>
     <string name="guts_checking_network">Checking whether this network can reach Google…</string>
     <string name="guts_network_national">Google is unreachable from this network, so the GUTS tunnel cannot carry a byte. The phone stays on the plain network and checks again every minute.</string>
     <string name="guts_network_none">This phone has no network right now, so there is nothing for the GUTS tunnel to ride on.</string>

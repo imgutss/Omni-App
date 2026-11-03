@@ -40,6 +40,9 @@ class ServerGutsActivity : BaseServerActivity() {
 
         val scope = rememberCoroutineScope()
         var scanRunning by remember { mutableStateOf(false) }
+        // The evidence of the last scan, kept on screen: which pairs this network carried and how
+        // fast, or what it answered instead — so a failed scan says why, not just that it failed.
+        var scanEvidence by rememberSaveable { mutableStateOf("") }
 
         ServerEditorScaffold(
             title = stringResource(R.string.guts_title),
@@ -110,6 +113,16 @@ class ServerGutsActivity : BaseServerActivity() {
                             sni = uiState.gutsSni,
                         )
                         scanRunning = false
+                        scanEvidence = if (found.answered) {
+                            val working = found.routes.filter { it.fronted }.take(8)
+                                .joinToString("\n") { "${it.ip}  •  ${it.sni}  •  ${it.rttMs} ms" }
+                            getString(R.string.guts_scan_routes_found) + "\n" + working
+                        } else {
+                            val refused = found.routes.filter { !it.error.isNullOrEmpty() }
+                                .distinctBy { it.error }.take(5)
+                                .joinToString("\n") { "${it.ip}  •  ${it.sni} — ${it.error}" }
+                            if (refused.isEmpty()) "" else getString(R.string.guts_scan_routes_none) + "\n" + refused
+                        }
                         if (!found.answered) {
                             this@ServerGutsActivity.toast(R.string.guts_scan_none)
                             return@launch
@@ -136,6 +149,13 @@ class ServerGutsActivity : BaseServerActivity() {
                     text = stringResource(
                         if (scanRunning) R.string.guts_scan_running else R.string.guts_scan_edge
                     )
+                )
+            }
+            if (scanEvidence.isNotEmpty()) {
+                Text(
+                    text = scanEvidence,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 )
             }
             Text(

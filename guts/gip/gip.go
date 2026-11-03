@@ -721,7 +721,13 @@ func Probe(ctx context.Context, ip string, opts Options) Result {
 
 	// The request that matters is the one the door needs: Host of the door over a connection whose
 	// certificate name is Google. An edge that answers 421 does not front, and is useless here.
-	_ = conn.SetDeadline(time.Now().Add(opts.Timeout))
+	// The stage gets its full Timeout, shortened only by a caller's sooner deadline: a race that
+	// another pair already won should not leave this connection reading until the stage runs out.
+	readDeadline := time.Now().Add(opts.Timeout)
+	if deadline, ok := ctx.Deadline(); ok && deadline.Before(readDeadline) {
+		readDeadline = deadline
+	}
+	_ = conn.SetDeadline(readDeadline)
 	req := fmt.Sprintf("GET / HTTP/1.1\r\nHost: %s\r\nUser-Agent: guts-scan/0.2\r\nConnection: close\r\n\r\n", opts.FrontHost)
 	if _, werr := conn.Write([]byte(req)); werr != nil {
 		res.Err = trimErr(werr)
@@ -744,15 +750,26 @@ func Probe(ctx context.Context, ip string, opts Options) Result {
 	return res
 }
 
-// readStatus reads the status code of an HTTP/1 response without buffering its body.
+// readStatus reads the status code of an HTTP/1 response without buffering its body. The first
+// read is not trusted to carry the whole status line: on a throttled line the line can arrive a
+// few bytes at a time, and an edge that did answer must not be reported silent for that.
 func readStatus(conn net.Conn) int {
-	buf := make([]byte, 32)
-	n, err := conn.Read(buf)
-	if err != nil || n < 12 {
+	buf := make([]byte, 0, 64)
+	chunk := make([]byte, 32)
+	for len(buf) < 12 && len(buf) < 64 {
+		n, err := conn.Read(chunk)
+		if n > 0 {
+			buf = append(buf, chunk[:n]...)
+		}
+		if err != nil {
+			break
+		}
+	}
+	if len(buf) < 12 {
 		return 0
 	}
 	// "HTTP/1.1 404 Not Found"
-	line := string(buf[:n])
+	line := string(buf)
 	if len(line) < 12 || line[:4] != "HTTP" {
 		return 0
 	}
