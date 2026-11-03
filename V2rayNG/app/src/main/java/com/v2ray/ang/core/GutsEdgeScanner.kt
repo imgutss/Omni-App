@@ -1,11 +1,11 @@
 package com.v2ray.ang.core
 
 import android.content.Context
+import com.google.gson.JsonParser
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.util.LogUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
 import java.io.File
 import java.util.concurrent.TimeUnit
 
@@ -127,36 +127,31 @@ object GutsEdgeScanner {
     /**
      * Reads `gutsclient -scan-json`: an array of `{ip, rtt_ms, fronted, status, e}`.
      *
-     * The client also prints log lines on the same stream, so everything before the JSON array is
-     * skipped rather than failing the parse: a scan that worked is not made worthless by a log line.
+     * The client also prints log lines on the same stream, so everything around the JSON array is
+     * skipped rather than failing the parse: a scan that worked is not made worthless by a log
+     * line. Gson reads it because it is what this app already parses JSON with — and because
+     * `org.json` is a stub in JVM unit tests, where these parsers are the thing under test.
      */
-    internal fun parseEdges(answer: String): List<Edge> = runCatching {
-        val array = JSONArray(jsonPart(answer))
-        (0 until array.length()).mapNotNull { index ->
-            val item = array.optJSONObject(index) ?: return@mapNotNull null
-            val ip = item.optString("ip")
-            if (ip.isBlank()) return@mapNotNull null
-            Edge(
-                ip = ip,
-                rttMs = item.optLong("rtt_ms", 0L),
-                fronted = item.optBoolean("fronted", false),
-                error = item.optString("e").ifBlank { null },
-            )
-        }
-    }.getOrElse { emptyList() }
+    internal fun parseEdges(answer: String): List<Edge> =
+        rows(answer, "ip").map { Edge(it.name, it.rttMs, it.fronted, it.error) }
 
     /** Reads `gutsclient -scan-snis-json`: the same shape, with `sni` instead of `ip`. */
-    internal fun parseNames(answer: String): List<Name> = runCatching {
-        val array = JSONArray(jsonPart(answer))
-        (0 until array.length()).mapNotNull { index ->
-            val item = array.optJSONObject(index) ?: return@mapNotNull null
-            val sni = item.optString("sni")
-            if (sni.isBlank()) return@mapNotNull null
-            Name(
-                sni = sni,
-                rttMs = item.optLong("rtt_ms", 0L),
-                fronted = item.optBoolean("fronted", false),
-                error = item.optString("e").ifBlank { null },
+    internal fun parseNames(answer: String): List<Name> =
+        rows(answer, "sni").map { Name(it.name, it.rttMs, it.fronted, it.error) }
+
+    /** One element of either answer, seen through the field that names it. */
+    private data class Row(val name: String, val rttMs: Long, val fronted: Boolean, val error: String?)
+
+    private fun rows(answer: String, key: String): List<Row> = runCatching {
+        JsonParser.parseString(jsonPart(answer)).asJsonArray.mapNotNull { element ->
+            val item = runCatching { element.asJsonObject }.getOrNull() ?: return@mapNotNull null
+            val name = runCatching { item.get(key)?.asString }.getOrNull()?.trim().orEmpty()
+            if (name.isEmpty()) return@mapNotNull null
+            Row(
+                name = name,
+                rttMs = runCatching { item.get("rtt_ms")?.asLong }.getOrNull() ?: 0L,
+                fronted = runCatching { item.get("fronted")?.asBoolean }.getOrNull() ?: false,
+                error = runCatching { item.get("e")?.asString }.getOrNull()?.takeIf { it.isNotBlank() },
             )
         }
     }.getOrElse { emptyList() }

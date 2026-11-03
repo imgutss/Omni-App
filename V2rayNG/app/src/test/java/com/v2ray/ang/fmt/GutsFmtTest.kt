@@ -76,7 +76,11 @@ class GutsFmtTest {
         assertEquals(GutsCore.doorsOf(original), GutsCore.doorsOf(restored))
         assertEquals(original.gutsKey, restored.gutsKey)
         assertEquals(original.gutsGoogleIp, restored.gutsGoogleIp)
-        assertEquals(original.gutsSni, restored.gutsSni)
+        // The writer drops what the reader would fill back in: a default SNI is left out so the URI
+        // stays short, and GutsCore.of puts "www.google.com" back for an empty one. Compare what
+        // the client will be told, not the raw field.
+        assertNull(restored.gutsSni)
+        assertEquals(GutsCore.of(original).sni, GutsCore.of(restored).sni)
         assertEquals(original.remarks, restored.remarks)
         assertEquals(GutsCore.of(original).identity, GutsCore.of(restored).identity)
     }
