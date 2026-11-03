@@ -102,6 +102,9 @@ object LauncherManager {
     private fun askTheNetworkFirst(context: Context, config: ProfileItem): Boolean {
         if (!SettingsManager.isGutsAutoSwitch()) return false
         val core = runCatching { GutsCore.of(config) }.getOrNull() ?: return false
+        // The question costs a handshake, and on a network that drops it a few seconds: say so
+        // rather than leave the user staring at a button that seems to have done nothing.
+        context.toast(R.string.guts_checking_network)
         NetworkGate.begin(context, core) { plan ->
             when (plan.decision) {
                 TunnelDecision.START -> startServiceFromGate(context)

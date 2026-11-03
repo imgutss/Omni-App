@@ -885,6 +885,7 @@
     <string name="guts_scan_none">هیچ لبه‌ی گوگلی از این شبکه جواب نداد؛ چیزی تغییر نکرد.</string>
     <string name="guts_scan_unchanged">بدون تغییر</string>
     <string name="guts_scan_done">لبه %1$s، نام %2$s. برای استفاده، پروفایل را ذخیره کن.</string>
+    <string name="guts_checking_network">داریم می‌بینیم این شبکه به گوگل می‌رسد یا نه…</string>
     <string name="guts_network_national">گوگل از این شبکه در دسترس نیست، پس تونل GUTS نمی‌تواند حتی یک بایت ببرد. گوشی روی شبکه‌ی عادی می‌ماند و هر دقیقه دوباره بررسی می‌شود.</string>
     <string name="guts_network_none">همین حالا هیچ شبکه‌ای روی گوشی نیست؛ چیزی نیست که تونل GUTS رویش سوار شود.</string>
     <string name="guts_network_coming_back">گوگل دوباره جواب می‌دهد: تونل GUTS باز می‌شود.</string>
