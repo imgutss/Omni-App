@@ -57,6 +57,16 @@ object CoreConfigManager {
             gutsFailure(context, guid, gutsDependency)?.let { return it }
             if (takesExitNodeName(dependency, configContext.resolvedOutbounds)) return exitNodeNameFailure(context, guid)
             val v2rayConfig = buildUnifiedConfig(configContext)
+            // A tunnel that speaks TCP only must refuse QUIC, STUN and DoH itself, so applications
+            // fall back to TCP at once instead of waiting for a handshake that cannot arrive.
+            if (TunnelRouting.carriesTcpOnly(
+                    (gutsDependency as? GutsDependency.Single)?.core,
+                    (dnsttDependency as? DnsttDependency.Single)?.core,
+                    (masterDnsDependency as? MasterDnsDependency.Single)?.core,
+                )
+            ) {
+                TunnelRouting.blockUnsupportedTransports(v2rayConfig)
+            }
             if (lacksMainOutbound(v2rayConfig)) return mainOutboundFailure(context, guid)
             unbuiltRoutingTarget(v2rayConfig)?.let { return routingTargetFailure(context, guid, it) }
             unbuiltGroupFallback(v2rayConfig)?.let { return groupFallbackFailure(context, guid, it) }
