@@ -43,7 +43,7 @@ object GutsEdgeScanner {
     internal const val BUDGET_MS = 95_000L
 
     /** Per-stage budget inside one probe: connect, handshake and read each get this in full. */
-    internal const val CLIENT_TIMEOUT = "5s"
+    internal const val CLIENT_TIMEOUT = "6s"
 
     /** What the client may spend on the whole matrix. */
     internal const val CLIENT_BUDGET = "80s"

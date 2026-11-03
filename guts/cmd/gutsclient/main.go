@@ -31,6 +31,15 @@ import (
 	"guts/gip"
 	"guts/protect"
 	"guts/relay"
+
+	// On a phone this client runs as a GOOS=linux binary (libguts.so), so Go's x509 looks for
+	// the Linux bundle paths — which do not exist on Android — and never adds the Android
+	// cacerts directories it only appends for GOOS=android builds. The system pool loads
+	// empty and Google's genuine certificate reads "signed by unknown authority", so every
+	// probe and every fronted call fails before it starts. The embedded Mozilla roots are
+	// installed as the fallback for exactly that case: a real system pool is still preferred
+	// where one loads, and verification stays strict everywhere.
+	_ "golang.org/x/crypto/x509roots/fallback"
 )
 
 type stringList []string
@@ -96,7 +105,7 @@ func main() {
 	asURI := flag.Bool("export", false, "print the setup as a guts:// URI")
 	importURI := flag.String("import", "", "start from a guts:// URI")
 	pick := flag.Bool("pick", false, "ping every door, print the latencies, then continue")
-	timeout := flag.Duration("timeout", 4*time.Second, "per-stage timeout of a scan probe: the connect, the handshake and the fronted read each get it in full")
+	timeout := flag.Duration("timeout", 6*time.Second, "per-stage timeout of a scan probe: the connect, the handshake and the fronted read each get it in full")
 	doorBudget := flag.Int("door-budget", envInt("GUTS_DOOR_BUDGET", 0), "calls one door may take per day (0 = no limit); spread over the doors so several Apps Script accounts add up")
 	quotaState := flag.String("quota-state", os.Getenv("GUTS_QUOTA_STATE"), "file that remembers today's calls per door across restarts (empty = in memory only)")
 	mux := flag.Bool("mux", true, "carry every connection as a stream of one session (one door call per interval)")

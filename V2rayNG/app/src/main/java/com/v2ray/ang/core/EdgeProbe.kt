@@ -24,7 +24,7 @@ import kotlin.concurrent.thread
  */
 object EdgeProbe {
     /** A probe is bounded by itself; this is only the outer guarantee that it ends. */
-    internal const val BUDGET_MS = 16_000L
+    internal const val BUDGET_MS = 25_000L
 
     /**
      * Passed to the client so it gives up before the outer budget does. Twelve seconds because
@@ -32,7 +32,7 @@ object EdgeProbe {
      * healthy line answers in a second, and a line whose one working name is slow is still a
      * working line — five seconds used to call it blocked.
      */
-    internal const val CLIENT_BUDGET = "12s"
+    internal const val CLIENT_BUDGET = "20s"
 
     /** What resolving this line's own edge addresses may cost the probe. */
     private const val EDGE_RESOLVE_BUDGET_MS = 2_500L
