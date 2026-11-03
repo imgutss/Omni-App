@@ -33,6 +33,13 @@ func (r *Rotator) Describe() string {
 	return "rotator[" + join(names, ", ") + "]"
 }
 
+// order is a copy of the current door order, for callers that need to reorder a set of their own.
+func (r *Rotator) order() []Door {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return append([]Door(nil), r.doors...)
+}
+
 // Call tries the current order and moves a failing door to the back.
 func (r *Rotator) Call(ctx context.Context, req proto.Request) (proto.Response, error) {
 	r.mu.Lock()
