@@ -1,13 +1,28 @@
 /**
  * guts — the door (Google Apps Script)
+ * ═══════════════════════════════════════════════════════════════════════════
+ * این فایل را همین‌طور کپی کن. فقط دو خطِ مشخص‌شده با «✏️ ویرایش کن» را عوض کن:
  *
- * Deploy:
- *   1. script.google.com → New project → paste this whole file
- *   2. Set AUTH_KEY to a long random secret, and EXIT_URL to your exit node's /g URL
- *      (the URL the GitHub Actions workflow prints, or your own server)
- *   3. Deploy → New deployment → Web app
- *        Execute as: Me        Who has access: Anyone
- *   4. Copy the /exec URL: that is the door your phone dials (with SNI of a Google host)
+ *   AUTH_KEY  ← یک رمز طولانی و تصادفی؛ عینِ همین رمز باید در خروجی (Exit)
+ *               و در اپ گوشی (فیلد Shared key) هم باشد. هر سه جا یکی.
+ *   EXIT_URL  ← آدرس خروجی با پسوند /g، مثلاً
+ *               https://xxxx-xxxx.trycloudflare.com/g
+ *               این آدرس را اجرای ورک‌فلوی «guts exit» در گیت‌هاب چاپ می‌کند
+ *               (یا آدرس سرور خودت اگر خروجی را روی VPS بالا آوردی).
+ *
+ * مراحل (قدم‌به‌قدم کامل در guts/SETUP.fa.md):
+ *   ۱) script.google.com ← ورود با اکانت گوگل ← ‏New project
+ *   ۲) کد پیش‌فرض داخل ویرایشگر را پاک کن و کل این فایل را بچسبان
+ *   ۳) دو خط زیر را ویرایش کن و ‏Save بزن (Ctrl+S)
+ *   ۴) ‏Deploy ← ‏New deployment ← چرخ‌دنده ⚙ ← ‏Web app
+ *        ‏Execute as: ‏Me        ‏Who has access: ‏Anyone
+ *   ۵) ‏Deploy ← اگر اجازه خواست ‏Authorize access را تأیید کن
+ *   ۶) آدرس ‏/exec را کپی کن؛ این می‌رود در اپ گوشی، فیلد Doors
+ *
+ * دفعه‌های بعد که فقط EXIT_URL عوض شد (هر اجرای تازه‌ی خروجی آدرس تازه می‌دهد):
+ *   خط را ویرایش کن ← Deploy ← Manage deployments ← مداد ✏️ ←
+ *   Version: New version ← Deploy  — آدرس ‎/exec ثابت می‌ماند.
+ * ═══════════════════════════════════════════════════════════════════════════
  *
  * The door is deliberately dumb: it checks the shared key and hands the body to the exit node,
  * returning the answer unchanged. It never parses destinations, never fetches a target site, and
@@ -15,11 +30,23 @@
  * phone reach Google.
  */
 
+// ✏️ ویرایش کن (۱ از ۲): همان رمزی که در خروجی و در اپ می‌گذاری. طولانی و تصادفی باشد.
 const AUTH_KEY = 'CHANGE_ME_TO_A_LONG_RANDOM_SECRET';
+
+// ✏️ ویرایش کن (۲ از ۲): آدرس خروجی با /g در انتها.
 const EXIT_URL = 'https://your-exit-node.example/g';
 
 function doPost(e) {
   try {
+    // A door that still carries the placeholders can only ever answer errors; say so plainly
+    // instead of letting the phone debug a failed fetch to a made-up host.
+    if (AUTH_KEY.indexOf('CHANGE_ME') === 0) {
+      return out({ ok: false, e: 'door: AUTH_KEY is still the placeholder — edit Code.gs and redeploy a new version' });
+    }
+    if (EXIT_URL.indexOf('your-exit-node.example') !== -1) {
+      return out({ ok: false, e: 'door: EXIT_URL is still the placeholder — run the exit node, paste its /g URL, and redeploy a new version' });
+    }
+
     var body = (e && e.postData && e.postData.contents) || '';
     var req;
     try {
