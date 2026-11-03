@@ -24,6 +24,7 @@ import (
 	"sync"
 	"time"
 
+	"guts/protect"
 	"guts/proto"
 )
 
@@ -51,8 +52,15 @@ func NewDirect(endpoint, key string) *Direct {
 		url: endpoint,
 		key: key,
 		http: &http.Client{
-			Timeout:   60 * time.Second,
-			Transport: &http.Transport{ForceAttemptHTTP2: false, MaxIdleConnsPerHost: 8, IdleConnTimeout: 90 * time.Second},
+			Timeout: 60 * time.Second,
+			Transport: &http.Transport{
+				ForceAttemptHTTP2:   false,
+				MaxIdleConnsPerHost: 8,
+				IdleConnTimeout:     90 * time.Second,
+				// On a phone this dial protects the socket from our own VPN before it connects;
+				// on a desktop it is an ordinary dial. See guts/protect.
+				DialContext: protect.Dial,
+			},
 		},
 	}
 }
@@ -77,8 +85,7 @@ func NewFronted(doorURL *url.URL, edgeAddr, sni, key string) (*Fronted, error) {
 		MaxIdleConnsPerHost: 8,
 		IdleConnTimeout:     90 * time.Second,
 		DialContext: func(ctx context.Context, network, _ string) (net.Conn, error) {
-			d := &net.Dialer{Timeout: 12 * time.Second, KeepAlive: 30 * time.Second}
-			return d.DialContext(ctx, "tcp", addr)
+			return protect.Dial(ctx, network, addr)
 		},
 		TLSClientConfig: &tls.Config{
 			ServerName: sni,

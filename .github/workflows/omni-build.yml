@@ -12,6 +12,7 @@ on:
       - omni
       - omni-masterdns
       - omni-dnstt
+      - guts
 
 permissions:
   contents: read
@@ -217,6 +218,33 @@ jobs:
         path: ${{ github.workspace }}/libs-dnstt
         key: dnstt-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-dnstt.sh', 'third_party/dnstt/**') }}
 
+    # GUTS is this fork's own client, built from guts/ in this repository: a Google-fronted relay
+    # for a network where only Google is reachable. The app spawns it exactly as it spawns the DNS
+    # tunnel engines, and Xray dials the loopback SOCKS listener it opens.
+    - name: Restore cached GUTS client
+      id: cache-guts-restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ github.workspace }}/libs-guts
+        key: guts-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-guts.sh', 'guts/**') }}
+
+    - name: Build GUTS client
+      if: steps.cache-guts-restore.outputs.cache-hit != 'true'
+      run: bash compile-guts.sh
+
+    - name: Test GUTS packages
+      run: |
+        cd guts
+        GOTOOLCHAIN=local CGO_ENABLED=0 go vet ./...
+        GOTOOLCHAIN=local CGO_ENABLED=0 go test ./... -count=1
+
+    - name: Save GUTS client
+      if: steps.cache-guts-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ github.workspace }}/libs-guts
+        key: guts-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-guts.sh', 'guts/**') }}
+
     - name: Restore cached NoizDNS client
       id: cache-noizdns-restore
       uses: actions/cache/restore@v6
@@ -321,6 +349,7 @@ jobs:
           audit_elf "libs-soar/$abi/libsoar.so" EXEC "$machine"
           audit_elf "libs-vaydns/$abi/libvaydns.so" EXEC "$machine"
           audit_elf "libs-slipstream/$abi/libslipstream.so" DYN "$machine"
+          audit_elf "libs-guts/$abi/libguts.so" EXEC "$machine"
         done
 
     - name: Save Slipstream client
@@ -385,6 +414,7 @@ jobs:
         cp -r ${{ github.workspace }}/libs-noizdns/. ${{ github.workspace }}/V2rayNG/app/libs/
         cp -r ${{ github.workspace }}/libs-vaydns/. ${{ github.workspace }}/V2rayNG/app/libs/
         cp -r ${{ github.workspace }}/libs-slipstream/. ${{ github.workspace }}/V2rayNG/app/libs/
+        cp -r ${{ github.workspace }}/libs-guts/. ${{ github.workspace }}/V2rayNG/app/libs/
 
     # Psiphon's client starts with the newest server list the build could fetch, so a fresh install has
     # servers before it can reach the list on its own; see fetch-psiphon-servers.sh.

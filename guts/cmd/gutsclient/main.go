@@ -28,6 +28,7 @@ import (
 
 	"guts/config"
 	"guts/gip"
+	"guts/protect"
 	"guts/relay"
 )
 
@@ -62,7 +63,21 @@ func main() {
 	importURI := flag.String("import", "", "start from a guts:// URI")
 	pick := flag.Bool("pick", false, "ping every door, print the latencies, then continue")
 	timeout := flag.Duration("timeout", 4*time.Second, "per-address timeout of a scan")
+	controlSocket := flag.String(
+		"fd-control-unix-socket",
+		os.Getenv("OMNI_FD_CONTROL_UNIX_SOCKET"),
+		"Android: abstract unix socket that protects every dialed socket from our own VPN",
+	)
 	flag.Parse()
+
+	// Set before the first dial, so that a scan or a probe is protected too: inside the VPN an
+	// unprotected connection to a Google edge address would be routed back into our own tunnel.
+	if err := protect.Use(*controlSocket); err != nil {
+		log.Fatalf("gutsclient: %v", err)
+	}
+	if address := protect.Address(); address != "" {
+		log.Printf("gutsclient: protecting sockets through %s", address)
+	}
 
 	if *importURI != "" {
 		cfg, err := config.ParseURI(*importURI)

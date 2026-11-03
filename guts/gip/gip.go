@@ -18,6 +18,8 @@ import (
 	"sort"
 	"sync"
 	"time"
+
+	"guts/protect"
 )
 
 // Pool is the published frontend range sampled at build time. It is only a starting point: the
@@ -162,7 +164,6 @@ func Probe(ctx context.Context, ip string, opts Options) Result {
 	reqCtx, cancel := context.WithTimeout(ctx, opts.Timeout)
 	defer cancel()
 
-	dialer := &net.Dialer{Timeout: opts.Timeout}
 	tlsCfg := &tls.Config{
 		ServerName:         opts.SNI,
 		MinVersion:         tls.VersionTLS12,
@@ -170,7 +171,7 @@ func Probe(ctx context.Context, ip string, opts Options) Result {
 		RootCAs:            opts.RootCAs,
 	}
 	started := time.Now()
-	rawConn, err := dialer.DialContext(reqCtx, "tcp", addr)
+	rawConn, err := protect.Dial(reqCtx, "tcp", addr)
 	if err != nil {
 		res.Err = trimErr(err)
 		return res
@@ -268,8 +269,7 @@ func Client(ip, sni, frontHost string, timeout time.Duration) (*http.Client, err
 		Transport: &http.Transport{
 			ForceAttemptHTTP2: false,
 			DialContext: func(ctx context.Context, network, _ string) (net.Conn, error) {
-				d := &net.Dialer{Timeout: timeout}
-				return d.DialContext(ctx, "tcp", addr)
+				return protect.Dial(ctx, network, addr)
 			},
 			TLSClientConfig: &tls.Config{ServerName: sni, MinVersion: tls.VersionTLS12},
 		},
