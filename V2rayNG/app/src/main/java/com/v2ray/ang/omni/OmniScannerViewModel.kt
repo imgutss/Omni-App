@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.v2ray.ang.core.CoreConfigManager
 import com.v2ray.ang.core.DnsttDelayTester
+import com.v2ray.ang.core.GutsDelayTester
 import com.v2ray.ang.core.MasterDnsDelayTester
 import com.v2ray.ang.dto.RealPingEvent
 import com.v2ray.ang.omni.lab.OmniTransferLab
@@ -335,12 +336,16 @@ class OmniScannerViewModel(application: Application) : AndroidViewModel(applicat
                 val lab = OmniTransferLab(OmniNativeCoreRuntime(getApplication()))
                 val masterDns = config.masterDnsCore
                 val dnstt = config.dnsttCore
+                val guts = config.gutsCore
                 val connection = when {
                     masterDns != null -> MasterDnsDelayTester.withCore(
                         getApplication(), masterDns, MasterDnsDelayTester.STARTUP_BUDGET_MS, guid,
                     ) { lab.connectivity(config.content, downloadUrl) }
                     dnstt != null -> DnsttDelayTester.withCore(
                         getApplication(), dnstt, DnsttDelayTester.STARTUP_BUDGET_MS, guid,
+                    ) { lab.connectivity(config.content, downloadUrl) }
+                    guts != null -> GutsDelayTester.withCore(
+                        getApplication(), guts, GutsDelayTester.STARTUP_BUDGET_MS, guid,
                     ) { lab.connectivity(config.content, downloadUrl) }
                     else -> lab.connectivity(config.content, downloadUrl)
                 }
@@ -358,6 +363,10 @@ class OmniScannerViewModel(application: Application) : AndroidViewModel(applicat
                         getApplication(), dnstt, DnsttDelayTester.STARTUP_BUDGET_MS, guid,
                     ) { lab.measure(config.content, downloadUrl, uploadUrl) }
                         ?: OmniTransferResult(false, error = "DNSTT core did not start")
+                    guts != null -> GutsDelayTester.withCore(
+                        getApplication(), guts, GutsDelayTester.STARTUP_BUDGET_MS, guid,
+                    ) { lab.measure(config.content, downloadUrl, uploadUrl) }
+                        ?: OmniTransferResult(false, error = "GUTS client did not start")
                     else -> lab.measure(config.content, downloadUrl, uploadUrl)
                 }
                 mutableState.update { it.copy(transfer = transfer, message = if (transfer.success) null else OmniScannerMessage.SPEED_FAILED) }

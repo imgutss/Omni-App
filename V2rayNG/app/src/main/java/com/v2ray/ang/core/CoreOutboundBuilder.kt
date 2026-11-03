@@ -34,6 +34,7 @@ object CoreOutboundBuilder {
             EConfigType.AETHER -> toOutboundAether(profileItem)
             EConfigType.MASTERDNS -> toOutboundMasterDns(profileItem)
             EConfigType.DNSTT -> toOutboundDnstt(profileItem)
+            EConfigType.GUTS -> toOutboundGuts(profileItem)
             else -> null
         }
 
@@ -41,7 +42,7 @@ object CoreOutboundBuilder {
         // PattNG: an Aether profile's outbound only reaches its core on the loopback address; its dialMode is
         // that of the exit-node its traffic leaves Xray by, see toOutboundAetherExit.
         if (profileItem.configType != EConfigType.AETHER && profileItem.configType != EConfigType.MASTERDNS &&
-            profileItem.configType != EConfigType.DNSTT
+            profileItem.configType != EConfigType.DNSTT && profileItem.configType != EConfigType.GUTS
         ) {
             applyDialMode(outbound, profileItem)
         }
@@ -327,6 +328,21 @@ object CoreOutboundBuilder {
         outboundBean?.settings?.let { settings ->
             settings.address = AppConfig.LOOPBACK
             settings.port = DnsttCoreManager.coreOf(profileItem).port
+        }
+        return outboundBean
+    }
+
+    /**
+     * A SOCKS outbound to the guts client's loopback listener. Everything the client needs — the
+     * doors, the key, the Google edge — stays in the profile and in the process this app spawns;
+     * Xray only dials the port, so a chain, a route rule, or a policy group can treat a GUTS
+     * profile like any other outbound.
+     */
+    internal fun toOutboundGuts(profileItem: ProfileItem): OutboundBean? {
+        val outboundBean = createInitOutbound(EConfigType.SOCKS)
+        outboundBean?.settings?.let { settings ->
+            settings.address = AppConfig.LOOPBACK
+            settings.port = GutsCore.of(profileItem).port
         }
         return outboundBean
     }

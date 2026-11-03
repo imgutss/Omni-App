@@ -6,6 +6,7 @@ import com.v2ray.ang.core.CoreConfigContextBuilder
 import com.v2ray.ang.core.CoreConfigManager
 import com.v2ray.ang.core.CoreNativeManager
 import com.v2ray.ang.core.DnsttDelayTester
+import com.v2ray.ang.core.GutsDelayTester
 import com.v2ray.ang.core.MasterDnsDelayTester
 import com.v2ray.ang.dto.RealPingEvent
 import com.v2ray.ang.enums.EConfigType
@@ -187,6 +188,17 @@ class RealPingWorkerService(
             // The Xray probe runs beside the real DNSTT process and its remote SOCKS5 endpoint.
             return summarizeHttp(
                 DnsttDelayTester.measureVia(context, guid, dnstt, samples) { _, _ ->
+                    RealPingExecutionLimiter.run(config.configType) {
+                        CoreNativeManager.measureOutboundDelay(configResult.content, SettingsManager.getDelayTestUrl(), batch)
+                    }
+                }
+            )
+        }
+        val guts = configResult.gutsCore
+        if (guts != null) {
+            // The Xray probe runs beside the real GUTS client and the door it posts to.
+            return summarizeHttp(
+                GutsDelayTester.measureVia(context, guid, guts, samples) { _, _ ->
                     RealPingExecutionLimiter.run(config.configType) {
                         CoreNativeManager.measureOutboundDelay(configResult.content, SettingsManager.getDelayTestUrl(), batch)
                     }

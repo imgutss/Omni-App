@@ -121,6 +121,10 @@
             android:exported="false"
             android:windowSoftInputMode="stateUnchanged|adjustResize" />
         <activity
+            android:name=".ui.server.ServerGutsActivity"
+            android:exported="false"
+            android:windowSoftInputMode="stateUnchanged|adjustResize" />
+        <activity
             android:name=".ui.server.ServerAetherKeysActivity"
             android:exported="false"
             android:windowSoftInputMode="stateUnchanged|adjustResize" />
@@ -254,6 +258,7 @@
                 <data android:scheme="cottendns" />
                 <data android:scheme="soar" />
                 <data android:scheme="omni" />
+                <data android:scheme="guts" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />

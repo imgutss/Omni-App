@@ -53,6 +53,8 @@ object CoreConfigManager {
             masterDnsFailure(context, guid, masterDnsDependency)?.let { return it }
             val dnsttDependency = DnsttDependency.of(configContext.resolvedOutbounds)
             dnsttFailure(context, guid, dnsttDependency)?.let { return it }
+            val gutsDependency = GutsDependency.of(configContext.resolvedOutbounds)
+            gutsFailure(context, guid, gutsDependency)?.let { return it }
             if (takesExitNodeName(dependency, configContext.resolvedOutbounds)) return exitNodeNameFailure(context, guid)
             val v2rayConfig = buildUnifiedConfig(configContext)
             if (lacksMainOutbound(v2rayConfig)) return mainOutboundFailure(context, guid)
@@ -73,7 +75,8 @@ object CoreConfigManager {
             }
             val masterDnsCore = (masterDnsDependency as? MasterDnsDependency.Single)?.core
             val dnsttCore = (dnsttDependency as? DnsttDependency.Single)?.core
-            return toConfigResult(context, configContext, v2rayConfig, core, masterDnsCore, dnsttCore)
+            val gutsCore = (gutsDependency as? GutsDependency.Single)?.core
+            return toConfigResult(context, configContext, v2rayConfig, core, masterDnsCore, dnsttCore, gutsCore)
         } catch (e: Exception) {
             LogUtil.e(AppConfig.TAG, "Failed to get V2ray config", e)
             return ConfigResult(
@@ -121,6 +124,8 @@ object CoreConfigManager {
             masterDnsFailure(context, guid, masterDnsDependency)?.let { return it }
             val dnsttDependency = DnsttDependency.of(configContext.resolvedOutbounds.take(1))
             dnsttFailure(context, guid, dnsttDependency)?.let { return it }
+            val gutsDependency = GutsDependency.of(configContext.resolvedOutbounds.take(1))
+            gutsFailure(context, guid, gutsDependency)?.let { return it }
             speedtestCoresRefusal(configContext.resolvedOutbounds)?.let { refusal -> aetherFailure(context, guid, refusal)?.let { return it } }
             if (takesExitNodeName(dependency, configContext.resolvedOutbounds)) return exitNodeNameFailure(context, guid)
             val v2rayConfig = buildUnifiedConfig(configContext)
@@ -136,7 +141,8 @@ object CoreConfigManager {
             if (core != null) exitNodeProblem(core, v2rayConfig.outbounds)?.let { return exitNodeFailure(context, guid, core, it) }
             val masterDnsCore = (masterDnsDependency as? MasterDnsDependency.Single)?.core
             val dnsttCore = (dnsttDependency as? DnsttDependency.Single)?.core
-            return toConfigResult(context, configContext, v2rayConfig, core, masterDnsCore, dnsttCore)
+            val gutsCore = (gutsDependency as? GutsDependency.Single)?.core
+            return toConfigResult(context, configContext, v2rayConfig, core, masterDnsCore, dnsttCore, gutsCore)
         } catch (e: Exception) {
             LogUtil.e(AppConfig.TAG, "Failed to get V2ray config for speedtest", e)
             return ConfigResult(
@@ -633,6 +639,7 @@ object CoreConfigManager {
         core: AetherCore?,
         masterDnsCore: MasterDnsCore? = null,
         dnsttCore: DnsttCore? = null,
+        gutsCore: GutsCore? = null,
     ): ConfigResult {
         v2rayConfig.aetherCommand = core?.command
         // PattNG: the ECH outbounds of the profiles get their tags and go after every other outbound, as written
@@ -657,6 +664,7 @@ object CoreConfigManager {
             aetherCore = core,
             masterDnsCore = masterDnsCore,
             dnsttCore = dnsttCore,
+            gutsCore = gutsCore,
         )
     }
 
@@ -960,6 +968,24 @@ object CoreConfigManager {
             }
         }
         LogUtil.w(AppConfig.TAG, "DNSTT cannot serve this configuration: $dependency, guid=$guid")
+        return ConfigResult(status = false, guid = guid, errorMessage = message, localizedError = true)
+    }
+
+    /** A GUTS profile whose client cannot serve this placement, or whose doors and key are not usable. */
+    private fun gutsFailure(context: Context, guid: String, dependency: GutsDependency): ConfigResult? {
+        val message = when (dependency) {
+            GutsDependency.None, is GutsDependency.Single -> return null
+            GutsDependency.Unsupported -> context.getString(R.string.guts_unsupported_combination)
+            is GutsDependency.Invalid -> when (dependency.problem) {
+                GutsCore.Problem.DOOR_MISSING -> context.getString(R.string.guts_error_door_missing)
+                GutsCore.Problem.DOOR_INVALID -> context.getString(R.string.guts_error_door)
+                GutsCore.Problem.KEY_MISSING -> context.getString(R.string.guts_error_key_missing)
+                GutsCore.Problem.KEY_INVALID -> context.getString(R.string.guts_error_key)
+                GutsCore.Problem.EDGE_INVALID -> context.getString(R.string.guts_error_edge)
+                GutsCore.Problem.SNI_INVALID -> context.getString(R.string.guts_error_sni)
+            }
+        }
+        LogUtil.w(AppConfig.TAG, "GUTS cannot serve this configuration: $dependency, guid=$guid")
         return ConfigResult(status = false, guid = guid, errorMessage = message, localizedError = true)
     }
 

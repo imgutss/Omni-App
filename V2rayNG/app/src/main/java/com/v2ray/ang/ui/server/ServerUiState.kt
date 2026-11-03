@@ -15,6 +15,7 @@ import com.v2ray.ang.AppConfig.WIREGUARD_LOCAL_REMOTE_DNS
 import com.v2ray.ang.core.AetherCore
 import com.v2ray.ang.core.AetherCoreManager
 import com.v2ray.ang.core.CoreOutboundBuilder
+import com.v2ray.ang.core.GutsCore
 import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.enums.AetherFingerprint
 import com.v2ray.ang.enums.AetherIpVersion
@@ -32,6 +33,7 @@ import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.enums.NetworkType
 import com.v2ray.ang.extension.nullIfBlank
 import com.v2ray.ang.fmt.DnsttFmt
+import com.v2ray.ang.fmt.GutsFmt
 import com.v2ray.ang.fmt.MasterDnsFmt
 import com.v2ray.ang.util.JsonUtil
 
@@ -121,6 +123,10 @@ class ServerUiState(
     masterDnsConfig: String = "",
     masterDnsResolvers: String = "8.8.8.8",
     masterDnsEngine: String = MasterDnsFmt.ENGINE_MASTERDNS,
+    gutsDoors: String = "",
+    gutsKey: String = "",
+    gutsGoogleIp: String = "",
+    gutsSni: String = GutsCore.DEFAULT_SNI,
     dnsttTransport: String = "doh",
     dnsttResolver: String = "https://cloudflare-dns.com/dns-query",
     dnsttResolverAuthorities: String = "",
@@ -257,6 +263,10 @@ class ServerUiState(
     var masterDnsConfig by mutableStateOf(masterDnsConfig)
     var masterDnsResolvers by mutableStateOf(masterDnsResolvers)
     var masterDnsEngine by mutableStateOf(masterDnsEngine)
+    var gutsDoors by mutableStateOf(gutsDoors)
+    var gutsKey by mutableStateOf(gutsKey)
+    var gutsGoogleIp by mutableStateOf(gutsGoogleIp)
+    var gutsSni by mutableStateOf(gutsSni)
     var dnsttTransport by mutableStateOf(dnsttTransport)
     var dnsttResolver by mutableStateOf(dnsttResolver)
     var dnsttResolverAuthorities by mutableStateOf(dnsttResolverAuthorities)
@@ -328,6 +338,10 @@ class ServerUiState(
     var isPasswordError by mutableStateOf(false)
     var isMasterDnsConfigError by mutableStateOf(false)
     var isMasterDnsResolversError by mutableStateOf(false)
+    var isGutsDoorsError by mutableStateOf(false)
+    var isGutsKeyError by mutableStateOf(false)
+    var isGutsGoogleIpError by mutableStateOf(false)
+    var isGutsSniError by mutableStateOf(false)
     var isDnsttResolverError by mutableStateOf(false)
     var isDnsttDomainError by mutableStateOf(false)
     var isDnsttPublicKeyError by mutableStateOf(false)
@@ -349,6 +363,7 @@ class ServerUiState(
         val isHysteria2 = configType == EConfigType.HYSTERIA2
         val isAether = configType == EConfigType.AETHER
         val isMasterDns = configType == EConfigType.MASTERDNS
+        val isGuts = configType == EConfigType.GUTS
         val isDnstt = configType == EConfigType.DNSTT
         val isVaydns = isDnstt && dnsttEngine == DnsttFmt.ENGINE_VAYDNS
         val isSlipstream = isDnstt && dnsttEngine == DnsttFmt.ENGINE_SLIPSTREAM
@@ -358,8 +373,9 @@ class ServerUiState(
         val profile = initialConfig.copy(
             configType = configType,
             remarks = remarks,
-            server = address,
-            serverPort = port,
+            // A GUTS profile has no address of its own: the door's host is what its list entry shows.
+            server = if (isGuts) GutsFmt.hostOf(GutsFmt.firstDoor(gutsDoors)).orEmpty() else address,
+            serverPort = if (isGuts) DEFAULT_PORT.toString() else port,
             password = password,
             method = when {
                 isVmess || isShadowsocks -> method
@@ -453,6 +469,10 @@ class ServerUiState(
             masterDnsConfig = if (isMasterDns) masterDnsConfig.trim() else null,
             masterDnsResolvers = if (isMasterDns) masterDnsResolvers.trim() else null,
             masterDnsEngine = if (isMasterDns) masterDnsEngine else null,
+            gutsDoors = if (isGuts) GutsCore.doorsIn(gutsDoors).joinToString("\n") else null,
+            gutsKey = if (isGuts) gutsKey.trim().nullIfBlank() else null,
+            gutsGoogleIp = if (isGuts) gutsGoogleIp.trim().nullIfBlank() else null,
+            gutsSni = if (isGuts) gutsSni.trim().nullIfBlank() else null,
             dnsttTransport = if (isDnstt) dnsttTransport else null,
             dnsttResolver = if (isDnstt) dnsttResolver.trim() else null,
             dnsttResolverAuthorities = if (isDnstt) dnsttResolverAuthorities.nullIfBlank() else null,
@@ -598,6 +618,10 @@ class ServerUiState(
                 masterDnsConfig = initialConfig.masterDnsConfig ?: "",
                 masterDnsResolvers = initialConfig.masterDnsResolvers ?: "8.8.8.8",
                 masterDnsEngine = initialConfig.masterDnsEngine ?: MasterDnsFmt.ENGINE_MASTERDNS,
+                gutsDoors = initialConfig.gutsDoors ?: "",
+                gutsKey = initialConfig.gutsKey ?: "",
+                gutsGoogleIp = initialConfig.gutsGoogleIp ?: "",
+                gutsSni = initialConfig.gutsSni ?: GutsCore.DEFAULT_SNI,
                 dnsttTransport = initialConfig.dnsttTransport ?: "doh",
                 dnsttResolver = initialConfig.dnsttResolver ?: "https://cloudflare-dns.com/dns-query",
                 dnsttResolverAuthorities = initialConfig.dnsttResolverAuthorities ?: "",

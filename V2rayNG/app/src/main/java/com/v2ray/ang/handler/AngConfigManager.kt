@@ -18,6 +18,7 @@ import com.v2ray.ang.fmt.AetherFmt
 import com.v2ray.ang.fmt.CustomFmt
 import com.v2ray.ang.fmt.DnsttFmt
 import com.v2ray.ang.fmt.Hysteria2Fmt
+import com.v2ray.ang.fmt.GutsFmt
 import com.v2ray.ang.fmt.MasterDnsFmt
 import com.v2ray.ang.fmt.ShadowsocksFmt
 import com.v2ray.ang.fmt.SlipNetFmt
@@ -61,6 +62,7 @@ object AngConfigManager {
             AppConfig.SOAR to DnsttFmt::parse,
             EConfigType.DNSTT.protocolScheme to DnsttFmt::parse,
             AppConfig.SLIPNET to SlipNetFmt::parse,
+            EConfigType.GUTS.protocolScheme to GutsFmt::parse,
         )
     }
 
@@ -184,6 +186,7 @@ object AngConfigManager {
                 EConfigType.AETHER -> AetherFmt.toUri(config)
                 EConfigType.MASTERDNS -> MasterDnsFmt.toUri(config)
                 EConfigType.DNSTT -> DnsttFmt.toUri(config)
+                EConfigType.GUTS -> GutsFmt.toUri(config).orEmpty()
                 else -> {}
             }
         } catch (e: Exception) {
@@ -684,7 +687,9 @@ object AngConfigManager {
         val server = profile.server
         val port = profile.serverPort
         if (server.isNullOrBlank() && port.isNullOrBlank()) return ""
-        if (profile.configType == EConfigType.MASTERDNS || profile.configType == EConfigType.DNSTT) {
+        if (profile.configType == EConfigType.MASTERDNS || profile.configType == EConfigType.DNSTT ||
+            profile.configType == EConfigType.GUTS
+        ) {
             return server?.split('.')?.dropLast(1)?.joinToString(".", postfix = ".***").orEmpty()
         }
 

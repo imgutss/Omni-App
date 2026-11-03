@@ -2,6 +2,7 @@ package com.v2ray.ang.dto
 
 import com.v2ray.ang.core.AetherCore
 import com.v2ray.ang.core.DnsttCore
+import com.v2ray.ang.core.GutsCore
 import com.v2ray.ang.core.MasterDnsCore
 
 data class ConfigResult(
@@ -17,4 +18,6 @@ data class ConfigResult(
     var masterDnsCore: MasterDnsCore? = null,
     /** The official DNSTT process the loopback SOCKS outbound depends on. */
     var dnsttCore: DnsttCore? = null,
+    /** The guts client process the loopback SOCKS outbound depends on. */
+    var gutsCore: GutsCore? = null,
 )

@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.v2ray.ang.core.CoreConfigManager
 import com.v2ray.ang.core.DnsttDelayTester
+import com.v2ray.ang.core.GutsDelayTester
 import com.v2ray.ang.core.MasterDnsDelayTester
 import com.v2ray.ang.dto.RealPingEvent
 import com.v2ray.ang.omni.lab.OmniTransferLab
@@ -144,6 +145,7 @@ class OmniSpeedLabViewModel(application: Application) : AndroidViewModel(applica
                             val lab = OmniTransferLab(runtime)
                             val masterDns = config.masterDnsCore
                             val dnstt = config.dnsttCore
+                            val guts = config.gutsCore
                             var coreUnavailable = false
                             suspend fun measure(url: String): OmniTransferResult {
                                 val operation: suspend () -> OmniTransferResult = {
@@ -156,6 +158,9 @@ class OmniSpeedLabViewModel(application: Application) : AndroidViewModel(applica
                                     dnstt != null -> DnsttDelayTester.withCore(
                                         getApplication(), dnstt, DnsttDelayTester.STARTUP_BUDGET_MS, profile.guid, operation,
                                     ) ?: OmniTransferResult(false, error = "DNSTT core did not start").also { coreUnavailable = true }
+                                    guts != null -> GutsDelayTester.withCore(
+                                        getApplication(), guts, GutsDelayTester.STARTUP_BUDGET_MS, profile.guid, operation,
+                                    ) ?: OmniTransferResult(false, error = "GUTS client did not start").also { coreUnavailable = true }
                                     else -> operation()
                                 }
                             }

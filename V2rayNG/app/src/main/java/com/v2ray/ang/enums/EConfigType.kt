@@ -21,6 +21,7 @@ enum class EConfigType(val value: Int, val protocolScheme: String) {
     AETHER(500, AppConfig.AETHER),
     MASTERDNS(501, AppConfig.MASTERDNS),
     DNSTT(502, AppConfig.DNSTT),
+    GUTS(503, AppConfig.GUTS),
     POLICYGROUP(101, AppConfig.CUSTOM),
     PROXYCHAIN(102, AppConfig.CUSTOM);
 

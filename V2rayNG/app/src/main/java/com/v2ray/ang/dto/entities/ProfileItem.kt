@@ -249,6 +249,18 @@ data class ProfileItem(
     var dnsttSshAuthType: String? = null,
     var dnsttSshPrivateKey: String? = null,
     var dnsttSshKeyPassphrase: String? = null,
+
+    /** GUTS doors: Google Apps Script web apps, one per line or comma separated. */
+    var gutsDoors: String? = null,
+
+    /** The shared secret the door and the exit node check; kept out of the command line. */
+    var gutsKey: String? = null,
+
+    /** The Google edge the client pins, or "auto" to scan for the fastest one that fronts. */
+    var gutsGoogleIp: String? = null,
+
+    /** The SNI presented to that edge; the connection must look like a Google one. */
+    var gutsSni: String? = null,
 ) {
 
     companion object {
@@ -296,7 +308,9 @@ data class ProfileItem(
         if (server.isNullOrEmpty() && configType == EConfigType.CUSTOM) {
             return "${AppConfig.LOOPBACK}:${AppConfig.PORT_SOCKS}"
         }
-        if (configType == EConfigType.MASTERDNS || configType == EConfigType.DNSTT) return server.orEmpty()
+        if (configType == EConfigType.MASTERDNS || configType == EConfigType.DNSTT || configType == EConfigType.GUTS) {
+            return server.orEmpty()
+        }
         return "${Utils.getIpv6Address(server)}:$serverPort"
     }
 

@@ -501,4 +501,33 @@ class ServerUiStateTest {
         assertEquals("pass", restored.dnsttSocksPassword)
         assertNull(DnsttFmt.normalize(restored))
     }
+
+    @Test
+    fun gutsSettingsSurviveTheEditorRoundTrip() {
+        val original = ProfileItem.create(EConfigType.GUTS).apply {
+            remarks = "GUTS"
+            gutsDoors = "https://script.google.com/macros/s/A/exec, https://script.google.com/macros/s/B/exec"
+            gutsKey = "s3cret-AuthKey"
+            gutsGoogleIp = "216.239.38.120"
+            gutsSni = "www.google.com"
+        }
+
+        val restored = ServerUiState.from(original).toProfileItem(original)
+
+        // A pasted list is stored one door per line, and the first door's host is what the list shows.
+        assertEquals(
+            "https://script.google.com/macros/s/A/exec\nhttps://script.google.com/macros/s/B/exec",
+            restored.gutsDoors,
+        )
+        assertEquals("s3cret-AuthKey", restored.gutsKey)
+        assertEquals("216.239.38.120", restored.gutsGoogleIp)
+        assertEquals("www.google.com", restored.gutsSni)
+        assertEquals("script.google.com", restored.server)
+        assertEquals(AppConfig.DEFAULT_PORT.toString(), restored.serverPort)
+        assertNull(com.v2ray.ang.core.GutsCore.normalize(restored))
+        // The editor reads them back as they were.
+        val reopened = ServerUiState.from(restored)
+        assertEquals(2, com.v2ray.ang.core.GutsCore.doorsIn(reopened.gutsDoors).size)
+        assertEquals("s3cret-AuthKey", reopened.gutsKey)
+    }
 }

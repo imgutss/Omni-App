@@ -287,6 +287,7 @@ object AppConfig {
     const val SOAR = "soar://"
     const val DNSTT = "dnstt://"
     const val SLIPNET = "slipnet://"
+    const val GUTS = "guts://"
 
     /** Give a good name to this, IDK*/
     const val VPN = "VPN"

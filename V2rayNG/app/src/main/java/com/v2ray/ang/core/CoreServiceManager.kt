@@ -70,6 +70,9 @@ object CoreServiceManager {
 
     /** The selected DNSTT/NoizDNS process the running configuration depends on, if any. */
     private var currentDnstt: DnsttCore? = null
+
+    /** The guts client process the running configuration depends on, if any. */
+    private var currentGuts: GutsCore? = null
     private var processFinder: XrayProcessFinder? = null
     private var browserDialer: IDialerService? = null
 
@@ -97,6 +100,12 @@ object CoreServiceManager {
 
     @Volatile
     private var dnsttExitHandled = false
+
+    private val gutsScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var gutsWarmUpJob: Job? = null
+
+    @Volatile
+    private var gutsExitHandled = false
 
     @Volatile
     private var isReloading = false
@@ -221,6 +230,7 @@ object CoreServiceManager {
         cancelAetherWarmUp()
         cancelMasterDnsWarmUp()
         cancelDnsttWarmUp()
+        cancelGutsWarmUp()
         // Starting a configuration ends the config tests, whatever the configuration: that is what a start
         // means to the user, and the tests spawn Aether cores of their own, which a session's core must not
         // come up beside, on the same key or with Psiphon on the same datastore. The same goes for the test
@@ -260,11 +270,16 @@ object CoreServiceManager {
         if (dnstt != null && !DnsttCoreManager.isSupported(service, dnstt.engine)) {
             throw StartFailure(service.getString(R.string.dnstt_unsupported_abi))
         }
+        val guts = result.gutsCore
+        if (guts != null && !GutsCoreManager.isSupported(service)) {
+            throw StartFailure(service.getString(R.string.guts_unsupported_abi))
+        }
         // A reload still has the previous session's cores; they end before Xray starts again. New
         // external cores start once Xray listens, see launchNativeCore.
         AetherCoreManager.stop()
         MasterDnsCoreManager.stop()
         DnsttCoreManager.stop()
+        GutsCoreManager.stop()
         if (aether != null) {
             checkAetherPorts(service, guid, aether, result.content, isReload)
         }
@@ -285,15 +300,22 @@ object CoreServiceManager {
             }
             checkDnsttPort(service, guid, dnstt, isReload)
         }
-        if ((aether != null || masterDns != null || dnstt != null) && !goesOn()) return false
+        if (guts != null) {
+            if (AetherDependency.inboundListensOn(content, guts.port)) {
+                throw StartFailure(service.getString(R.string.guts_port_taken, guts.port))
+            }
+            checkGutsPort(service, guid, guts, isReload)
+        }
+        if ((aether != null || masterDns != null || dnstt != null || guts != null) && !goesOn()) return false
 
         try {
-            launchNativeCore(service, guid, config, aether, masterDns, dnstt, content, vpnInterface, isReload)
+            launchNativeCore(service, guid, config, aether, masterDns, dnstt, guts, content, vpnInterface, isReload)
         } catch (e: Exception) {
             // Setup failed after this attempt spawned an external process; release both kinds.
             AetherCoreManager.stop()
             MasterDnsCoreManager.stop()
             DnsttCoreManager.stop()
+            GutsCoreManager.stop()
             throw e
         }
         return true
@@ -311,6 +333,7 @@ object CoreServiceManager {
         AetherCoreManager.stop()
         MasterDnsCoreManager.stop()
         DnsttCoreManager.stop()
+        GutsCoreManager.stop()
         throw StartFailure(message())
     }
 
@@ -396,6 +419,23 @@ object CoreServiceManager {
     }
 
     @Throws(Exception::class)
+    private fun checkGutsPort(service: Service, guid: String, core: GutsCore, isReload: Boolean) {
+        val attempt = "${service.javaClass.simpleName} ${if (isReload) "reload" else "start"}"
+        when (val check = GutsCoreManager.checkSessionPort(core.port)) {
+            GutsCoreManager.PortCheck.Free -> Unit
+            GutsCoreManager.PortCheck.Taken -> {
+                LogUtil.w(AppConfig.TAG, "StartCore-Manager: $attempt refused, GUTS port ${core.port} is taken, guid=$guid")
+                throw StartFailure(service.getString(R.string.guts_port_taken, core.port))
+            }
+            is GutsCoreManager.PortCheck.Unchecked -> {
+                val message = "StartCore-Manager: $attempt could not check the GUTS port, guid=$guid"
+                check.cause?.let { LogUtil.w(AppConfig.TAG, message, it) } ?: LogUtil.w(AppConfig.TAG, message)
+                throw IllegalStateException("The GUTS session port could not be checked", check.cause)
+            }
+        }
+    }
+
+    @Throws(Exception::class)
     private fun launchNativeCore(
         service: Service,
         guid: String,
@@ -403,6 +443,7 @@ object CoreServiceManager {
         aether: AetherCore?,
         masterDns: MasterDnsCore?,
         dnstt: DnsttCore?,
+        guts: GutsCore?,
         content: String,
         vpnInterface: ParcelFileDescriptor?,
         isReload: Boolean,
@@ -411,6 +452,7 @@ object CoreServiceManager {
         currentAether = aether
         currentMasterDns = masterDns
         currentDnstt = dnstt
+        currentGuts = guts
         var tunFd = vpnInterface?.fd ?: 0
         val dialerMode = BrowserDialerMode.from(config.browserDialerMode)
         val dialerAddr = if (dialerMode != null) {
@@ -455,6 +497,15 @@ object CoreServiceManager {
             }
             DnsttCoreManager.start(service, dnstt, protect) { onDnsttExit(guid) }
         }
+        if (guts != null) {
+            gutsExitHandled = false
+            val protect: ((Int) -> Boolean)? = if (vpnInterface == null) null else { fd ->
+                // The client dials a Google edge address, which inside the VPN is our own tun
+                // device; protecting every socket is what keeps the tunnel out of itself.
+                serviceControl?.get()?.vpnProtect(fd) == true
+            }
+            GutsCoreManager.start(service, guts, protect) { onGutsExit(guid) }
+        }
 
         if (browserDialer != null) {
             browserDialer!!.stop()
@@ -480,6 +531,8 @@ object CoreServiceManager {
             announceMasterDnsWarmUp(service, guid, isReload)
         } else if (dnstt != null) {
             announceDnsttWarmUp(service, guid, isReload)
+        } else if (guts != null) {
+            announceGutsWarmUp(service, guid, isReload)
         } else if (!isReload) {
             MessageHelper.sendMsg2UI(service, AppConfig.MSG_STATE_START_SUCCESS, "")
         }
@@ -605,6 +658,52 @@ object CoreServiceManager {
         NotificationManager.setStatusLine(null)
     }
 
+    /** Reports GUTS ready only after real HTTP succeeds through the client and the Xray outbound. */
+    private fun announceGutsWarmUp(service: Service, guid: String, isReload: Boolean) {
+        val connecting = service.getString(R.string.guts_core_connecting)
+        MessageHelper.sendMsg2UI(service, AppConfig.MSG_STATE_RUNNING, "")
+        MessageHelper.sendMsg2UI(service, AppConfig.MSG_STATE_CONNECTING, connecting)
+        NotificationManager.setStatusLine(connecting)
+        gutsWarmUpJob = gutsScope.launch {
+            var listening = false
+            var reachable = false
+            while (isActive && !reachable && GutsCoreManager.isRunning) {
+                if (!listening) listening = GutsCoreManager.awaitListening(AETHER_WARM_UP_MS)
+                if (listening) {
+                    reachable = confirmNativePath()
+                    if (!reachable) kotlinx.coroutines.delay(1_000L)
+                }
+            }
+            when (AetherCoreManager.warmUpOutcome(reachable, isActive, isRunning())) {
+                AetherCoreManager.WarmUpOutcome.ABANDONED -> Unit
+                AetherCoreManager.WarmUpOutcome.CORE_EXITED -> onGutsExit(guid)
+                AetherCoreManager.WarmUpOutcome.LISTENING -> {
+                    NotificationManager.setStatusLine(null)
+                    val ready = if (isReload) AppConfig.MSG_STATE_RUNNING else AppConfig.MSG_STATE_START_SUCCESS
+                    MessageHelper.sendMsg2UI(service, ready, "")
+                }
+            }
+        }
+    }
+
+    private fun cancelGutsWarmUp() {
+        gutsWarmUpJob?.cancel()
+        gutsWarmUpJob = null
+        NotificationManager.setStatusLine(null)
+    }
+
+    private fun onGutsExit(guid: String) {
+        val control = serviceControl?.get() ?: return
+        val service = control.getService()
+        ContextCompat.getMainExecutor(service).execute {
+            if (gutsExitHandled || GutsCoreManager.isRunning || !isRunning() || serviceControl?.get() !== control) return@execute
+            gutsExitHandled = true
+            LogUtil.e(AppConfig.TAG, "StartCore-Manager: GUTS client exited while running, stopping ${service.javaClass.simpleName}, guid=$guid")
+            MessageHelper.sendMsg2UI(service, AppConfig.MSG_STATE_START_FAILURE, service.getString(R.string.guts_core_stopped))
+            control.stopService()
+        }
+    }
+
     private suspend fun confirmNativePath(): Boolean {
         for (alternate in listOf(false, true)) {
             try {
@@ -667,9 +766,11 @@ object CoreServiceManager {
         cancelAetherWarmUp()
         cancelMasterDnsWarmUp()
         cancelDnsttWarmUp()
+        cancelGutsWarmUp()
         AetherCoreManager.stop()
         MasterDnsCoreManager.stop()
         DnsttCoreManager.stop()
+        GutsCoreManager.stop()
 
         if (isRunning()) {
             CoroutineScope(Dispatchers.IO).launch {
@@ -828,9 +929,11 @@ object CoreServiceManager {
             cancelAetherWarmUp()
             cancelMasterDnsWarmUp()
             cancelDnsttWarmUp()
+            cancelGutsWarmUp()
             AetherCoreManager.stop()
             MasterDnsCoreManager.stop()
             DnsttCoreManager.stop()
+            GutsCoreManager.stop()
             try {
                 coreController.stopLoop()
             } catch (e: Exception) {
@@ -909,6 +1012,14 @@ object CoreServiceManager {
             }
             if (currentDnstt != null && !DnsttCoreManager.awaitListening(AetherDelayTester.TEST_BUDGET_MS)) {
                 val reason = if (DnsttCoreManager.isRunning) R.string.dnstt_core_connecting else R.string.dnstt_core_stopped
+                val stalled = ConnectionTestResult(delayMillis = -1L, errorMessage = service.getString(reason))
+                withContext(Dispatchers.Main.immediate) {
+                    MessageHelper.sendMsg2UI(service, AppConfig.MSG_MEASURE_DELAY_RESULT, stalled, requestId)
+                }
+                return@launch
+            }
+            if (currentGuts != null && !GutsCoreManager.awaitListening(AetherDelayTester.TEST_BUDGET_MS)) {
+                val reason = if (GutsCoreManager.isRunning) R.string.guts_core_connecting else R.string.guts_core_stopped
                 val stalled = ConnectionTestResult(delayMillis = -1L, errorMessage = service.getString(reason))
                 withContext(Dispatchers.Main.immediate) {
                     MessageHelper.sendMsg2UI(service, AppConfig.MSG_MEASURE_DELAY_RESULT, stalled, requestId)

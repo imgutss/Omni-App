@@ -23,9 +23,11 @@ class UrlSchemeActivity : BaseComponentActivity() {
 
     private val omniSchemes = setOf(
         "vless", "vmess", "trojan", "ss", "hysteria2", "hy2", "tuic", "wireguard", "aether",
-        "masterdns", "cottendns", "soar", "omni",
+        "masterdns", "cottendns", "soar", "omni", "guts",
     )
-    private val opaqueProfileSchemes = setOf("masterdns", "cottendns", "soar")
+
+    // These carry an opaque Base64 payload whose '+' and '/' a URL decoder would change.
+    private val opaqueProfileSchemes = setOf("masterdns", "cottendns", "soar", "guts")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
