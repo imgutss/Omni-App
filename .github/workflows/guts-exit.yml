@@ -85,6 +85,18 @@ jobs:
           echo "Paste this as EXIT_URL in the Apps Script door (Code.gs), then redeploy a new version." >> "$GITHUB_STEP_SUMMARY"
           echo "paste this as EXIT_URL in the Apps Script door:  $url/g"
           echo "GUTS_EXIT_URL=$url/g" >> "$GITHUB_ENV"
+          printf '%s\n' "$url/g" > guts-exit-url.txt
+
+      # The URL as an artifact: the job stays alive for hours by design, and an artifact is the
+      # one output of a still-running job that can be fetched programmatically the moment the
+      # tunnel is up, instead of after the session ends.
+      - name: Publish the exit URL
+        uses: actions/upload-artifact@v4
+        with:
+          name: guts-exit-url
+          path: guts-exit-url.txt
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Keep it alive
         env:
