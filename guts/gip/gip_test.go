@@ -141,3 +141,57 @@ func TestReachableHonoursTheDeadline(t *testing.T) {
 		t.Fatalf("the deadline was not honoured: %v", elapsed)
 	}
 }
+
+func TestScanSNIsKeepsTheNamesInOrderAndReportsEach(t *testing.T) {
+	host, port, _ := localServer(t)
+	names := []string{"www.google.com", "mail.google.com", "drive.google.com"}
+
+	results := gip.ScanSNIs(context.Background(), net.JoinHostPort(host, strconv.Itoa(port)), names, gip.Options{
+		FrontHost: "script.google.com",
+		Timeout:   5 * time.Second,
+		Insecure:  true,
+	})
+	if len(results) != len(names) {
+		t.Fatalf("got %d results for %d names", len(results), len(names))
+	}
+	for i, name := range names {
+		if results[i].SNI != name {
+			t.Fatalf("result %d is for %q, want %q", i, results[i].SNI, name)
+		}
+		if !results[i].Fronted {
+			t.Fatalf("%q was not recognised as fronted: %+v", name, results[i])
+		}
+	}
+	if best := gip.BestSNI(results); best == "" {
+		t.Fatal("no name was chosen although every one answered")
+	}
+}
+
+func TestScanSNIsSaysNothingWhenTheEdgeIsDead(t *testing.T) {
+	results := gip.ScanSNIs(context.Background(), "127.0.0.1:1", gip.SniPool[:2], gip.Options{
+		Timeout: 200 * time.Millisecond,
+		Only:    []string{"127.0.0.1:1"},
+	})
+	if len(results) == 0 {
+		t.Fatal("no results at all")
+	}
+	for _, res := range results {
+		if res.Fronted {
+			t.Fatalf("a dead edge was reported as fronted: %+v", res)
+		}
+	}
+	if best := gip.BestSNI(results); best != "" {
+		t.Fatalf("a name was chosen for a dead edge: %q", best)
+	}
+}
+
+func TestBestSNIPrefersTheFastestName(t *testing.T) {
+	best := gip.BestSNI([]gip.Result{
+		{SNI: "slow.google.com", Fronted: true, RTTMs: 300},
+		{SNI: "dead.google.com", RTTMs: 5},
+		{SNI: "fast.google.com", Fronted: true, RTTMs: 20},
+	})
+	if best != "fast.google.com" {
+		t.Fatalf("best = %q, want fast.google.com", best)
+	}
+}

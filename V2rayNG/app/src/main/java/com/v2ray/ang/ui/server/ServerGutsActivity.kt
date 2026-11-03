@@ -3,17 +3,25 @@ package com.v2ray.ang.ui.server
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.v2ray.ang.R
 import com.v2ray.ang.core.GutsCore
+import com.v2ray.ang.core.GutsEdgeScanner
 import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.extension.toast
 import com.v2ray.ang.ui.compose.FormTextField
+import kotlinx.coroutines.launch
 
 /**
  * Editor for a GUTS profile: the doors it posts to, the key they and the exit node check, and the
@@ -29,6 +37,9 @@ class ServerGutsActivity : BaseServerActivity() {
         val uiState = rememberSaveable(saver = ServerUiState.Saver) {
             ServerUiState.fromProfileItem(initialConfig)
         }.apply { configType = serverConfigType }
+
+        val scope = rememberCoroutineScope()
+        var scanRunning by remember { mutableStateOf(false) }
 
         ServerEditorScaffold(
             title = stringResource(R.string.guts_title),
@@ -85,6 +96,48 @@ class ServerGutsActivity : BaseServerActivity() {
                 supportingText = stringResource(R.string.guts_sni_support),
                 isError = uiState.isGutsSniError,
             )
+            // The edge address and the Google name are properties of the network, not of the
+            // profile: the client itself says which ones this network still answers, so the fields
+            // above can be filled from an answer instead of from a guess.
+            TextButton(
+                enabled = !scanRunning,
+                onClick = {
+                    scanRunning = true
+                    scope.launch {
+                        val found = GutsEdgeScanner.scan(
+                            context = this@ServerGutsActivity,
+                            googleIp = uiState.gutsGoogleIp,
+                            sni = uiState.gutsSni,
+                        )
+                        scanRunning = false
+                        if (!found.answered) {
+                            this@ServerGutsActivity.toast(R.string.guts_scan_none)
+                            return@launch
+                        }
+                        found.bestEdge?.let {
+                            uiState.gutsGoogleIp = it
+                            uiState.isGutsGoogleIpError = false
+                        }
+                        found.bestSni?.let {
+                            uiState.gutsSni = it
+                            uiState.isGutsSniError = false
+                        }
+                        this@ServerGutsActivity.toast(
+                            getString(
+                                R.string.guts_scan_done,
+                                found.bestEdge ?: getString(R.string.guts_scan_unchanged),
+                                found.bestSni ?: getString(R.string.guts_scan_unchanged),
+                            )
+                        )
+                    }
+                },
+            ) {
+                Text(
+                    text = stringResource(
+                        if (scanRunning) R.string.guts_scan_running else R.string.guts_scan_edge
+                    )
+                )
+            }
             Text(
                 text = stringResource(R.string.guts_engine_notice),
                 style = MaterialTheme.typography.bodySmall,

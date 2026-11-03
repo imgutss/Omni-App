@@ -41,9 +41,26 @@ var Pool = []string{
 	"209.85.202.120",
 }
 
+// SniPool is the set of Google host names whose certificates a fronted call may be made under. A
+// network that blocks Google by name blocks some of these and not others, so which one works is a
+// property of the network, exactly like the address pool above.
+var SniPool = []string{
+	"www.google.com",
+	"mail.google.com",
+	"drive.google.com",
+	"docs.google.com",
+	"accounts.google.com",
+	"photos.google.com",
+	"calendar.google.com",
+	"meet.google.com",
+	"myaccount.google.com",
+	"maps.google.com",
+}
+
 // Result is what one address did.
 type Result struct {
 	IP      string `json:"ip"`
+	SNI     string `json:"sni,omitempty"`
 	RTTMs   int64  `json:"rtt_ms"`            // TCP + TLS handshake
 	Fronted bool   `json:"fronted,omitempty"` // the edge carried a request whose Host was FrontHost
 	Status  int    `json:"status,omitempty"`
@@ -138,6 +155,44 @@ func Reachable(ctx context.Context, opts Options) (Result, bool) {
 		last.Err = "no address answered"
 	}
 	return last, false
+}
+
+// ScanSNIs asks one edge, in turn, to be reached under each of several Google names. TLS carries the
+// name in the clear in its ClientHello, so a network that filters on the name answers for some and
+// drops the others; the first name that answers is the one the phone should pin.
+func ScanSNIs(ctx context.Context, ip string, snis []string, opts Options) []Result {
+	opts.withDefaults()
+	if len(snis) == 0 {
+		snis = SniPool
+	}
+	out := make([]Result, 0, len(snis))
+	for _, name := range snis {
+		if ctx.Err() != nil {
+			break
+		}
+		attempt := opts
+		attempt.SNI = name
+		res := Probe(ctx, ip, attempt)
+		res.SNI = name
+		out = append(out, res)
+	}
+	return out
+}
+
+// BestSNI is the fastest name that carried a fronted call, or empty when none did.
+func BestSNI(results []Result) string {
+	best := ""
+	var bestRTT int64
+	for _, res := range results {
+		if !res.Fronted {
+			continue
+		}
+		if best == "" || res.RTTMs < bestRTT {
+			best = res.SNI
+			bestRTT = res.RTTMs
+		}
+	}
+	return best
 }
 
 // Scan probes every candidate and returns the results with the working ones first, fastest first.

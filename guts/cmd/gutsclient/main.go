@@ -22,6 +22,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -45,6 +46,28 @@ func (s *stringList) Set(v string) error {
 	return nil
 }
 
+// firstLine keeps one error reason on one printed line.
+func firstLine(text string) string {
+	if i := strings.IndexByte(text, '\n'); i >= 0 {
+		return text[:i]
+	}
+	return text
+}
+
+// envInt reads an integer from the environment, so the app can configure the client without an argv
+// that an older client would refuse to parse.
+func envInt(name string, fallback int) int {
+	raw := strings.TrimSpace(os.Getenv(name))
+	if raw == "" {
+		return fallback
+	}
+	value, err := strconv.Atoi(raw)
+	if err != nil || value < 0 {
+		return fallback
+	}
+	return value
+}
+
 func main() {
 	var doors stringList
 	flag.Var(&doors, "door", "door URL, repeatable or comma separated")
@@ -60,11 +83,15 @@ func main() {
 	probe := flag.Bool("probe", false, "ask whether this network reaches the Google edge at all, print JSON, exit 0 if it does and 3 if it does not")
 	probeBudget := flag.Duration("probe-budget", 5*time.Second, "how long a probe may take")
 	scanJSON := flag.Bool("scan-json", false, "print the scan as JSON")
+	scanSNIs := flag.Bool("scan-snis", false, "try the Google names a fronted call may use, and exit")
+	scanSNIsJSON := flag.Bool("scan-snis-json", false, "print the name scan as JSON")
 	asJSON := flag.Bool("export-json", false, "print the setup as JSON")
 	asURI := flag.Bool("export", false, "print the setup as a guts:// URI")
 	importURI := flag.String("import", "", "start from a guts:// URI")
 	pick := flag.Bool("pick", false, "ping every door, print the latencies, then continue")
 	timeout := flag.Duration("timeout", 4*time.Second, "per-address timeout of a scan")
+	doorBudget := flag.Int("door-budget", envInt("GUTS_DOOR_BUDGET", 0), "calls one door may take per day (0 = no limit); spread over the doors so several Apps Script accounts add up")
+	quotaState := flag.String("quota-state", os.Getenv("GUTS_QUOTA_STATE"), "file that remembers today's calls per door across restarts (empty = in memory only)")
 	mux := flag.Bool("mux", true, "carry every connection as a stream of one session (one door call per interval)")
 	controlSocket := flag.String(
 		"fd-control-unix-socket",
@@ -131,6 +158,45 @@ func main() {
 		os.Exit(0)
 	}
 
+	if *scanSNIs || *scanSNIsJSON {
+		// The name is in the clear in the ClientHello, so a network that filters on it answers for
+		// some Google names and drops the others. Scanning one edge with every name finds the one
+		// this network still lets through.
+		ctx, cancel := context.WithTimeout(context.Background(), *probeBudget)
+		defer cancel()
+		opts := gip.Options{SNI: *sni, FrontHost: *frontHost, Timeout: *timeout}
+		edge := strings.TrimSpace(*googleIP)
+		if edge == "" || edge == "auto" {
+			if best, ok := gip.Reachable(ctx, opts); ok {
+				edge = best.IP
+			} else {
+				edge = gip.Pool[0]
+			}
+		}
+		host, err := gip.Host(edge)
+		if err != nil {
+			log.Fatalf("gutsclient: %v", err)
+		}
+		results := gip.ScanSNIs(ctx, host, nil, opts)
+		if *scanSNIsJSON {
+			enc := json.NewEncoder(os.Stdout)
+			enc.SetIndent("", "  ")
+			_ = enc.Encode(results)
+			return
+		}
+		for _, res := range results {
+			if !res.Fronted {
+				fmt.Printf("  %-28s blocked (%s)\n", res.SNI, firstLine(res.Err))
+				continue
+			}
+			fmt.Printf("  %-28s %d ms\n", res.SNI, res.RTTMs)
+		}
+		if best := gip.BestSNI(results); best != "" {
+			fmt.Println("best:", best)
+		}
+		return
+	}
+
 	if *scan || *scanJSON || *googleIP == "auto" {
 		results := gip.Scan(context.Background(), gip.Options{SNI: *sni, FrontHost: *frontHost, Timeout: *timeout})
 		if *scanJSON {
@@ -140,10 +206,12 @@ func main() {
 		} else {
 			printScan(results)
 		}
-		best := gip.Best(results)
-		if *googleIP != "auto" {
+		// An explicit scan answers and exits; -google-ip=auto is the client's own startup path and
+		// continues with the best address it found.
+		if *scan || *scanJSON {
 			return
 		}
+		best := gip.Best(results)
 		if best == "" {
 			log.Fatal("gutsclient: no Google edge address carried a fronted call; the door is unreachable from here")
 		}
@@ -193,7 +261,20 @@ func main() {
 		}
 		built = append(built, fronted)
 	}
-	door := relay.NewRotator(built...)
+	rotator := relay.NewRotator(built...)
+	var door relay.Door = rotator
+	var quotaDoor *relay.QuotaRotator
+	if *doorBudget > 0 || *quotaState != "" {
+		quotaDoor = relay.NewQuotaRotator(rotator, relay.NewQuota(*doorBudget, *quotaState))
+		door = quotaDoor
+		if *doorBudget > 0 {
+			log.Printf("gutsclient: %d calls per door per day (~%d for %d doors), state in %q",
+				*doorBudget, *doorBudget*len(built), len(built), *quotaState)
+		}
+	}
+	if quotaDoor != nil {
+		defer quotaDoor.Close()
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
@@ -207,7 +288,7 @@ func main() {
 		return
 	}
 	if *pick && len(built) > 1 {
-		for name, took := range door.Pick(ctx) {
+		for name, took := range rotator.Pick(ctx) {
 			if took < 0 {
 				fmt.Printf("  %-60s unreachable\n", name)
 				continue
