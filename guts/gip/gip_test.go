@@ -69,7 +69,8 @@ func TestProbeRejectsAnEdgeThatRefusesFronting(t *testing.T) {
 
 func TestCandidatesAreUniqueAndKeepTheExtrasFirst(t *testing.T) {
 	ips := gip.Candidates(context.Background(), gip.Options{
-		Extra: []string{"203.0.113.9"},
+		Extra:        []string{"203.0.113.9"},
+		ResolveHosts: []string{}, // this test is about ordering, not about this machine's DNS
 	})
 	if len(ips) == 0 {
 		t.Fatal("no candidates")
@@ -193,5 +194,73 @@ func TestBestSNIPrefersTheFastestName(t *testing.T) {
 	})
 	if best != "fast.google.com" {
 		t.Fatalf("best = %q, want fast.google.com", best)
+	}
+}
+
+func TestSniPoolCoversTheNamesRealLinesAnswer(t *testing.T) {
+	seen := map[string]bool{}
+	for _, name := range gip.SniPool {
+		if seen[name] {
+			t.Fatalf("duplicate name %q in the pool", name)
+		}
+		seen[name] = true
+	}
+	// Measured on a real restricted line: these answered under a second while www.google.com
+	// needed three. A pool without them cannot find that line's way through.
+	for _, name := range []string{
+		"g1.gstatic.com", "fonts.gstatic.com", "connectivitycheck.gstatic.com",
+		"clientservices.googleapis.com", "beacons.gcp.gvt2.com", "www.google.com",
+	} {
+		if !seen[name] {
+			t.Fatalf("the pool is missing %q", name)
+		}
+	}
+}
+
+func TestScanMatrixFindsThePairThatFronts(t *testing.T) {
+	host, port, _ := localServer(t)
+	live := net.JoinHostPort(host, strconv.Itoa(port))
+
+	results := gip.ScanMatrix(context.Background(), gip.Options{
+		FrontHost: "script.google.com",
+		Timeout:   5 * time.Second,
+		Insecure:  true,
+		SNIs:      []string{"www.google.com", "mail.google.com"},
+		Only:      []string{"127.0.0.1:1", live},
+	})
+	best, ok := gip.BestPair(results)
+	if !ok {
+		t.Fatalf("no pair was found to front: %+v", results)
+	}
+	if best.IP != live {
+		t.Fatalf("best pair is on %q, want the live edge %q", best.IP, live)
+	}
+	if best.SNI != "www.google.com" && best.SNI != "mail.google.com" {
+		t.Fatalf("best pair carries an unexpected name %q", best.SNI)
+	}
+	if results[0] != best {
+		t.Fatalf("the best pair is not reported first: %+v", results[0])
+	}
+}
+
+func TestReachableTriesEveryNameNotJustTheFirst(t *testing.T) {
+	host, port, srv := localServer(t)
+	roots := srv.Client().Transport.(*http.Transport).TLSClientConfig.RootCAs
+
+	// The first name cannot verify against this edge's certificate, as a filtered name cannot
+	// complete a handshake on a real line. The scan must move on to a name that works instead of
+	// declaring the network dead after its first choice.
+	res, ok := gip.Reachable(context.Background(), gip.Options{
+		FrontHost: "script.google.com",
+		Timeout:   5 * time.Second,
+		RootCAs:   roots,
+		SNIs:      []string{"filtered.example", "example.com"},
+		Only:      []string{net.JoinHostPort(host, strconv.Itoa(port))},
+	})
+	if !ok {
+		t.Fatalf("a working name was missed: %+v", res)
+	}
+	if res.SNI != "example.com" {
+		t.Fatalf("answered under %q, want example.com", res.SNI)
 	}
 }

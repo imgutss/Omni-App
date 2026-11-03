@@ -46,6 +46,9 @@ object GutsCoreManager {
     private const val QUOTA_BUDGET_ENV = "GUTS_DOOR_BUDGET"
     private const val QUOTA_STATE_FILE = "guts-quota.json"
 
+    /** What resolving this line's own edge addresses may cost a connect. */
+    private const val EDGE_RESOLVE_BUDGET_MS = 2_500L
+
     private const val READY_POLL_MS = 250L
     private const val EXIT_WAIT_MS = 2_000L
     private const val EXIT_POLL_MS = 50L
@@ -207,7 +210,19 @@ object GutsCoreManager {
                 }
             }
 
-            val process = ProcessBuilder(processArguments(target)).apply {
+            // An automatic edge starts from this line's own answers: the operator's resolver
+            // names the frontends it routes for Google, and the client races them first, under
+            // every name it knows, before falling back to its built-in pool.
+            val edgeCandidates = if (target.core.googleIp == GutsCore.AUTO_EDGE) {
+                GutsEdgeScanner.resolveOperatorEdges(EDGE_RESOLVE_BUDGET_MS)
+            } else {
+                emptyList()
+            }
+            if (edgeCandidates.isNotEmpty()) {
+                LogUtil.i(AppConfig.TAG, "GUTS: ${edgeCandidates.size} edge candidates from this line's resolver")
+            }
+
+            val process = ProcessBuilder(processArguments(target, edgeCandidates)).apply {
                 directory(directory)
                 redirectErrorStream(true)
                 environment().apply {
@@ -251,18 +266,30 @@ object GutsCoreManager {
      * Deterministic command line. The key is absent on purpose: it reaches the client through
      * GUTS_KEY in the environment, which only this user can read, and never through a log line.
      */
-    internal fun processArguments(target: Session): List<String> = processArguments(
+    internal fun processArguments(
+        target: Session,
+        edgeCandidates: List<String> = emptyList(),
+    ): List<String> = processArguments(
         binary = binary(target.context),
         core = target.core,
         protectAddress = target.protectServer?.configAddress,
+        edgeCandidates = edgeCandidates,
     )
 
-    internal fun processArguments(binary: File, core: GutsCore, protectAddress: String?): List<String> = buildList {
+    internal fun processArguments(
+        binary: File,
+        core: GutsCore,
+        protectAddress: String?,
+        edgeCandidates: List<String> = emptyList(),
+    ): List<String> = buildList {
         add(binary.absolutePath)
         add("-listen=${AppConfig.LOOPBACK}:${core.port}")
         core.doors.forEach { door -> add("-door=$door") }
         add("-google-ip=${core.googleIp}")
         add("-sni=${core.sni}")
+        if (edgeCandidates.isNotEmpty()) {
+            add("-edge-candidates=${edgeCandidates.take(24).joinToString(",")}")
+        }
         add("-front-host=${core.frontHost}")
         add("-fd-control-unix-socket=${protectAddress.orEmpty()}")
     }

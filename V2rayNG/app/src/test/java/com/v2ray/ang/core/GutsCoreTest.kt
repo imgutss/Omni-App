@@ -120,6 +120,25 @@ class GutsCoreTest {
     }
 
     @Test
+    fun theCommandLineCarriesThisLinesOwnEdgeCandidates() {
+        val arguments = GutsCoreManager.processArguments(
+            binary = File("/data/app/lib/libguts.so"),
+            core = GutsCore.of(profile(edge = "auto")),
+            protectAddress = null,
+            edgeCandidates = listOf("108.177.14.120", "142.250.72.14"),
+        )
+
+        assertTrue("-edge-candidates=108.177.14.120,142.250.72.14" in arguments)
+
+        val without = GutsCoreManager.processArguments(
+            binary = File("/data/app/lib/libguts.so"),
+            core = GutsCore.of(profile(edge = "auto")),
+            protectAddress = null,
+        )
+        assertTrue(without.none { it.startsWith("-edge-candidates") })
+    }
+
+    @Test
     fun withoutVpnProtectionTheSocketFlagStaysEmptyRatherThanDisappearing() {
         val arguments = GutsCoreManager.processArguments(
             binary = File("/data/app/lib/libguts.so"),

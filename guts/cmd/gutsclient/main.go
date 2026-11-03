@@ -71,6 +71,10 @@ func envInt(name string, fallback int) int {
 func main() {
 	var doors stringList
 	flag.Var(&doors, "door", "door URL, repeatable or comma separated")
+	var edgeCandidates stringList
+	flag.Var(&edgeCandidates, "edge-candidates", "edge addresses this line's own resolver answered, repeatable or comma separated; every scan tries them first")
+	var sniNames stringList
+	flag.Var(&sniNames, "snis", "the exact Google names a scan may dial under, repeatable or comma separated; default is the built-in pool")
 
 	listen := flag.String("listen", "127.0.0.1:1080", "SOCKS5 listen address")
 	key := flag.String("key", os.Getenv("GUTS_KEY"), "shared key, also read from GUTS_KEY")
@@ -85,11 +89,14 @@ func main() {
 	scanJSON := flag.Bool("scan-json", false, "print the scan as JSON")
 	scanSNIs := flag.Bool("scan-snis", false, "try the Google names a fronted call may use, and exit")
 	scanSNIsJSON := flag.Bool("scan-snis-json", false, "print the name scan as JSON")
+	scanMatrix := flag.Bool("scan-matrix", false, "scan addresses and names as one matrix — which (edge, name) pairs front on this line — and exit")
+	scanMatrixJSON := flag.Bool("scan-matrix-json", false, "print the matrix scan as JSON")
+	scanBudget := flag.Duration("scan-budget", 75*time.Second, "how long a scan may take overall; a probe keeps its own smaller budget")
 	asJSON := flag.Bool("export-json", false, "print the setup as JSON")
 	asURI := flag.Bool("export", false, "print the setup as a guts:// URI")
 	importURI := flag.String("import", "", "start from a guts:// URI")
 	pick := flag.Bool("pick", false, "ping every door, print the latencies, then continue")
-	timeout := flag.Duration("timeout", 4*time.Second, "per-address timeout of a scan")
+	timeout := flag.Duration("timeout", 4*time.Second, "per-stage timeout of a scan probe: the connect, the handshake and the fronted read each get it in full")
 	doorBudget := flag.Int("door-budget", envInt("GUTS_DOOR_BUDGET", 0), "calls one door may take per day (0 = no limit); spread over the doors so several Apps Script accounts add up")
 	quotaState := flag.String("quota-state", os.Getenv("GUTS_QUOTA_STATE"), "file that remembers today's calls per door across restarts (empty = in memory only)")
 	mux := flag.Bool("mux", true, "carry every connection as a stream of one session (one door call per interval)")
@@ -131,25 +138,41 @@ func main() {
 		}
 	}
 
+	// scanOptions is what every scan mode asks the question with: the addresses this line's own
+	// resolver answered first (the app resolves them with the platform resolver, which a pure-Go
+	// binary on Android cannot), every Google name the pool knows unless an exact list was given,
+	// and — when an edge is pinned — that edge and no other.
+	scanOptions := func() gip.Options {
+		opts := gip.Options{
+			SNI:       *sni,
+			FrontHost: *frontHost,
+			Timeout:   *timeout,
+			AllSNIs:   true,
+			Extra:     []string(edgeCandidates),
+		}
+		if len(sniNames) > 0 {
+			opts.SNIs = []string(sniNames)
+		}
+		if ip := strings.TrimSpace(*googleIP); ip != "" && ip != "auto" {
+			opts.Only = []string{ip}
+		}
+		return opts
+	}
+
 	if *probe {
 		// The one question a phone asks before it tries: does this network reach Google at all?
 		// Nothing here touches Apps Script, so the answer costs no quota.
 		ctx, cancel := context.WithTimeout(context.Background(), *probeBudget)
 		defer cancel()
-		opts := gip.Options{SNI: *sni, FrontHost: *frontHost, Timeout: *timeout}
-		if ip := strings.TrimSpace(*googleIP); ip != "" && ip != "auto" {
-			if host, err := gip.Host(ip); err == nil {
-				opts.Only = []string{host}
-			}
-		}
-		res, reachable := gip.Reachable(ctx, opts)
+		res, reachable := gip.Reachable(ctx, scanOptions())
 		out := struct {
 			Probe string `json:"probe"`
 			OK    bool   `json:"ok"`
 			IP    string `json:"ip,omitempty"`
+			SNI   string `json:"sni,omitempty"`
 			RTTMs int64  `json:"rtt_ms,omitempty"`
 			Error string `json:"e,omitempty"`
-		}{Probe: "edge", OK: reachable, IP: res.IP, RTTMs: res.RTTMs, Error: res.Err}
+		}{Probe: "edge", OK: reachable, IP: res.IP, SNI: res.SNI, RTTMs: res.RTTMs, Error: res.Err}
 		enc := json.NewEncoder(os.Stdout)
 		_ = enc.Encode(out)
 		if !reachable {
@@ -161,10 +184,11 @@ func main() {
 	if *scanSNIs || *scanSNIsJSON {
 		// The name is in the clear in the ClientHello, so a network that filters on it answers for
 		// some Google names and drops the others. Scanning one edge with every name finds the one
-		// this network still lets through.
-		ctx, cancel := context.WithTimeout(context.Background(), *probeBudget)
+		// this network still lets through. A scan gets the scan budget, not the probe's: with the
+		// probe's five seconds the later names were never even tried on a slow line.
+		ctx, cancel := context.WithTimeout(context.Background(), *scanBudget)
 		defer cancel()
-		opts := gip.Options{SNI: *sni, FrontHost: *frontHost, Timeout: *timeout}
+		opts := scanOptions()
 		edge := strings.TrimSpace(*googleIP)
 		if edge == "" || edge == "auto" {
 			if best, ok := gip.Reachable(ctx, opts); ok {
@@ -173,11 +197,7 @@ func main() {
 				edge = gip.Pool[0]
 			}
 		}
-		host, err := gip.Host(edge)
-		if err != nil {
-			log.Fatalf("gutsclient: %v", err)
-		}
-		results := gip.ScanSNIs(ctx, host, nil, opts)
+		results := gip.ScanSNIs(ctx, edge, []string(sniNames), opts)
 		if *scanSNIsJSON {
 			enc := json.NewEncoder(os.Stdout)
 			enc.SetIndent("", "  ")
@@ -197,8 +217,26 @@ func main() {
 		return
 	}
 
-	if *scan || *scanJSON || *googleIP == "auto" {
-		results := gip.Scan(context.Background(), gip.Options{SNI: *sni, FrontHost: *frontHost, Timeout: *timeout})
+	if *scanMatrix || *scanMatrixJSON {
+		// The complete question, for a person or a scanner screen: every (edge, name) pair this
+		// line carries, fastest first. The name is scanned together with the address, never after
+		// it, because on the lines that need this most the default name is the filtered one.
+		ctx, cancel := context.WithTimeout(context.Background(), *scanBudget)
+		defer cancel()
+		results := gip.ScanMatrix(ctx, scanOptions())
+		if *scanMatrixJSON {
+			enc := json.NewEncoder(os.Stdout)
+			_ = enc.Encode(results)
+		} else {
+			printScan(results)
+		}
+		return
+	}
+
+	if *scan || *scanJSON {
+		ctx, cancel := context.WithTimeout(context.Background(), *scanBudget)
+		defer cancel()
+		results := gip.Scan(ctx, scanOptions())
 		if *scanJSON {
 			enc := json.NewEncoder(os.Stdout)
 			enc.SetIndent("", "  ")
@@ -206,17 +244,24 @@ func main() {
 		} else {
 			printScan(results)
 		}
-		// An explicit scan answers and exits; -google-ip=auto is the client's own startup path and
-		// continues with the best address it found.
-		if *scan || *scanJSON {
-			return
-		}
-		best := gip.Best(results)
-		if best == "" {
+		return
+	}
+
+	if *googleIP == "auto" {
+		// The client's own startup path: race the matrix and keep the first pair that fronts.
+		// Both halves of the pair are adopted — a line that only answers for fonts.gstatic.com is
+		// then dialled under fonts.gstatic.com, not declared dead for not answering under www.
+		ctx, cancel := context.WithTimeout(context.Background(), *scanBudget)
+		res, ok := gip.Reachable(ctx, scanOptions())
+		cancel()
+		if !ok {
 			log.Fatal("gutsclient: no Google edge address carried a fronted call; the door is unreachable from here")
 		}
-		*googleIP = best
-		log.Printf("gutsclient: using edge %s", best)
+		*googleIP = res.IP
+		if res.SNI != "" {
+			*sni = res.SNI
+		}
+		log.Printf("gutsclient: using edge %s (sni %s, %d ms)", res.IP, *sni, res.RTTMs)
 	}
 
 	if len(doors) == 0 {
@@ -321,7 +366,7 @@ func main() {
 }
 
 func printScan(results []gip.Result) {
-	fmt.Printf("%-16s %-9s %-8s %s\n", "address", "handshake", "fronted", "note")
+	fmt.Printf("%-16s %-32s %-9s %-8s %s\n", "address", "sni", "handshake", "fronted", "note")
 	for _, r := range results {
 		rtt := "-"
 		if r.RTTMs > 0 {
@@ -335,6 +380,6 @@ func printScan(results []gip.Result) {
 		if note == "" {
 			note = fmt.Sprintf("status %d", r.Status)
 		}
-		fmt.Printf("%-16s %-9s %-8s %s\n", r.IP, rtt, fronted, note)
+		fmt.Printf("%-16s %-32s %-9s %-8s %s\n", r.IP, r.SNI, rtt, fronted, note)
 	}
 }

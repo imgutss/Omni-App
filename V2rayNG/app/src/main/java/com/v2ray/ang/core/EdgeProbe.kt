@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 
 /**
  * Asks the phone's own network the one question that decides the «national ⇄ normal» switch: does
@@ -23,10 +24,18 @@ import java.util.concurrent.TimeUnit
  */
 object EdgeProbe {
     /** A probe is bounded by itself; this is only the outer guarantee that it ends. */
-    internal const val BUDGET_MS = 8_000L
+    internal const val BUDGET_MS = 16_000L
 
-    /** Passed to the client so it gives up before the outer budget does. */
-    internal const val CLIENT_BUDGET = "5s"
+    /**
+     * Passed to the client so it gives up before the outer budget does. Twelve seconds because
+     * the client now races addresses and names together and returns at the first fronted pair: a
+     * healthy line answers in a second, and a line whose one working name is slow is still a
+     * working line — five seconds used to call it blocked.
+     */
+    internal const val CLIENT_BUDGET = "12s"
+
+    /** What resolving this line's own edge addresses may cost the probe. */
+    private const val EDGE_RESOLVE_BUDGET_MS = 2_500L
 
     /** Thin wrapper so the spawn is not attempted twice for a phone that has no client at all. */
     suspend fun probe(context: Context, core: GutsCore): EdgeVerdict = withContext(Dispatchers.IO) {
@@ -43,6 +52,14 @@ object EdgeProbe {
     }
 
     private fun ask(context: Context, binary: File, core: GutsCore): EdgeVerdict {
+        // While the edge is automatic the probe races the addresses this line's resolver just
+        // answered, resolved here for the same reason the scanner resolves them: the client's own
+        // resolver has nothing to read on Android.
+        val edgeCandidates = if (core.googleIp == GutsCore.AUTO_EDGE) {
+            GutsEdgeScanner.resolveOperatorEdges(EDGE_RESOLVE_BUDGET_MS)
+        } else {
+            emptyList()
+        }
         val command = buildList {
             add(binary.absolutePath)
             add("-probe")
@@ -50,6 +67,9 @@ object EdgeProbe {
             core.doors.forEach { door -> add("-door=$door") }
             add("-google-ip=${core.googleIp}")
             add("-sni=${core.sni}")
+            if (edgeCandidates.isNotEmpty()) {
+                add("-edge-candidates=${edgeCandidates.joinToString(",")}")
+            }
             add("-front-host=${core.frontHost}")
             // No control socket: this runs while the tunnel is down, so there is no VPN of ours to
             // escape. Passing one would only make the probe depend on a session that is not there.
@@ -65,18 +85,25 @@ object EdgeProbe {
             }
             .start()
 
+        // Read on its own thread, like the scanner: reading to the end first would leave the
+        // outer budget below with nothing left to enforce.
         val answer = StringBuilder()
-        try {
-            process.inputStream.bufferedReader().useLines { lines ->
-                lines.forEach { line ->
-                    if (answer.length < MAX_ANSWER) answer.appendLine(line)
+        val reader = thread(name = "EdgeProbeRead", isDaemon = true) {
+            try {
+                process.inputStream.bufferedReader().useLines { lines ->
+                    lines.forEach { line ->
+                        synchronized(answer) {
+                            if (answer.length < MAX_ANSWER) answer.appendLine(line)
+                        }
+                    }
                 }
+            } catch (error: Exception) {
+                LogUtil.w(AppConfig.TAG, "EdgeProbe: could not read the answer: ${error.message}")
             }
-        } catch (error: Exception) {
-            LogUtil.w(AppConfig.TAG, "EdgeProbe: could not read the answer: ${error.message}")
         }
 
         val finished = process.waitFor(BUDGET_MS, TimeUnit.MILLISECONDS)
+        reader.join(2_000L)
         if (!finished) {
             process.destroy()
             LogUtil.w(AppConfig.TAG, "EdgeProbe: the probe did not answer in time")
@@ -86,7 +113,8 @@ object EdgeProbe {
         val verdict = EdgeVerdict.classify(process.exitValue(), timedOut = false)
         // The answer is one JSON line with the address and its latency, or the reason it failed; it
         // is logged with the key taken out like every other line of this client.
-        LogUtil.i(AppConfig.TAG, "EdgeProbe: ${verdict.name.lowercase()} ${core.redact(answer.toString().trim())}")
+        val text = synchronized(answer) { answer.toString() }
+        LogUtil.i(AppConfig.TAG, "EdgeProbe: ${verdict.name.lowercase()} ${core.redact(text.trim())}")
         return verdict
     }
 

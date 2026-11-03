@@ -59,10 +59,35 @@ class GutsEdgeScannerTest {
     }
 
     @Test
+    fun theMatrixScanKeepsAddressAndNameTogetherAsPairs() {
+        // The pair is the unit a profile pins: an address that only answers under
+        // fonts.gstatic.com must be reported with that name, never as a bare address to be
+        // combined again with a name that was filtered.
+        val answer = """
+            gutsclient: protecting sockets through @omni-guts-1
+            [{"ip":"108.177.14.120","sni":"fonts.gstatic.com","rtt_ms":936,"fronted":true,"status":302},
+             {"ip":"108.177.14.120","sni":"www.google.com","rtt_ms":3007,"e":"tls: handshake timeout"},
+             {"ip":"142.250.185.78","e":"connect: i/o timeout"}]
+        """.trimIndent()
+
+        val routes = GutsEdgeScanner.parseRoutes(answer)
+        assertEquals(3, routes.size)
+        assertEquals("108.177.14.120", routes[0].ip)
+        assertEquals("fonts.gstatic.com", routes[0].sni)
+        assertTrue(routes[0].fronted)
+        assertEquals(936L, routes[0].rttMs)
+        assertFalse(routes[1].fronted)
+        assertTrue(routes[1].error.orEmpty().contains("handshake"))
+        assertEquals("", routes[2].sni)
+        assertFalse(routes[2].fronted)
+    }
+
+    @Test
     fun anUnusableAnswerIsEmptyRatherThanAGuess() {
         listOf("", "gutsclient: no Google edge address carried a fronted call", "[]", "{}").forEach { answer ->
             assertTrue(GutsEdgeScanner.parseEdges(answer).isEmpty(), "edges for ${answer.take(20)}")
             assertTrue(GutsEdgeScanner.parseNames(answer).isEmpty(), "names for ${answer.take(20)}")
+            assertTrue(GutsEdgeScanner.parseRoutes(answer).isEmpty(), "routes for ${answer.take(20)}")
         }
     }
 
