@@ -21,6 +21,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
+      # One version for the whole build. The assemble step and the slim-copy step each used to
+      # fall back to a different hard-coded version, so a push built Omni_<one>_*.apk and then
+      # went looking for Omni_<other>_*.apk to slim — which is what failed the 0.11.2 build.
+      OMNI_VERSION: ${{ inputs.release_tag || '0.11.3' }}
       # The latest stable release, as aether's own release workflow builds with. The libaether
       # cache is keyed by the rustc it installs, so a new stable release builds the core afresh.
       RUST_TOOLCHAIN: "stable"
@@ -460,7 +464,7 @@ jobs:
         # build before anything is assembled or signed.
         ./gradlew :app:testPlaystoreDebugUnitTest :app:testFdroidDebugUnitTest
         ./gradlew licenseFdroidReleaseReport
-        ./gradlew assemblePlaystoreRelease -PpattngVersion="${{ inputs.release_tag || '0.11.1' }}" -Pandroid.injected.signing.store.file=${{ steps.android_keystore.outputs.filePath }} -Pandroid.injected.signing.store.password=${{ secrets.OMNI_KEYSTORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.OMNI_KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.OMNI_KEY_PASSWORD }}
+        ./gradlew assemblePlaystoreRelease -PpattngVersion="${{ env.OMNI_VERSION }}" -Pandroid.injected.signing.store.file=${{ steps.android_keystore.outputs.filePath }} -Pandroid.injected.signing.store.password=${{ secrets.OMNI_KEYSTORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.OMNI_KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.OMNI_KEY_PASSWORD }}
     
     - name: Verify each APK's signature and print its certificate
       run: |
@@ -527,7 +531,7 @@ jobs:
         sudo apt-get update -qq
         sudo apt-get install -y -qq advancecomp zip unzip
         cd "${{ github.workspace }}/V2rayNG/app/build/outputs/apk/playstore/release"
-        version="${{ inputs.release_tag || '0.11.2' }}"
+        version="${{ env.OMNI_VERSION }}"
         build_tools="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
         sign() {
           "$build_tools/zipalign" -f -p 4 "$1" /tmp/sign-in.apk
