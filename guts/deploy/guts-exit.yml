@@ -1,0 +1,86 @@
+# guts exit node on a free GitHub Actions runner.
+#
+# Copy this file to .github/workflows/guts-exit.yml in the repository you own, then run it from the
+# Actions tab with your shared key. It builds the exit node, exposes it through a free cloudflared
+# quick tunnel, and prints the URL to paste into the Apps Script door.
+#
+# Nothing is paid for: the runner and the tunnel are both free, and the session lasts up to six
+# hours (the runner limit). Start it again whenever you need the next one.
+name: guts exit
+
+on:
+  workflow_dispatch:
+    inputs:
+      key:
+        description: 'Shared key (also set in the Apps Script door as AUTH_KEY)'
+        required: true
+        type: string
+      minutes:
+        description: 'How long to keep the exit node up (max 350)'
+        required: false
+        default: '330'
+
+jobs:
+  exit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+
+      - name: Build the exit node
+        working-directory: guts
+        run: |
+          go build -trimpath -ldflags='-s -w' -o "$RUNNER_TEMP/guts-exit" ./cmd/exitnode
+          "$RUNNER_TEMP/guts-exit" -h || true
+
+      - name: Start the exit node and a free tunnel
+        env:
+          GUTS_KEY: ${{ inputs.key }}
+          MINUTES: ${{ inputs.minutes }}
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/guts-exit" -addr 127.0.0.1:8080 -key "$GUTS_KEY" > exit.log 2>&1 &
+          echo "exit node pid $!"
+          curl -fsSL -o "$RUNNER_TEMP/cloudflared" \
+            https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          chmod +x "$RUNNER_TEMP/cloudflared"
+          "$RUNNER_TEMP/cloudflared" tunnel --no-autoupdate --url http://127.0.0.1:8080 > cf.log 2>&1 &
+
+          url=""
+          for _ in $(seq 1 90); do
+            url=$(grep -Eo 'https://[a-z0-9-]+\.trycloudflare\.com' cf.log | head -1 || true)
+            [ -n "$url" ] && break
+            sleep 2
+          done
+          if [ -z "$url" ]; then
+            echo "::error::the tunnel did not come up"; tail -n 40 cf.log; exit 1
+          fi
+          echo "### guts exit URL" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "$url/g" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "paste this as EXIT_URL in the Apps Script door:  $url/g"
+          echo "GUTS_EXIT_URL=$url/g" >> "$GITHUB_ENV"
+
+      - name: Keep it alive
+        env:
+          MINUTES: ${{ inputs.minutes }}
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 "$MINUTES"); do
+            sleep 60
+            curl -fsS -m 10 "http://127.0.0.1:8080/healthz" > /dev/null || {
+              echo "::error::the exit node stopped"; tail -n 40 exit.log; exit 1; }
+          done
+
+      - name: Logs
+        if: always()
+        run: |
+          echo "--- exit node ---"; tail -n 50 exit.log || true
+          echo "--- tunnel ---"; tail -n 50 cf.log || true
