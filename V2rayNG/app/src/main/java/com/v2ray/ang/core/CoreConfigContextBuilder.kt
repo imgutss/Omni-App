@@ -301,7 +301,11 @@ object CoreConfigContextBuilder {
      * cannot. A chain used to leave a hop out without a word when its address did not look like a web address.
      */
     internal fun hasServerAddress(profile: ProfileItem): Boolean =
-        profile.configType == EConfigType.AETHER || !profile.server.isNullOrBlank()
+        profile.configType == EConfigType.AETHER ||
+            // A GUTS hop has no address of its own either: it dials the Google door it holds and
+            // listens on the loopback, so the chain dials localhost rather than a name.
+            profile.configType == EConfigType.GUTS ||
+            !profile.server.isNullOrBlank()
 
     /** PattNG: why a name that finds no profile, or [several], cannot be used, see [ByName]. */
     private fun reasonOf(several: Boolean): CoreConfigContext.UnresolvedName.Reason =

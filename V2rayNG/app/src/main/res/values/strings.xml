@@ -830,7 +830,7 @@
     <string name="guts_core_connecting">GUTS is connecting…</string>
     <string name="guts_core_stopped">The GUTS client stopped.</string>
     <string name="guts_port_taken">GUTS cannot use local port %1$d because it is already in use.</string>
-    <string name="guts_unsupported_combination">GUTS currently works only as a standalone primary profile, not inside a chain, a policy group, or beside another native core.</string>
+    <string name="guts_unsupported_combination">GUTS works as the profile itself, or as the last step of a proxy chain — the tunnel the chain is dialled through. It cannot sit in the middle of a chain, inside a policy group, or beside another native core.</string>
     <string name="guts_error_door_missing">Add at least one GUTS door: the web app URL the client posts to.</string>
     <string name="guts_error_door">A GUTS door must be an http or https web app URL, one per line.</string>
     <string name="guts_error_key_missing">Enter the shared key the door and the exit node check.</string>
