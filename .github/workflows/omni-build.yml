@@ -460,8 +460,19 @@ jobs:
         # build before anything is assembled or signed.
         ./gradlew :app:testPlaystoreDebugUnitTest :app:testFdroidDebugUnitTest
         ./gradlew licenseFdroidReleaseReport
-        ./gradlew assemblePlaystoreRelease -PpattngVersion="${{ inputs.release_tag || '0.10.1' }}" -Pandroid.injected.signing.store.file=${{ steps.android_keystore.outputs.filePath }} -Pandroid.injected.signing.store.password=${{ secrets.OMNI_KEYSTORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.OMNI_KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.OMNI_KEY_PASSWORD }}
+        ./gradlew assemblePlaystoreRelease -PpattngVersion="${{ inputs.release_tag || '0.11.1' }}" -Pandroid.injected.signing.store.file=${{ steps.android_keystore.outputs.filePath }} -Pandroid.injected.signing.store.password=${{ secrets.OMNI_KEYSTORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.OMNI_KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.OMNI_KEY_PASSWORD }}
     
+    - name: Verify each APK's signature and print its certificate
+      run: |
+        # Says out loud what the installer will check: which signing schemes the file carries and
+        # which certificate it was signed with, so a release is never published on trust.
+        set -euo pipefail
+        build_tools="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+        for apk in "${{ github.workspace }}"/V2rayNG/app/build/outputs/apk/playstore/release/*.apk; do
+          echo "$(basename "$apk"):"
+          "$build_tools/apksigner" verify --print-certs "$apk" | sed 's/^/  /'
+        done
+
     - name: Check the native libraries in the APKs
       run: |
         # Looked into as ZIP files: every ABI the Aether core is built for has to carry the core, its
@@ -503,6 +514,29 @@ jobs:
           done
         done
         exit $status
+
+    - name: Build a diagnostic APK without the native libraries
+      run: |
+        # The last release installs everywhere but on one phone, and the only new file in it is a
+        # native library: this copy carries the same code with no lib/ at all, so that phone can
+        # say which of the two it refuses. It is signed with the same key, so it installs over the
+        # release; it cannot open a tunnel, and it is named so nobody mistakes it for the app.
+        set -euo pipefail
+        cd "${{ github.workspace }}/V2rayNG/app/build/outputs/apk/playstore/release"
+        version="${{ inputs.release_tag || '0.11.1' }}"
+        build_tools="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+        out="Omni_${version}-nolibs_arm64-v8a.apk"
+        cp "Omni_${version}_arm64-v8a.apk" /tmp/nolibs.apk
+        zip -q -d /tmp/nolibs.apk 'lib/*'
+        "$build_tools/zipalign" -f -p 4 /tmp/nolibs.apk /tmp/nolibs-aligned.apk
+        "$build_tools/apksigner" sign \
+          --ks "${{ steps.android_keystore.outputs.filePath }}" \
+          --ks-pass "pass:${{ secrets.OMNI_KEYSTORE_PASSWORD }}" \
+          --key-pass "pass:${{ secrets.OMNI_KEY_PASSWORD }}" \
+          --ks-key-alias "${{ secrets.OMNI_KEY_ALIAS }}" \
+          --out "$out" /tmp/nolibs-aligned.apk
+        "$build_tools/apksigner" verify --print-certs "$out"
+        sha256sum "$out"
 
     - name: Upload Omni APKs
       if: ${{ success() }}
