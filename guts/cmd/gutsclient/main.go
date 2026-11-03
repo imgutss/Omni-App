@@ -2,53 +2,153 @@
 // carried through a door to the exit node, which opens the real connection.
 //
 //	gutsclient -door https://script.google.com/macros/s/<id>/exec -key <secret> \
-//	           -google-ip 216.239.38.120 -sni www.google.com -listen 127.0.0.1:1080
+//	           -google-ip auto -sni www.google.com -listen 127.0.0.1:1080
 //
-// With -direct the door is an exit node itself, which is how a local test or a home server runs.
+// Flags that matter on a restricted network:
+//
+//	-scan          probe the Google frontend addresses and print which ones carry a fronted call
+//	-google-ip auto  scan first, then use the fastest edge address that worked
+//	-door (repeat)   several doors, tried fastest first and rotated on failure
+//	-export        print a guts:// URI (a QR code can carry it) instead of starting the proxy
+//	-import        start from a guts:// URI
 package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
+	"guts/config"
+	"guts/gip"
 	"guts/relay"
 )
 
+type stringList []string
+
+func (s *stringList) String() string { return strings.Join(*s, ",") }
+
+func (s *stringList) Set(v string) error {
+	for _, part := range strings.Split(v, ",") {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			*s = append(*s, trimmed)
+		}
+	}
+	return nil
+}
+
 func main() {
+	var doors stringList
+	flag.Var(&doors, "door", "door URL, repeatable or comma separated")
+
 	listen := flag.String("listen", "127.0.0.1:1080", "SOCKS5 listen address")
-	doorURL := flag.String("door", "", "door URL: an Apps Script /exec URL, or an exit node endpoint")
-	key := flag.String("key", os.Getenv("GUTS_KEY"), "shared key")
-	googleIP := flag.String("google-ip", "", "Google edge address to dial instead of the door's own address")
+	key := flag.String("key", os.Getenv("GUTS_KEY"), "shared key, also read from GUTS_KEY")
+	googleIP := flag.String("google-ip", "", "Google edge address, or 'auto' to scan for the working one")
 	sni := flag.String("sni", "www.google.com", "SNI used on the connection to the Google edge")
+	frontHost := flag.String("front-host", "script.google.com", "Host header a fronted scan sends")
 	direct := flag.Bool("direct", false, "post straight to the exit node at -door, no fronting")
 	check := flag.Bool("check", false, "ping the door and exit without starting the proxy")
+	scan := flag.Bool("scan", false, "scan the Google frontend addresses and exit")
+	scanJSON := flag.Bool("scan-json", false, "print the scan as JSON")
+	asJSON := flag.Bool("export-json", false, "print the setup as JSON")
+	asURI := flag.Bool("export", false, "print the setup as a guts:// URI")
+	importURI := flag.String("import", "", "start from a guts:// URI")
+	pick := flag.Bool("pick", false, "ping every door, print the latencies, then continue")
+	timeout := flag.Duration("timeout", 4*time.Second, "per-address timeout of a scan")
 	flag.Parse()
 
-	if *doorURL == "" {
-		log.Fatal("gutsclient: -door is required")
-	}
-	parsed, err := url.Parse(*doorURL)
-	if err != nil {
-		log.Fatalf("gutsclient: bad -door: %v", err)
+	if *importURI != "" {
+		cfg, err := config.ParseURI(*importURI)
+		if err != nil {
+			log.Fatalf("gutsclient: %v", err)
+		}
+		if len(doors) == 0 {
+			doors = cfg.Doors
+		}
+		if *key == "" {
+			*key = cfg.Key
+		}
+		if *googleIP == "" {
+			*googleIP = cfg.GoogleIP
+		}
+		if *sni == "www.google.com" && cfg.SNI != "" {
+			*sni = cfg.SNI
+		}
+		if *listen == "127.0.0.1:1080" && cfg.Listen != "" {
+			*listen = cfg.Listen
+		}
 	}
 
-	var door relay.Door
-	if *direct || *googleIP == "" {
-		door = relay.NewDirect(*doorURL, *key)
-	} else {
+	if *scan || *scanJSON || *googleIP == "auto" {
+		results := gip.Scan(context.Background(), gip.Options{SNI: *sni, FrontHost: *frontHost, Timeout: *timeout})
+		if *scanJSON {
+			enc := json.NewEncoder(os.Stdout)
+			enc.SetIndent("", "  ")
+			_ = enc.Encode(results)
+		} else {
+			printScan(results)
+		}
+		best := gip.Best(results)
+		if *googleIP != "auto" {
+			return
+		}
+		if best == "" {
+			log.Fatal("gutsclient: no Google edge address carried a fronted call; the door is unreachable from here")
+		}
+		*googleIP = best
+		log.Printf("gutsclient: using edge %s", best)
+	}
+
+	if len(doors) == 0 {
+		log.Fatal("gutsclient: -door is required")
+	}
+
+	if *asURI || *asJSON {
+		cfg := config.Config{
+			Doors:    doors,
+			Key:      *key,
+			GoogleIP: *googleIP,
+			SNI:      *sni,
+			Listen:   *listen,
+		}
+		cfg.Defaults()
+		if *asJSON {
+			out, _ := json.MarshalIndent(cfg, "", "  ")
+			fmt.Println(string(out))
+			return
+		}
+		uri, err := cfg.URI()
+		if err != nil {
+			log.Fatalf("gutsclient: %v", err)
+		}
+		fmt.Println(uri)
+		return
+	}
+
+	var built []relay.Door
+	for _, raw := range doors {
+		parsed, err := url.Parse(raw)
+		if err != nil {
+			log.Fatalf("gutsclient: bad -door %q: %v", raw, err)
+		}
+		if *direct || *googleIP == "" {
+			built = append(built, relay.NewDirect(raw, *key))
+			continue
+		}
 		fronted, err := relay.NewFronted(parsed, *googleIP, *sni, *key)
 		if err != nil {
 			log.Fatalf("gutsclient: %v", err)
 		}
-		door = fronted
+		built = append(built, fronted)
 	}
+	door := relay.NewRotator(built...)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
@@ -60,6 +160,15 @@ func main() {
 		}
 		fmt.Println("door ok:", info, "via", door.Describe())
 		return
+	}
+	if *pick && len(built) > 1 {
+		for name, took := range door.Pick(ctx) {
+			if took < 0 {
+				fmt.Printf("  %-60s unreachable\n", name)
+				continue
+			}
+			fmt.Printf("  %-60s %d ms\n", name, took.Milliseconds())
+		}
 	}
 
 	proxy := relay.NewProxy(door, *listen, func(format string, args ...any) { log.Printf(format, args...) })
@@ -78,5 +187,24 @@ func main() {
 	}()
 	if err := proxy.Serve(); err != nil {
 		log.Fatalf("gutsclient: %v", err)
+	}
+}
+
+func printScan(results []gip.Result) {
+	fmt.Printf("%-16s %-9s %-8s %s\n", "address", "handshake", "fronted", "note")
+	for _, r := range results {
+		rtt := "-"
+		if r.RTTMs > 0 {
+			rtt = fmt.Sprintf("%d ms", r.RTTMs)
+		}
+		fronted := "no"
+		if r.Fronted {
+			fronted = "yes"
+		}
+		note := r.Err
+		if note == "" {
+			note = fmt.Sprintf("status %d", r.Status)
+		}
+		fmt.Printf("%-16s %-9s %-8s %s\n", r.IP, rtt, fronted, note)
 	}
 }

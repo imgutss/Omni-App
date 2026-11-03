@@ -52,6 +52,39 @@ gutsclient -door "http://127.0.0.1:8080/g" -key "رمز-طولانی" -direct
 ```
 بعد مرورگر/اپ را روی `socks5://127.0.0.1:1080` بگذار. `-check` سلامت کل مسیر را تست می‌کند.
 
+## پیدا کردن آدرس بازِ گوگل (اسکنر)
+شبکه‌ی محدود فقط بعضی از IPهای گوگل را باز می‌گذارد و این هر روز عوض می‌شود، پس اسکنر داخل خود کلاینت است:
+
+```bash
+gutsclient -scan                      # جدول: دست‌دادن TLS، آیا درخواست fronted را قبول کرد، کد وضعیت
+gutsclient -scan-json                 # همان، JSON (برای اپ/پنل)
+gutsclient -door ... -google-ip auto  # خودش اسکن می‌کند و سریع‌ترین آدرسِ کارآمد را برمی‌دارد
+```
+خروجی واقعی از یک اجرا (شبکه‌ی آزاد):
+```text
+address          handshake fronted  note
+172.217.16.142   5 ms      yes      status 302
+216.239.38.120   21 ms     yes      status 302
+142.250.185.78   -         no       context deadline exceeded
+```
+یعنی همان چیزی که کل طرح به آن تکیه دارد: با **SNI=www.google.com** و **Host=script.google.com** لبه‌ی گوگل درخواست را می‌پذیرد (۳۰۲)، نه ۴۲۱.
+
+## چند در و خروجی‌ها
+```bash
+gutsclient -door "https://script.google.com/macros/s/A/exec" \
+           -door "https://script.google.com/macros/s/B/exec" \
+           -google-ip auto -pick -key "..."      # هر دور را پینگ می‌کند، سریع‌ترین اول، و روی خطا می‌چرخد
+```
+با چند اکانت گوگل/چند Apps Script، سهمیه‌ی ۲۰هزاری تقسیم می‌شود و یک deployment خراب همه‌چیز را نمی‌خواباند.
+
+## پروفایل قابل اسکن (QR)
+```bash
+gutsclient -door "https://.../exec" -key "..." -google-ip 216.239.38.120 -export
+# guts://eyJkb29yIjpbImh0dHBzOi8vLi4uIl0sImtleSI6Ii4uLiJ9
+gutsclient -import "guts://..."           # همان پروفایل را اجرا می‌کند
+```
+این دقیقاً قالبی است که اپ اندروید برای QR/deep-link مصرف می‌کند.
+
 ## تست محلی (بدون گوگل)
 ```bash
 ./scripts/smoke.sh      # خروجی + در قلابی + کلاینت + دانلود ۲ مگابایت و مقایسه‌ی md5
