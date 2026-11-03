@@ -515,28 +515,52 @@ jobs:
         done
         exit $status
 
-    - name: Build a diagnostic APK without the native libraries
+    - name: Build the two copies a size-limited installer needs
       run: |
-        # The last release installs everywhere but on one phone, and the only new file in it is a
-        # native library: this copy carries the same code with no lib/ at all, so that phone can
-        # say which of the two it refuses. It is signed with the same key, so it installs over the
-        # release; it cannot open a tunnel, and it is named so nobody mistakes it for the app.
+        # One phone installs the 24 MB copy with no native libraries and refuses the 82 MB one, so
+        # the size of the file, and not its signature, is the first thing to test. Two copies are
+        # built here from the release APK: a slim one that drops the two geo data files and some
+        # unused post-quantum tables and recompresses what is left with zopfli, and a 27 MB one
+        # that keeps the code and this release's new library and nothing else. Both are signed
+        # with the release key, so they install over it.
         set -euo pipefail
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq advancecomp zip unzip
         cd "${{ github.workspace }}/V2rayNG/app/build/outputs/apk/playstore/release"
-        version="${{ inputs.release_tag || '0.11.1' }}"
+        version="${{ inputs.release_tag || '0.11.2' }}"
         build_tools="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
-        out="Omni_${version}-nolibs_arm64-v8a.apk"
-        cp "Omni_${version}_arm64-v8a.apk" /tmp/nolibs.apk
-        zip -q -d /tmp/nolibs.apk 'lib/*'
-        "$build_tools/zipalign" -f -p 4 /tmp/nolibs.apk /tmp/nolibs-aligned.apk
-        "$build_tools/apksigner" sign \
-          --ks "${{ steps.android_keystore.outputs.filePath }}" \
-          --ks-pass "pass:${{ secrets.OMNI_KEYSTORE_PASSWORD }}" \
-          --key-pass "pass:${{ secrets.OMNI_KEY_PASSWORD }}" \
-          --ks-key-alias "${{ secrets.OMNI_KEY_ALIAS }}" \
-          --out "$out" /tmp/nolibs-aligned.apk
-        "$build_tools/apksigner" verify --print-certs "$out"
-        sha256sum "$out"
+        sign() {
+          "$build_tools/zipalign" -f -p 4 "$1" /tmp/sign-in.apk
+          "$build_tools/apksigner" sign \
+            --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
+            --ks "${{ steps.android_keystore.outputs.filePath }}" \
+            --ks-pass "pass:${{ secrets.OMNI_KEYSTORE_PASSWORD }}" \
+            --key-pass "pass:${{ secrets.OMNI_KEY_PASSWORD }}" \
+            --ks-key-alias "${{ secrets.OMNI_KEY_ALIAS }}" \
+            --out "$2" /tmp/sign-in.apk
+          "$build_tools/apksigner" verify --print-certs "$2" | head -4
+          ls -l "$2"
+        }
+        # zip -0 puts resources.arsc back uncompressed, which the installer requires and which the
+        # recompression below takes away.
+        restore_arsc() {
+          rm -rf /tmp/arsc && mkdir -p /tmp/arsc
+          unzip -qo "$1" resources.arsc -d /tmp/arsc
+          ( cd /tmp/arsc && zip -q -0 "$1" resources.arsc )
+        }
+        slim="Omni_${version}-slim_arm64-v8a.apk"
+        cp "Omni_${version}_arm64-v8a.apk" /tmp/slim.apk
+        zip -q -d /tmp/slim.apk 'assets/geoip.dat' 'assets/geosite.dat' 'org/bouncycastle/*'
+        advzip -q -z -2 /tmp/slim.apk || echo "::warning::advzip did not finish; shipping it as it stands"
+        restore_arsc /tmp/slim.apk
+        sign /tmp/slim.apk "$slim"
+        small="Omni_${version}-nolibs-guts_arm64-v8a.apk"
+        cp "Omni_${version}_arm64-v8a.apk" /tmp/small.apk
+        unzip -q -o /tmp/small.apk 'lib/arm64-v8a/libguts.so' -d /tmp/guts-lib
+        zip -q -d /tmp/small.apk 'lib/*'
+        ( cd /tmp/guts-lib && zip -q -0 /tmp/small.apk 'lib/arm64-v8a/libguts.so' )
+        sign /tmp/small.apk "$small"
+        sha256sum "$slim" "$small"
 
     - name: Upload Omni APKs
       if: ${{ success() }}
