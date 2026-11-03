@@ -926,6 +926,7 @@
     <string name="title_guts_settings">GUTS</string>
     <string name="title_pref_guts_auto_switch">Keep the tunnel off when Google is unreachable</string>
     <string name="summary_pref_guts_auto_switch">On a national network the Google edge that carries every GUTS call is not there. Before opening a GUTS tunnel, ask the edge — one handshake, no Apps Script quota — and stay on the plain network when the answer is no, looking again every minute instead of failing a connect.</string>
+    <string name="title_pref_guts_door_budget">Calls per door per day</string>
     <string name="guts_scan_edge">Scan this network for a working edge</string>
     <string name="guts_scan_running">Scanning…</string>
     <string name="guts_scan_none">No Google edge answered from this network: nothing was changed.</string>

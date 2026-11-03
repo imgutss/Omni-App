@@ -879,6 +879,7 @@
     <string name="title_guts_settings">GUTS</string>
     <string name="title_pref_guts_auto_switch">روی شبکه‌ای که گوگل در دسترس نیست، تونل باز نشود</string>
     <string name="summary_pref_guts_auto_switch">در «شبکه ملی»، لبه‌ی گوگلی که همه‌ی تماس‌های GUTS را می‌برد وجود ندارد. پیش از باز کردن تونل، یک دست‌دادن (بدون هیچ تماس Apps Script و بدون مصرف سهمیه) می‌پرسد که گوگل از این شبکه در دسترس است یا نه؛ اگر نه، گوشی روی شبکه‌ی عادی می‌ماند و هر دقیقه دوباره می‌پرسد، به‌جای اینکه یک اتصال تا ته شکست بخورد.</string>
+    <string name="title_pref_guts_door_budget">تماس مجاز هر در در روز</string>
     <string name="guts_scan_edge">این شبکه را برای یافتن لبه‌ی سالم اسکن کن</string>
     <string name="guts_scan_running">در حال اسکن…</string>
     <string name="guts_scan_none">هیچ لبه‌ی گوگلی از این شبکه جواب نداد؛ چیزی تغییر نکرد.</string>

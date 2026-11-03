@@ -521,6 +521,9 @@ object SettingsManager {
      * Check if HEV TUN is being used.
      * @return True if HEV TUN is used, false otherwise.
      */
+    /** Apps Script allows about twenty thousand calls a day per account; this leaves a margin. */
+    const val DEFAULT_GUTS_DOOR_BUDGET = 18_000
+
     fun isUsingHevTun(): Boolean {
         // PattNG: Xray-core's own TUN is the default
         return MmkvManager.decodeSettingsBool(AppConfig.PREF_USE_HEV_TUNNEL, false)
@@ -535,6 +538,17 @@ object SettingsManager {
      */
     fun isGutsAutoSwitch(): Boolean =
         MmkvManager.decodeSettingsBool(AppConfig.PREF_GUTS_AUTO_SWITCH, true)
+
+    /**
+     * How many calls one GUTS door may take per day, or 0 for no limit.
+     *
+     * An Apps Script project allows roughly twenty thousand calls a day per account, so the default
+     * stays under it: a client that spends the day silently would otherwise fail like a broken
+     * tunnel, while this way the client refuses a door out loud and the others carry on.
+     */
+    fun gutsDoorBudget(): Int =
+        MmkvManager.decodeSettingsString(AppConfig.PREF_GUTS_DOOR_BUDGET)?.trim()?.toIntOrNull()
+            ?.coerceIn(0, 100_000) ?: DEFAULT_GUTS_DOOR_BUDGET
 
     /**
      * Check if VPN mode is enabled.

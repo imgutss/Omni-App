@@ -39,6 +39,7 @@ import com.v2ray.ang.handler.AppLocaleManager
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.MmkvManager.rememberMmkvBool
 import com.v2ray.ang.handler.MmkvManager.rememberMmkvString
+import com.v2ray.ang.handler.SettingsManager
 import com.v2ray.ang.handler.SettingsChangeManager
 import com.v2ray.ang.root.RootManager
 import com.v2ray.ang.ui.base.BaseComponentActivity
@@ -152,6 +153,10 @@ fun SettingsScreen(
 
     var speedEnabled by rememberMmkvBool(AppConfig.PREF_SPEED_ENABLED, false)
     var gutsAutoSwitch by rememberMmkvBool(AppConfig.PREF_GUTS_AUTO_SWITCH, true)
+    var gutsDoorBudget by rememberMmkvString(
+        AppConfig.PREF_GUTS_DOOR_BUDGET,
+        SettingsManager.DEFAULT_GUTS_DOOR_BUDGET.toString()
+    )
     var confirmRemove by rememberMmkvBool(AppConfig.PREF_CONFIRM_REMOVE, false)
     var doubleColumnDisplay by rememberMmkvBool(AppConfig.PREF_DOUBLE_COLUMN_DISPLAY, false)
     var groupAllDisplay by rememberMmkvBool(AppConfig.PREF_GROUP_ALL_DISPLAY, false)
@@ -519,6 +524,12 @@ fun SettingsScreen(
                     summary = stringResource(R.string.summary_pref_guts_auto_switch),
                     checked = gutsAutoSwitch,
                     onCheckedChange = { gutsAutoSwitch = it }
+                )
+                SettingsEditItem(
+                    title = stringResource(R.string.title_pref_guts_door_budget),
+                    value = gutsDoorBudget,
+                    keyboardNumber = true,
+                    onValueChanged = { gutsDoorBudget = it }
                 )
             }
 

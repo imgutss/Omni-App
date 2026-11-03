@@ -4,6 +4,7 @@ import android.content.Context
 import android.system.Os
 import android.system.OsConstants
 import com.v2ray.ang.AppConfig
+import com.v2ray.ang.handler.SettingsManager
 import com.v2ray.ang.util.LogUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -41,6 +42,9 @@ object GutsCoreManager {
 
     /** The client reads its shared key from here, which keeps it off the command line. */
     private const val KEY_ENV = "GUTS_KEY"
+    private const val QUOTA_STATE_ENV = "GUTS_QUOTA_STATE"
+    private const val QUOTA_BUDGET_ENV = "GUTS_DOOR_BUDGET"
+    private const val QUOTA_STATE_FILE = "guts-quota.json"
 
     private const val READY_POLL_MS = 250L
     private const val EXIT_WAIT_MS = 2_000L
@@ -215,6 +219,12 @@ object GutsCoreManager {
                     put(PORT_ENV, target.core.port.toString())
                     put("HOME", directory.absolutePath)
                     put("TMPDIR", target.context.cacheDir.absolutePath)
+                    // Where the client remembers today's calls per door, and how many each door
+                    // may take: passed through the environment so an older client ignores them
+                    // instead of refusing an argv it does not know.
+                    put(QUOTA_STATE_ENV, File(target.context.filesDir, QUOTA_STATE_FILE).absolutePath)
+                    val budget = SettingsManager.gutsDoorBudget()
+                    if (budget > 0) put(QUOTA_BUDGET_ENV, budget.toString())
                 }
             }.start()
             // A client that cannot start prints why and exits; an open stdin would only make it wait.

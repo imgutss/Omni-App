@@ -70,6 +70,9 @@ object AppConfig {
     /** The «national network ⇄ normal» switch: ask the edge before opening a GUTS tunnel. */
     const val PREF_GUTS_AUTO_SWITCH = "pref_guts_auto_switch"
 
+    /** Calls one GUTS door may take per day; 0 or less means no limit. */
+    const val PREF_GUTS_DOOR_BUDGET = "pref_guts_door_budget"
+
     const val PREF_AETHER_LISTEN_PORT = "pref_aether_listen_port"
 
     /** PattNG: the settings of the page that gets new WARP keys, which no profile shares; see AetherKeysSettings. */
