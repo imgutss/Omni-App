@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -58,7 +59,58 @@ func (f *fakeFetchDoor) request() proto.Request {
 	return f.last
 }
 
+type fakeGoogleDirect struct {
+	mu       sync.Mutex
+	method   string
+	url      string
+	host     string
+	rangeHdr string
+	cookie   string
+	encoding string
+	body     []byte
+}
+
+func (f *fakeGoogleDirect) Do(req *http.Request) (*http.Response, error) {
+	body, err := io.ReadAll(req.Body)
+	if err != nil {
+		return nil, err
+	}
+	payload := "video-bytes"
+	f.mu.Lock()
+	f.method = req.Method
+	f.url = req.URL.String()
+	f.host = req.Host
+	f.rangeHdr = req.Header.Get("Range")
+	f.cookie = req.Header.Get("Cookie")
+	f.encoding = req.Header.Get("Accept-Encoding")
+	f.body = append([]byte(nil), body...)
+	f.mu.Unlock()
+	return &http.Response{
+		Status:        "206 Partial Content",
+		StatusCode:    http.StatusPartialContent,
+		Proto:         "HTTP/2.0",
+		ProtoMajor:    2,
+		Header:        http.Header{"Content-Type": {"video/mp4"}, "Content-Range": {"bytes 0-10/11"}},
+		Body:          io.NopCloser(strings.NewReader(payload)),
+		ContentLength: int64(len(payload)),
+		Request:       req,
+	}, nil
+}
+
+func (f *fakeGoogleDirect) Describe() string { return "fake google direct" }
+
+func (f *fakeGoogleDirect) snapshot() (string, string, string, string, string, string, []byte) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.method, f.url, f.host, f.rangeHdr, f.cookie, f.encoding, append([]byte(nil), f.body...)
+}
+
 func startFetchProxy(t *testing.T) (string, *fakeFetchDoor, *relay.CertificateAuthority) {
+	t.Helper()
+	return startFetchProxyWithGoogle(t, nil)
+}
+
+func startFetchProxyWithGoogle(t *testing.T, direct relay.GoogleDirectDoer) (string, *fakeFetchDoor, *relay.CertificateAuthority) {
 	t.Helper()
 	dir := t.TempDir()
 	ca, err := relay.LoadOrCreateCA(filepath.Join(dir, "ca.crt"), filepath.Join(dir, "ca.key"))
@@ -68,6 +120,9 @@ func startFetchProxy(t *testing.T) (string, *fakeFetchDoor, *relay.CertificateAu
 	door := &fakeFetchDoor{}
 	proxy := relay.NewProxy(door, "127.0.0.1:0", t.Logf)
 	proxy.UseFetchMITM(ca)
+	if direct != nil {
+		proxy.UseGoogleDirect(direct)
+	}
 	addr, err := proxy.Listen()
 	if err != nil {
 		t.Fatalf("listen: %v", err)
@@ -186,6 +241,57 @@ func TestFetchModeTerminatesHTTPSWithTheLocalCA(t *testing.T) {
 	}
 	if got := door.request(); got.URL != "https://example.com/secure" {
 		t.Fatalf("door URL = %q", got.URL)
+	}
+}
+
+func TestFetchModeRoutesGoogleVideoDirectly(t *testing.T) {
+	direct := &fakeGoogleDirect{}
+	addr, door, ca := startFetchProxyWithGoogle(t, direct)
+	host := "rr1---sn-abc.googlevideo.com"
+	raw := socksDial(t, addr, host, 443)
+	defer raw.Close()
+	_ = raw.SetDeadline(time.Now().Add(10 * time.Second))
+
+	roots := x509.NewCertPool()
+	if !roots.AppendCertsFromPEM(ca.CertificatePEM()) {
+		t.Fatal("the generated CA did not parse as a root")
+	}
+	tlsConn := tls.Client(raw, &tls.Config{
+		RootCAs:    roots,
+		ServerName: host,
+		NextProtos: []string{"http/1.1"},
+	})
+	if err := tlsConn.Handshake(); err != nil {
+		t.Fatalf("TLS handshake with local CA leaf: %v", err)
+	}
+	request := "POST /videoplayback?expire=1 HTTP/1.1\r\n" +
+		"Host: " + host + "\r\n" +
+		"Range: bytes=0-10\r\n" +
+		"Cookie: SESSION=abc\r\n" +
+		"Accept-Encoding: br\r\n" +
+		"Origin: https://www.youtube.com\r\n" +
+		"Content-Length: 7\r\n" +
+		"Connection: close\r\n\r\nsegment"
+	if _, err := io.WriteString(tlsConn, request); err != nil {
+		t.Fatalf("write video request: %v", err)
+	}
+	response, err := io.ReadAll(tlsConn)
+	if err != nil {
+		t.Fatalf("read video response: %v", err)
+	}
+	text := string(response)
+	if !strings.Contains(text, "206 Partial Content") || !strings.Contains(text, "Content-Range: bytes 0-10/11") || !strings.Contains(text, "video-bytes") {
+		t.Fatalf("unexpected direct response:\n%s", text)
+	}
+	if got := door.request(); got.Op != "" {
+		t.Fatalf("googlevideo reached the Apps Script door as %+v", got)
+	}
+	method, url, gotHost, rangeHdr, cookie, encoding, body := direct.snapshot()
+	if method != "POST" || url != "https://"+host+"/videoplayback?expire=1" || gotHost != host {
+		t.Fatalf("direct request = %s %q host %q", method, url, gotHost)
+	}
+	if rangeHdr != "bytes=0-10" || cookie != "SESSION=abc" || encoding != "br" || string(body) != "segment" {
+		t.Fatalf("direct headers/body = range %q cookie %q encoding %q body %q", rangeHdr, cookie, encoding, body)
 	}
 }
 

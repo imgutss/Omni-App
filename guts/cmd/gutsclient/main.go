@@ -333,6 +333,7 @@ func main() {
 	}
 
 	var built []relay.Door
+	var googleDirect *relay.GoogleDirectFetcher
 	for _, raw := range doors {
 		parsed, err := url.Parse(raw)
 		if err != nil {
@@ -347,6 +348,12 @@ func main() {
 			log.Fatalf("gutsclient: %v", err)
 		}
 		built = append(built, fronted)
+		if *mode == config.ModeFetch && googleDirect == nil {
+			googleDirect, err = relay.NewGoogleDirectFetcher(*googleIP, *sni)
+			if err != nil {
+				log.Fatalf("gutsclient: %v", err)
+			}
+		}
 	}
 	rotator := relay.NewRotator(built...)
 	var door relay.Door = rotator
@@ -398,6 +405,12 @@ func main() {
 			log.Fatalf("gutsclient: %v", err)
 		}
 		proxy.UseFetchMITM(ca)
+		if googleDirect != nil {
+			proxy.UseGoogleDirect(googleDirect)
+			log.Printf("gutsclient: google and youtube HTTPS will bypass Apps Script through %s", googleDirect.Describe())
+		} else {
+			log.Printf("gutsclient: no fronted google edge is configured; google and youtube HTTPS will use Apps Script fetch")
+		}
 		log.Printf("gutsclient: certificate/fetch mode; local CA sha256 %s", ca.FingerprintSHA256())
 	} else {
 		// Shared multiplexed sessions: the difference between a handful of polls per interval and

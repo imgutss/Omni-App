@@ -24,7 +24,7 @@ jobs:
       # One version for the whole build. The assemble step and the slim-copy step each used to
       # fall back to a different hard-coded version, so a push built Omni_<one>_*.apk and then
       # went looking for Omni_<other>_*.apk to slim — which is what failed the 0.11.2 build.
-      OMNI_VERSION: ${{ inputs.release_tag || '0.11.7' }}
+      OMNI_VERSION: ${{ inputs.release_tag || '0.11.8' }}
       # The latest stable release, as aether's own release workflow builds with. The libaether
       # cache is keyed by the rustc it installs, so a new stable release builds the core afresh.
       RUST_TOOLCHAIN: "stable"

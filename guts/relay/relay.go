@@ -252,13 +252,14 @@ type Proxy struct {
 	listen string
 	log    func(string, ...any)
 
-	mu          sync.Mutex
-	listener    net.Listener
-	closed      bool
-	useMux      bool
-	muxSessions int
-	muxes       []*Mux
-	fetchCA     *CertificateAuthority
+	mu           sync.Mutex
+	listener     net.Listener
+	closed       bool
+	useMux       bool
+	muxSessions  int
+	muxes        []*Mux
+	fetchCA      *CertificateAuthority
+	googleDirect GoogleDirectDoer
 }
 
 // NewProxy builds a SOCKS5 server that carries its connections through door.

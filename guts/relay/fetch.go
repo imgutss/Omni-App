@@ -23,7 +23,9 @@ import (
 //
 // HTTPS is terminated with the user's own local CA, translated into one HTTP request, and sent to
 // the Apps Script door. The door retrieves the page itself, so this mode needs no exit node and
-// no /g endpoint. Plain HTTP needs no certificate and follows the same fetch path.
+// no /g endpoint. Plain HTTP needs no certificate and follows the same fetch path. Google-owned
+// HTTPS destinations are the one exception when UseGoogleDirect is configured: YouTube rejects
+// Apps Script's server-side fetches, so those requests go straight to Google's edge instead.
 func (p *Proxy) UseFetchMITM(ca *CertificateAuthority) {
 	p.mu.Lock()
 	p.fetchCA = ca
@@ -137,6 +139,23 @@ func (p *Proxy) serveFetchHTTP(ctx context.Context, c net.Conn, scheme, tlsHost,
 			return
 		}
 
+		// Google's own services are the one class of destination Apps Script should not fetch:
+		// YouTube sees UrlFetchApp's server-side request as automated traffic and answers with
+		// a sorry page, and video segments are long-lived Range traffic, not one small JSON
+		// answer. Those hosts live on the same Google frontend the door already uses, so send
+		// the browser's real request there directly and stream the answer back.
+		if scheme == "https" {
+			if direct := p.googleFetcher(); direct != nil && isGoogleDirectHost(targetHost(target)) {
+				_ = c.SetWriteDeadline(time.Now().Add(15 * time.Minute))
+				err := p.serveGoogleDirect(ctx, writer, req, target, body, direct)
+				_ = c.SetWriteDeadline(time.Time{})
+				if err != nil || req.Close {
+					return
+				}
+				continue
+			}
+		}
+
 		fetchCtx, cancel := context.WithTimeout(ctx, 90*time.Second)
 		resp, err := p.door.Call(fetchCtx, proto.Request{
 			Op:      proto.OpFetch,
@@ -181,6 +200,70 @@ func (p *Proxy) serveFetchHTTP(ctx context.Context, c net.Conn, scheme, tlsHost,
 			return
 		}
 	}
+}
+
+func (p *Proxy) serveGoogleDirect(
+	ctx context.Context,
+	w *bufio.Writer,
+	req *http.Request,
+	target string,
+	body []byte,
+	direct GoogleDirectDoer,
+) error {
+	parsed, err := url.Parse(target)
+	if err != nil || parsed.Host == "" {
+		writeFetchError(w, req, http.StatusBadRequest, "the HTTP request target is not a usable URL", true)
+		return nil
+	}
+	upstream, err := http.NewRequestWithContext(ctx, req.Method, target, bytes.NewReader(body))
+	if err != nil {
+		writeFetchError(w, req, http.StatusBadRequest, err.Error(), true)
+		return nil
+	}
+	upstream.Header = sanitizeDirectRequestHeaders(req.Header)
+	upstream.Host = parsed.Host
+	upstream.ContentLength = int64(len(body))
+
+	resp, err := direct.Do(upstream)
+	if err != nil {
+		p.log("google-direct: %s %s: %v", req.Method, parsed.Host, err)
+		writeFetchError(w, req, http.StatusBadGateway, "The Google edge did not answer this Google request", true)
+		return nil
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	headers := sanitizeDirectResponseHeaders(resp.Header)
+	applyFetchCORS(req, headers)
+	contentLength := resp.ContentLength
+	responseBody := resp.Body
+	if strings.EqualFold(req.Method, http.MethodHead) || resp.StatusCode == http.StatusNoContent || resp.StatusCode == http.StatusNotModified {
+		if resp.StatusCode == http.StatusNoContent || resp.StatusCode == http.StatusNotModified {
+			contentLength = 0
+		}
+		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 64<<10))
+		responseBody = http.NoBody
+	}
+	status := resp.Status
+	if status == "" {
+		status = fmt.Sprintf("%d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
+	}
+	out := &http.Response{
+		Status:           status,
+		StatusCode:       resp.StatusCode,
+		Proto:            "HTTP/1.1",
+		ProtoMajor:       1,
+		ProtoMinor:       1,
+		Header:           headers,
+		Body:             responseBody,
+		ContentLength:    contentLength,
+		TransferEncoding: resp.TransferEncoding,
+		Request:          req,
+		Close:            req.Close || resp.Close,
+	}
+	if err := out.Write(w); err != nil {
+		return err
+	}
+	return w.Flush()
 }
 
 func fetchTargetURL(req *http.Request, scheme, tlsHost, socksHost string, socksPort int) (string, error) {
@@ -248,6 +331,41 @@ func sanitizeFetchRequestHeaders(in http.Header) map[string][]string {
 	// Apps Script returns the retrieved bytes inside JSON. Asking the origin for identity avoids a
 	// second, inconsistent compression layer between UrlFetchApp and the browser.
 	out["Accept-Encoding"] = []string{"identity"}
+	return out
+}
+
+func sanitizeDirectRequestHeaders(in http.Header) http.Header {
+	remove := hopByHopHeaderNames(in)
+	for _, name := range []string{
+		"Forwarded", "Via", "X-Forwarded-For", "X-Forwarded-Host",
+		"X-Forwarded-Port", "X-Forwarded-Proto", "X-Real-IP", "CF-Connecting-IP",
+		"True-Client-IP", "Fastly-Client-IP",
+	} {
+		remove[http.CanonicalHeaderKey(name)] = true
+	}
+	out := http.Header{}
+	for name, values := range in {
+		canonical := http.CanonicalHeaderKey(name)
+		if remove[canonical] || canonical == "Content-Length" {
+			continue
+		}
+		// Unlike Apps Script, the browser's Accept-Encoding stays intact here: Google's
+		// compressed response is streamed back to the browser that asked for it.
+		out[canonical] = append([]string(nil), values...)
+	}
+	return out
+}
+
+func sanitizeDirectResponseHeaders(in http.Header) http.Header {
+	remove := hopByHopHeaderNames(in)
+	out := http.Header{}
+	for name, values := range in {
+		canonical := http.CanonicalHeaderKey(name)
+		if remove[canonical] || canonical == "Content-Length" {
+			continue
+		}
+		out[canonical] = append([]string(nil), values...)
+	}
 	return out
 }
 
@@ -338,26 +456,32 @@ func writeFetchPreflight(w *bufio.Writer, req *http.Request) error {
 	return w.Flush()
 }
 
+func applyFetchCORS(req *http.Request, headers http.Header) {
+	origin := strings.TrimSpace(req.Header.Get("Origin"))
+	if origin == "" {
+		return
+	}
+	// Neither UrlFetchApp nor every Google API reliably returns a CORS answer a credentialed
+	// browser request may use. We are the browser's TLS endpoint in this mode, so make the
+	// browser-side permission explicit for its own origin.
+	for name := range headers {
+		if strings.HasPrefix(strings.ToLower(name), "access-control-") {
+			delete(headers, name)
+		}
+	}
+	headers.Set("Access-Control-Allow-Origin", origin)
+	headers.Set("Access-Control-Allow-Credentials", "true")
+	headers.Set("Access-Control-Expose-Headers", "*")
+	headers.Add("Vary", "Origin")
+}
+
 func writeFetchResponse(w *bufio.Writer, req *http.Request, fetched proto.Response, body []byte) error {
 	status := fetched.Status
 	if status < 100 || status > 999 {
 		status = http.StatusBadGateway
 	}
 	headers := sanitizeFetchResponseHeaders(fetched.Headers)
-	if origin := strings.TrimSpace(req.Header.Get("Origin")); origin != "" {
-		// UrlFetchApp does not reliably preserve CORS headers, and an origin's wildcard is not a
-		// valid answer to a credentialed browser request. We are the browser's TLS endpoint in
-		// this mode, so make the browser-side permission explicit for its own origin.
-		for name := range headers {
-			if strings.HasPrefix(strings.ToLower(name), "access-control-") {
-				delete(headers, name)
-			}
-		}
-		headers.Set("Access-Control-Allow-Origin", origin)
-		headers.Set("Access-Control-Allow-Credentials", "true")
-		headers.Set("Access-Control-Expose-Headers", "*")
-		headers.Add("Vary", "Origin")
-	}
+	applyFetchCORS(req, headers)
 	contentLength := int64(len(body))
 	if strings.EqualFold(req.Method, http.MethodHead) {
 		if raw := firstHeaderValue(fetched.Headers, "Content-Length"); raw != "" {
