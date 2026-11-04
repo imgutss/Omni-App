@@ -162,6 +162,7 @@ class ServerGutsActivity : BaseServerActivity() {
                 },
                 placeholder = GutsCore.AUTO_EDGE,
                 supportingText = stringResource(R.string.guts_google_ip_support),
+                maxLines = 6,
                 isError = uiState.isGutsGoogleIpError,
             )
             FormTextField(
@@ -203,8 +204,13 @@ class ServerGutsActivity : BaseServerActivity() {
                             this@ServerGutsActivity.toast(R.string.guts_scan_none)
                             return@launch
                         }
-                        found.bestEdge?.let {
-                            uiState.gutsGoogleIp = it
+                        found.bestEdge?.let { best ->
+                            val enteredEdges = GutsCore.edgesIn(uiState.gutsGoogleIp)
+                            uiState.gutsGoogleIp = if (enteredEdges.size > 1) {
+                                (listOf(best) + enteredEdges.filterNot { it == best }).joinToString("\n")
+                            } else {
+                                best
+                            }
                             uiState.isGutsGoogleIpError = false
                         }
                         found.bestSni?.let {

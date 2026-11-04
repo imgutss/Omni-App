@@ -84,6 +84,7 @@ data class GutsCore(
          */
         const val FETCH_TEST_URL = "http://cp.cloudflare.com/generate_204"
         const val MAX_DOORS = 16
+        const val MAX_EDGES = 32
         const val MAX_DOOR_LENGTH = 2048
         const val MAX_KEY_LENGTH = 512
         private const val REDACTED = "***"
@@ -108,10 +109,11 @@ data class GutsCore(
         fun of(profile: ProfileItem, listenPort: Int = DEFAULT_SOCKS_PORT): GutsCore {
             val normalized = profile.copy()
             require(normalize(normalized) == null) { "Invalid GUTS profile" }
+            val rawEdge = normalized.gutsGoogleIp.orEmpty().trim().ifBlank { AUTO_EDGE }
             return GutsCore(
                 doors = doorsOf(normalized),
                 key = normalized.gutsKey.orEmpty().trim(),
-                googleIp = normalized.gutsGoogleIp.orEmpty().trim().ifBlank { AUTO_EDGE },
+                googleIp = if (rawEdge == AUTO_EDGE) AUTO_EDGE else edgesIn(rawEdge).joinToString(","),
                 sni = normalized.gutsSni.orEmpty().trim().ifBlank { DEFAULT_SNI },
                 port = listenPort,
                 mode = Mode.fromWire(normalized.gutsMode) ?: Mode.EXIT,
@@ -135,6 +137,17 @@ data class GutsCore(
                 .filter { it.isNotEmpty() }
                 .distinct()
 
+        /**
+         * Edge addresses in the order to test them: one per line, or separated by commas,
+         * semicolons, or spaces, which is how a manual list for a national network usually arrives.
+         */
+        fun edgesIn(text: String?): List<String> =
+            text.orEmpty()
+                .split('\n', '\r', ',', ';', ' ', '\t')
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+                .distinct()
+
         /** A door is an https web app URL; http is allowed for a door emulator on the desk. */
         fun validDoor(raw: String): Boolean {
             if (raw.length > MAX_DOOR_LENGTH || raw.any { it.isWhitespace() }) return false
@@ -145,8 +158,17 @@ data class GutsCore(
 
         fun validSni(raw: String): Boolean = validHost(raw)
 
-        /** "auto" scans for the edge, a literal address or a host name pins it. */
-        fun validEdge(raw: String): Boolean = raw == AUTO_EDGE || validHost(raw) || validDottedLiteral(raw)
+        /**
+         * "auto" scans the built-in and line-resolved pools. A literal address pins one edge; a
+         * short list of them is the manual national-network list, scanned as a closed set.
+         */
+        fun validEdge(raw: String): Boolean {
+            if (raw.trim() == AUTO_EDGE) return true
+            val edges = edgesIn(raw)
+            return edges.size in 1..MAX_EDGES && edges.all { it != AUTO_EDGE && validSingleEdge(it) }
+        }
+
+        private fun validSingleEdge(raw: String): Boolean = validHost(raw) || validDottedLiteral(raw)
 
         private fun validHost(raw: String): Boolean =
             raw.isNotEmpty() && raw.length <= 253 && HOST.matches(raw) && !raw.startsWith("-")

@@ -202,6 +202,21 @@ func (p *Proxy) serveFetchHTTP(ctx context.Context, c net.Conn, scheme, tlsHost,
 	}
 }
 
+// flushingWriter flushes the browser-side buffer after each write. Direct Google answers are
+// streams — a page shell first, then media ranges — so a small part that is already here should
+// not wait in a 64 KiB buffer for the rest of the body to arrive.
+type flushingWriter struct {
+	w *bufio.Writer
+}
+
+func (f flushingWriter) Write(p []byte) (int, error) {
+	n, err := f.w.Write(p)
+	if err != nil {
+		return n, err
+	}
+	return n, f.w.Flush()
+}
+
 func (p *Proxy) serveGoogleDirect(
 	ctx context.Context,
 	w *bufio.Writer,
@@ -247,6 +262,16 @@ func (p *Proxy) serveGoogleDirect(
 	if status == "" {
 		status = fmt.Sprintf("%d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
 	}
+	// An HTTP/2 answer from Google usually has no Content-Length: the stream itself says where
+	// the body ends. Translated literally to this HTTP/1.1 browser connection, that becomes an
+	// EOF-delimited body. The browser then waits for us to close, while this loop waits for the
+	// browser's next keep-alive request — YouTube's white, hanging watch page. Give unknown
+	// lengths an explicit chunked body, and keep the downstream connection's fate tied to the
+	// browser's request, not to whether Google can reuse its own upstream connection.
+	var transferEncoding []string
+	if contentLength < 0 && responseBody != http.NoBody {
+		transferEncoding = []string{"chunked"}
+	}
 	out := &http.Response{
 		Status:           status,
 		StatusCode:       resp.StatusCode,
@@ -256,11 +281,11 @@ func (p *Proxy) serveGoogleDirect(
 		Header:           headers,
 		Body:             responseBody,
 		ContentLength:    contentLength,
-		TransferEncoding: resp.TransferEncoding,
+		TransferEncoding: transferEncoding,
 		Request:          req,
-		Close:            req.Close || resp.Close,
+		Close:            req.Close,
 	}
-	if err := out.Write(w); err != nil {
+	if err := out.Write(flushingWriter{w: w}); err != nil {
 		return err
 	}
 	return w.Flush()

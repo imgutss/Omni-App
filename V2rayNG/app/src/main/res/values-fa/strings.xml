@@ -892,6 +892,9 @@
     <string name="guts_error_mode">حالت GUTS باید exit یا fetch باشد.</string>
     <string name="guts_doors_support_fetch">هر درگاه در یک خط: نشانی ‎/exec‎ مربوط به Apps Script حالت گواهی/Fetch شما. نشانی نود خروجی یا ‎/g‎ نه اینجا و نه داخل آن اسکریپت جایی ندارد.</string>
     <string name="guts_key_support_fetch">همان رمزی که در AUTH_KEY اسکریپت Fetch نوشته‌اید. به محیط اجرای کلاینت می‌رسد و روی خط فرمان نمی‌آید.</string>
+    <string name="guts_lab_google_ip">نشانی(های) لبه‌ی گوگل</string>
+    <string name="guts_google_ip_support">خالی یا auto یعنی اسکن نشانی‌های فرانت‌اند گوگل. یک نشانی یعنی همان ثابت می‌ماند. چند نشانی، هرکدام در یک خط، فهرست دستی شبکه‌ی ملی است: فقط همان‌ها با درخواست fronted تست می‌شوند و کلاینت روی سریع‌ترین نشانی سالم شروع می‌کند.</string>
+    <string name="guts_error_edge">auto، یک نشانی IP یا نام لبه‌ی گوگل، یا فهرستی از نشانی‌های لبه (هرکدام در یک خط) وارد کنید.</string>
     <string name="guts_scan_edge">این شبکه را برای یافتن لبه‌ی سالم اسکن کن</string>
     <string name="guts_scan_running">در حال اسکن…</string>
     <string name="guts_scan_none">هیچ لبه‌ی گوگلی از این شبکه جواب نداد؛ چیزی تغییر نکرد.</string>

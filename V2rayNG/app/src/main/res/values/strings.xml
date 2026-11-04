@@ -845,7 +845,7 @@
     <string name="guts_error_key_missing">Enter the shared key the door and the exit node check.</string>
     <string name="guts_error_key">The GUTS key must be one line of text without spaces, up to 512 characters.</string>
     <string name="guts_error_mode">The GUTS mode must be exit or fetch.</string>
-    <string name="guts_error_edge">Enter a Google edge IP address, a host name, or auto.</string>
+    <string name="guts_error_edge">Enter auto, one Google edge IP address or host name, or a list of edge addresses (one per line).</string>
     <string name="guts_error_sni">The SNI must be a Google host name, such as www.google.com.</string>
     <string name="menu_item_import_config_manually_guts">GUTS</string>
     <string name="guts_lab_doors">Doors (Apps Script web apps)</string>
@@ -856,8 +856,8 @@
     <string name="guts_hint_key">The AUTH_KEY of your Apps Script</string>
     <string name="guts_key_support">The same secret the door and the exit node check. It travels to the client in its environment, never on a command line.</string>
     <string name="guts_key_support_fetch">The same secret as AUTH_KEY in your fetch Apps Script. It travels to the client in its environment, never on a command line.</string>
-    <string name="guts_lab_google_ip">Google edge address</string>
-    <string name="guts_google_ip_support">Empty or auto scans the Google frontend addresses and pins the fastest one that carries a fronted call. A literal address keeps that choice fixed.</string>
+    <string name="guts_lab_google_ip">Google edge address(es)</string>
+    <string name="guts_google_ip_support">Empty or auto scans the Google frontend addresses. One literal address pins it. Several addresses, one per line, form a manual national-network list: only those addresses are fronting-tested, and the client starts on the fastest one that carries a fronted call.</string>
     <string name="guts_lab_sni">Edge SNI</string>
     <string name="guts_sni_support">The certificate name presented to that edge. It must be a Google host, so the connection looks like one to Google.</string>
 

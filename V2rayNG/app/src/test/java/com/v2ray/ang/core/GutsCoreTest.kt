@@ -73,14 +73,32 @@ class GutsCoreTest {
     }
 
     @Test
-    fun anEdgeIsEitherAutoOrAPinnedAddress() {
+    fun anEdgeIsAutoAPinnedAddressOrAManualListOfThem() {
         assertTrue(GutsCore.validEdge("auto"))
         assertTrue(GutsCore.validEdge("216.239.38.120"))
         assertTrue(GutsCore.validEdge("172.217.16.142"))
         assertTrue(GutsCore.validEdge("[2001:4860:4860::8888]"))
         assertTrue(GutsCore.validEdge("www.google.com"))
+        assertTrue(GutsCore.validEdge("216.239.38.120\n142.250.72.14,172.217.16.142"))
         assertFalse(GutsCore.validEdge(""))
+        assertFalse(GutsCore.validEdge("auto,216.239.38.120"))
+        assertFalse(GutsCore.validEdge("216.239.38.120,bad/edge"))
         assertFalse(GutsCore.validEdge("216.239.38.120:443/x"))
+    }
+
+    @Test
+    fun aManualEdgeListIsCanonicalForTheClient() {
+        val core = GutsCore.of(
+            profile(edge = "216.239.38.120\n142.250.72.14,216.239.38.120;172.217.16.142")
+        )
+        val arguments = GutsCoreManager.processArguments(
+            binary = File("/data/app/lib/libguts.so"),
+            core = core,
+            protectAddress = null,
+        )
+
+        assertEquals("216.239.38.120,142.250.72.14,172.217.16.142", core.googleIp)
+        assertTrue("-google-ip=216.239.38.120,142.250.72.14,172.217.16.142" in arguments)
     }
 
     @Test

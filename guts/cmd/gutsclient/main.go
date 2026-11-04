@@ -58,6 +58,22 @@ func (s *stringList) Set(v string) error {
 	return nil
 }
 
+// edgeList reads one -google-ip value as a manual edge list: addresses separated by commas,
+// semicolons or whitespace, in the order a pasted list arrived, without duplicates.
+func edgeList(raw string) []string {
+	raw = strings.NewReplacer(",", " ", ";", " ").Replace(raw)
+	seen := map[string]struct{}{}
+	var out []string
+	for _, edge := range strings.Fields(raw) {
+		if _, ok := seen[edge]; ok {
+			continue
+		}
+		seen[edge] = struct{}{}
+		out = append(out, edge)
+	}
+	return out
+}
+
 // firstLine keeps one error reason on one printed line.
 func firstLine(text string) string {
 	if i := strings.IndexByte(text, '\n'); i >= 0 {
@@ -94,7 +110,7 @@ func main() {
 	caCert := flag.String("ca-cert", os.Getenv("GUTS_CA_CERT"), "fetch mode: persistent local CA certificate PEM path")
 	caKey := flag.String("ca-key", os.Getenv("GUTS_CA_KEY"), "fetch mode: persistent local CA private-key PEM path")
 	makeCA := flag.Bool("make-ca", false, "create or load the local fetch CA, print its fingerprint, and exit")
-	googleIP := flag.String("google-ip", "", "Google edge address, or 'auto' to scan for the working one")
+	googleIP := flag.String("google-ip", "", "Google edge address, a comma/space separated list of edge addresses to scan and choose between, or 'auto' to scan for the working one")
 	sni := flag.String("sni", "www.google.com", "SNI used on the connection to the Google edge")
 	frontHost := flag.String("front-host", "script.google.com", "Host header a fronted scan sends")
 	direct := flag.Bool("direct", false, "post straight to the exit node at -door, no fronting")
@@ -195,7 +211,12 @@ func main() {
 			opts.SNIs = []string(sniNames)
 		}
 		if ip := strings.TrimSpace(*googleIP); ip != "" && ip != "auto" {
-			opts.Only = []string{ip}
+			opts.Only = edgeList(ip)
+			if len(opts.Only) > 1 {
+				// A manual list is the whole point of the scan: every address in it earns the
+				// fronted-call test, not just the handful with the fastest bare TCP connect.
+				opts.MaxEdges = len(opts.Only)
+			}
 		}
 		return opts
 	}
@@ -288,21 +309,34 @@ func main() {
 		return
 	}
 
-	if *googleIP == "auto" {
+	manualEdges := edgeList(*googleIP)
+	if len(manualEdges) == 1 && *googleIP != "auto" {
+		*googleIP = manualEdges[0]
+	}
+	if *googleIP == "auto" || len(manualEdges) > 1 {
 		// The client's own startup path: race the matrix and keep the first pair that fronts.
 		// Both halves of the pair are adopted — a line that only answers for fonts.gstatic.com is
 		// then dialled under fonts.gstatic.com, not declared dead for not answering under www.
+		// A pasted edge list stays a closed list here: on a national network, falling back to
+		// addresses the user did not bring would answer a different question than they asked.
 		ctx, cancel := context.WithTimeout(context.Background(), *scanBudget)
 		res, ok := gip.Reachable(ctx, scanOptions())
 		cancel()
 		if !ok {
+			if len(manualEdges) > 1 {
+				log.Fatalf("gutsclient: none of the %d pinned Google edge addresses carried a fronted call; the door is unreachable from here", len(manualEdges))
+			}
 			log.Fatal("gutsclient: no Google edge address carried a fronted call; the door is unreachable from here")
 		}
 		*googleIP = res.IP
 		if res.SNI != "" {
 			*sni = res.SNI
 		}
-		log.Printf("gutsclient: using edge %s (sni %s, %d ms)", res.IP, *sni, res.RTTMs)
+		if len(manualEdges) > 1 {
+			log.Printf("gutsclient: using pinned edge %s of %d (sni %s, %d ms)", res.IP, len(manualEdges), *sni, res.RTTMs)
+		} else {
+			log.Printf("gutsclient: using edge %s (sni %s, %d ms)", res.IP, *sni, res.RTTMs)
+		}
 	}
 
 	if len(doors) == 0 {

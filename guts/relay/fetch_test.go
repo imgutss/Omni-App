@@ -1,6 +1,7 @@
 package relay_test
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/tls"
@@ -60,14 +61,15 @@ func (f *fakeFetchDoor) request() proto.Request {
 }
 
 type fakeGoogleDirect struct {
-	mu       sync.Mutex
-	method   string
-	url      string
-	host     string
-	rangeHdr string
-	cookie   string
-	encoding string
-	body     []byte
+	mu            sync.Mutex
+	method        string
+	url           string
+	host          string
+	rangeHdr      string
+	cookie        string
+	encoding      string
+	body          []byte
+	unknownLength bool
 }
 
 func (f *fakeGoogleDirect) Do(req *http.Request) (*http.Response, error) {
@@ -84,7 +86,12 @@ func (f *fakeGoogleDirect) Do(req *http.Request) (*http.Response, error) {
 	f.cookie = req.Header.Get("Cookie")
 	f.encoding = req.Header.Get("Accept-Encoding")
 	f.body = append([]byte(nil), body...)
+	unknownLength := f.unknownLength
 	f.mu.Unlock()
+	contentLength := int64(len(payload))
+	if unknownLength {
+		contentLength = -1
+	}
 	return &http.Response{
 		Status:        "206 Partial Content",
 		StatusCode:    http.StatusPartialContent,
@@ -92,7 +99,7 @@ func (f *fakeGoogleDirect) Do(req *http.Request) (*http.Response, error) {
 		ProtoMajor:    2,
 		Header:        http.Header{"Content-Type": {"video/mp4"}, "Content-Range": {"bytes 0-10/11"}},
 		Body:          io.NopCloser(strings.NewReader(payload)),
-		ContentLength: int64(len(payload)),
+		ContentLength: contentLength,
 		Request:       req,
 	}, nil
 }
@@ -292,6 +299,56 @@ func TestFetchModeRoutesGoogleVideoDirectly(t *testing.T) {
 	}
 	if rangeHdr != "bytes=0-10" || cookie != "SESSION=abc" || encoding != "br" || string(body) != "segment" {
 		t.Fatalf("direct headers/body = range %q cookie %q encoding %q body %q", rangeHdr, cookie, encoding, body)
+	}
+}
+
+func TestFetchModeFramesUnknownLengthGoogleResponsesForKeepAlive(t *testing.T) {
+	direct := &fakeGoogleDirect{unknownLength: true}
+	addr, door, ca := startFetchProxyWithGoogle(t, direct)
+	host := "m.youtube.com"
+	raw := socksDial(t, addr, host, 443)
+	defer raw.Close()
+	_ = raw.SetDeadline(time.Now().Add(10 * time.Second))
+
+	roots := x509.NewCertPool()
+	if !roots.AppendCertsFromPEM(ca.CertificatePEM()) {
+		t.Fatal("the generated CA did not parse as a root")
+	}
+	tlsConn := tls.Client(raw, &tls.Config{
+		RootCAs:    roots,
+		ServerName: host,
+		NextProtos: []string{"http/1.1"},
+	})
+	if err := tlsConn.Handshake(); err != nil {
+		t.Fatalf("TLS handshake with local CA leaf: %v", err)
+	}
+	reader := bufio.NewReader(tlsConn)
+	for i := 0; i < 2; i++ {
+		request := "GET /watch?v=test HTTP/1.1\r\nHost: " + host + "\r\nConnection: keep-alive\r\n\r\n"
+		if _, err := io.WriteString(tlsConn, request); err != nil {
+			t.Fatalf("write request %d: %v", i, err)
+		}
+		resp, err := http.ReadResponse(reader, &http.Request{Method: http.MethodGet})
+		if err != nil {
+			t.Fatalf("read response %d: %v", i, err)
+		}
+		body, err := io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
+		if err != nil {
+			t.Fatalf("read body %d: %v", i, err)
+		}
+		if len(resp.TransferEncoding) != 1 || resp.TransferEncoding[0] != "chunked" {
+			t.Fatalf("response %d transfer encoding = %v, want chunked", i, resp.TransferEncoding)
+		}
+		if string(body) != "video-bytes" {
+			t.Fatalf("response %d body = %q", i, body)
+		}
+		if resp.Close {
+			t.Fatalf("response %d closed a keep-alive connection", i)
+		}
+	}
+	if got := door.request(); got.Op != "" {
+		t.Fatalf("YouTube reached the Apps Script door as %+v", got)
 	}
 }
 
