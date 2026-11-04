@@ -253,8 +253,11 @@ data class ProfileItem(
     /** GUTS doors: Google Apps Script web apps, one per line or comma separated. */
     var gutsDoors: String? = null,
 
-    /** The shared secret the door and the exit node check; kept out of the command line. */
+    /** The shared secret the door checks, and in exit mode the exit node checks; kept off the command line. */
     var gutsKey: String? = null,
+
+    /** GUTS mode: null or "exit" means raw TCP through an exit node; "fetch" means certificate/fetch mode. */
+    var gutsMode: String? = null,
 
     /** The Google edge the client pins, or "auto" to scan for the fastest one that fronts. */
     var gutsGoogleIp: String? = null,

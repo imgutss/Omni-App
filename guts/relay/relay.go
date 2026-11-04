@@ -258,6 +258,7 @@ type Proxy struct {
 	useMux      bool
 	muxSessions int
 	muxes       []*Mux
+	fetchCA     *CertificateAuthority
 }
 
 // NewProxy builds a SOCKS5 server that carries its connections through door.
@@ -388,7 +389,12 @@ func (p *Proxy) handle(c net.Conn) {
 
 	p.mu.Lock()
 	muxed := p.useMux
+	fetchCA := p.fetchCA
 	p.mu.Unlock()
+	if fetchCA != nil {
+		p.handleFetch(c, ctx, host, port, fetchCA)
+		return
+	}
 	if muxed && p.handleMux(c, ctx, host, port) {
 		return
 	}

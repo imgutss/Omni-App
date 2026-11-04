@@ -6,6 +6,7 @@ import com.v2ray.ang.core.CoreConfigContextBuilder
 import com.v2ray.ang.core.CoreConfigManager
 import com.v2ray.ang.core.CoreNativeManager
 import com.v2ray.ang.core.DnsttDelayTester
+import com.v2ray.ang.core.GutsCore
 import com.v2ray.ang.core.GutsDelayTester
 import com.v2ray.ang.core.MasterDnsDelayTester
 import com.v2ray.ang.dto.RealPingEvent
@@ -196,11 +197,18 @@ class RealPingWorkerService(
         }
         val guts = configResult.gutsCore
         if (guts != null) {
-            // The Xray probe runs beside the real GUTS client and the door it posts to.
+            // The Xray probe runs beside the real GUTS client and the door it posts to. Fetch
+            // mode is probed over plain HTTP at a non-Google host: Apps Script cannot fetch
+            // Google's own generate_204, and Xray need not trust the user's CA to time the door.
+            val delayUrl = if (guts.mode == GutsCore.Mode.FETCH) {
+                GutsCore.FETCH_TEST_URL
+            } else {
+                SettingsManager.getDelayTestUrl()
+            }
             return summarizeHttp(
                 GutsDelayTester.measureVia(context, guid, guts, samples) { _, _ ->
                     RealPingExecutionLimiter.run(config.configType) {
-                        CoreNativeManager.measureOutboundDelay(configResult.content, SettingsManager.getDelayTestUrl(), batch)
+                        CoreNativeManager.measureOutboundDelay(configResult.content, delayUrl, batch)
                     }
                 }
             )

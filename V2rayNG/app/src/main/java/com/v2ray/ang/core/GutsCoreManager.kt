@@ -44,6 +44,8 @@ object GutsCoreManager {
     private const val KEY_ENV = "GUTS_KEY"
     private const val QUOTA_STATE_ENV = "GUTS_QUOTA_STATE"
     private const val QUOTA_BUDGET_ENV = "GUTS_DOOR_BUDGET"
+    private const val CA_CERT_ENV = "GUTS_CA_CERT"
+    private const val CA_KEY_ENV = "GUTS_CA_KEY"
     private const val QUOTA_STATE_FILE = "guts-quota.json"
 
     /** What resolving this line's own edge addresses may cost a connect. */
@@ -111,7 +113,7 @@ object GutsCoreManager {
         }
     }
 
-    private fun binary(context: Context): File =
+    internal fun binary(context: Context): File =
         File(context.applicationInfo.nativeLibraryDir, BINARY_NAME)
 
     fun isSupported(context: Context): Boolean = binary(context).canExecute()
@@ -232,6 +234,13 @@ object GutsCoreManager {
                     // The door and the exit node check this; the command line does not carry it.
                     put(KEY_ENV, target.core.key)
                     put(PORT_ENV, target.core.port.toString())
+                    if (target.core.mode == GutsCore.Mode.FETCH) {
+                        // Persistent private storage, unlike the session directory below: the
+                        // user installs this CA once and must not be asked again after a restart.
+                        val caFiles = GutsCa.files(target.context)
+                        put(CA_CERT_ENV, caFiles.cert.absolutePath)
+                        put(CA_KEY_ENV, caFiles.key.absolutePath)
+                    }
                     put("HOME", directory.absolutePath)
                     put("TMPDIR", target.context.cacheDir.absolutePath)
                     // Where the client remembers today's calls per door, and how many each door
@@ -284,6 +293,7 @@ object GutsCoreManager {
     ): List<String> = buildList {
         add(binary.absolutePath)
         add("-listen=${AppConfig.LOOPBACK}:${core.port}")
+        if (core.mode == GutsCore.Mode.FETCH) add("-mode=${core.mode.wire}")
         core.doors.forEach { door -> add("-door=$door") }
         add("-google-ip=${core.googleIp}")
         add("-sni=${core.sni}")

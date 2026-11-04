@@ -1,5 +1,6 @@
-// Command gutsclient runs the guts SOCKS5 proxy on this machine: every CONNECT it receives is
-// carried through a door to the exit node, which opens the real connection.
+// Command gutsclient runs the guts SOCKS5 proxy on this machine. In exit mode every CONNECT is
+// carried through a door to the exit node. In fetch mode there is no exit node: HTTPS ends at a
+// local user-owned CA and the door itself fetches each web request.
 //
 //	gutsclient -door https://script.google.com/macros/s/<id>/exec -key <secret> \
 //	           -google-ip auto -sni www.google.com -listen 127.0.0.1:1080
@@ -9,6 +10,8 @@
 //	-scan          probe the Google frontend addresses and print which ones carry a fronted call
 //	-google-ip auto  scan first, then use the fastest edge address that worked
 //	-door (repeat)   several doors, tried fastest first and rotated on failure
+//	-mode fetch      certificate/Apps Script fetch mode; pair with -ca-cert and -ca-key
+//	-make-ca         create or load that local CA and print its fingerprint
 //	-export        print a guts:// URI (a QR code can carry it) instead of starting the proxy
 //	-import        start from a guts:// URI
 package main
@@ -87,6 +90,10 @@ func main() {
 
 	listen := flag.String("listen", "127.0.0.1:1080", "SOCKS5 listen address")
 	key := flag.String("key", os.Getenv("GUTS_KEY"), "shared key, also read from GUTS_KEY")
+	mode := flag.String("mode", os.Getenv("GUTS_MODE"), "exit for raw TCP through an exit node, or fetch for certificate/Apps Script fetch mode")
+	caCert := flag.String("ca-cert", os.Getenv("GUTS_CA_CERT"), "fetch mode: persistent local CA certificate PEM path")
+	caKey := flag.String("ca-key", os.Getenv("GUTS_CA_KEY"), "fetch mode: persistent local CA private-key PEM path")
+	makeCA := flag.Bool("make-ca", false, "create or load the local fetch CA, print its fingerprint, and exit")
 	googleIP := flag.String("google-ip", "", "Google edge address, or 'auto' to scan for the working one")
 	sni := flag.String("sni", "www.google.com", "SNI used on the connection to the Google edge")
 	frontHost := flag.String("front-host", "script.google.com", "Host header a fronted scan sends")
@@ -137,6 +144,9 @@ func main() {
 		if *key == "" {
 			*key = cfg.Key
 		}
+		if *mode == "" {
+			*mode = cfg.Mode
+		}
 		if *googleIP == "" {
 			*googleIP = cfg.GoogleIP
 		}
@@ -146,6 +156,27 @@ func main() {
 		if *listen == "127.0.0.1:1080" && cfg.Listen != "" {
 			*listen = cfg.Listen
 		}
+	}
+
+	*mode = strings.ToLower(strings.TrimSpace(*mode))
+	if *mode == "" {
+		*mode = config.ModeExit
+	}
+	if *mode != config.ModeExit && *mode != config.ModeFetch {
+		log.Fatalf("gutsclient: unknown -mode %q", *mode)
+	}
+
+	if *makeCA {
+		if *caCert == "" || *caKey == "" {
+			log.Fatal("gutsclient: -make-ca needs -ca-cert and -ca-key")
+		}
+		ca, err := relay.LoadOrCreateCA(*caCert, *caKey)
+		if err != nil {
+			log.Fatalf("gutsclient: %v", err)
+		}
+		fmt.Printf("ca ready: %s\n", *caCert)
+		fmt.Printf("sha256: %s\n", ca.FingerprintSHA256())
+		return
 	}
 
 	// scanOptions is what every scan mode asks the question with: the addresses this line's own
@@ -282,6 +313,7 @@ func main() {
 		cfg := config.Config{
 			Doors:    doors,
 			Key:      *key,
+			Mode:     *mode,
 			GoogleIP: *googleIP,
 			SNI:      *sni,
 			Listen:   *listen,
@@ -334,7 +366,11 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 	if *check {
-		info, err := relay.Check(ctx, door)
+		checkDoor := relay.Check
+		if *mode == config.ModeFetch {
+			checkDoor = relay.CheckFetch
+		}
+		info, err := checkDoor(ctx, door)
 		if err != nil {
 			fmt.Println("door check failed:", err)
 			os.Exit(1)
@@ -353,11 +389,23 @@ func main() {
 	}
 
 	proxy := relay.NewProxy(door, *listen, func(format string, args ...any) { log.Printf(format, args...) })
-	// Shared multiplexed sessions: the difference between a handful of polls per interval and
-	// one per connection, which is what an Apps Script quota counts.
-	proxy.UseMux(*mux)
-	proxy.SetMuxSessions(*sessions)
-	log.Printf("gutsclient: multiplexing %v", *mux)
+	if *mode == config.ModeFetch {
+		if *caCert == "" || *caKey == "" {
+			log.Fatal("gutsclient: fetch mode needs -ca-cert and -ca-key")
+		}
+		ca, err := relay.LoadOrCreateCA(*caCert, *caKey)
+		if err != nil {
+			log.Fatalf("gutsclient: %v", err)
+		}
+		proxy.UseFetchMITM(ca)
+		log.Printf("gutsclient: certificate/fetch mode; local CA sha256 %s", ca.FingerprintSHA256())
+	} else {
+		// Shared multiplexed sessions: the difference between a handful of polls per interval and
+		// one per connection, which is what an Apps Script quota counts.
+		proxy.UseMux(*mux)
+		proxy.SetMuxSessions(*sessions)
+		log.Printf("gutsclient: multiplexing %v", *mux)
+	}
 	addr, err := proxy.Listen()
 	if err != nil {
 		log.Fatalf("gutsclient: %v", err)
@@ -369,7 +417,11 @@ func main() {
 	go func() {
 		wctx, wcancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer wcancel()
-		if info, err := relay.Check(wctx, door); err != nil {
+		checkDoor := relay.Check
+		if *mode == config.ModeFetch {
+			checkDoor = relay.CheckFetch
+		}
+		if info, err := checkDoor(wctx, door); err != nil {
 			log.Printf("gutsclient: door warm-up: %v", err)
 		} else {
 			log.Printf("gutsclient: door warm: %s", info)

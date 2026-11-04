@@ -670,7 +670,13 @@ object CoreServiceManager {
             while (isActive && !reachable && GutsCoreManager.isRunning) {
                 if (!listening) listening = GutsCoreManager.awaitListening(AETHER_WARM_UP_MS)
                 if (listening) {
-                    reachable = confirmNativePath()
+                    reachable = confirmNativePath(
+                        if (currentGuts?.mode == GutsCore.Mode.FETCH) {
+                            listOf(GutsCore.FETCH_TEST_URL)
+                        } else {
+                            null
+                        }
+                    )
                     if (!reachable) kotlinx.coroutines.delay(1_000L)
                 }
             }
@@ -704,10 +710,11 @@ object CoreServiceManager {
         }
     }
 
-    private suspend fun confirmNativePath(): Boolean {
-        for (alternate in listOf(false, true)) {
+    private suspend fun confirmNativePath(probeUrls: List<String>? = null): Boolean {
+        val urls = probeUrls ?: listOf(false, true).map { SettingsManager.getDelayTestUrl(it) }
+        for (url in urls) {
             try {
-                if (coreController.measureDelay(SettingsManager.getDelayTestUrl(alternate)) > 0L) return true
+                if (coreController.measureDelay(url) > 0L) return true
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
@@ -1028,11 +1035,14 @@ object CoreServiceManager {
             }
 
             val errorRef = AtomicReference("")
+            val fetchMode = currentGuts?.mode == GutsCore.Mode.FETCH
+            val primaryUrl = if (fetchMode) GutsCore.FETCH_TEST_URL else SettingsManager.getDelayTestUrl()
+            val alternateUrl = if (fetchMode) GutsCore.FETCH_TEST_URL else SettingsManager.getDelayTestUrl(true)
 
             suspend fun measureOnce(): Long {
                 var value = -1L
                 try {
-                    value = coreController.measureDelay(SettingsManager.getDelayTestUrl())
+                    value = coreController.measureDelay(primaryUrl)
                 } catch (e: Exception) {
                     LogUtil.e(AppConfig.TAG, "StartCore-Manager: Failed to measure delay", e)
                     errorRef.compareAndSet("", e.message?.substringAfter("\":").orEmpty())
@@ -1040,7 +1050,7 @@ object CoreServiceManager {
                 if (value == -1L) {
                     ensureActive()
                     try {
-                        value = coreController.measureDelay(SettingsManager.getDelayTestUrl(true))
+                        value = coreController.measureDelay(alternateUrl)
                     } catch (e: Exception) {
                         LogUtil.e(AppConfig.TAG, "StartCore-Manager: Failed to measure delay", e)
                         errorRef.compareAndSet("", e.message?.substringAfter("\":").orEmpty())

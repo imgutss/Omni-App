@@ -25,13 +25,19 @@ const MuxCapability = "mux"
 // ignores D on open, so the phone re-sends those bytes as an ordinary push.
 const MuxCapabilityV2 = "mux2"
 
+// FetchCapability is answered by a door that can fetch an HTTP request itself. That door needs
+// no exit node: the phone terminates HTTPS with the user's own local certificate authority,
+// sends the resulting HTTP request to Apps Script, and Apps Script retrieves the web page.
+const FetchCapability = "fetch"
+
 // Ops of a request.
 const (
 	OpOpen  = "open"  // dial host:port, answer with a session id
 	OpPush  = "push"  // write data to the session's socket
 	OpPoll  = "poll"  // wait up to TimeoutMs for data from the socket
 	OpClose = "close" // close the session
-	OpPing  = "ping"  // liveness, answer with the exit node's build info
+	OpFetch = "fetch" // ask the door itself to retrieve one HTTP request
+	OpPing  = "ping"  // liveness, answer with the peer's build info
 )
 
 // Request is one guts/1 call.
@@ -46,21 +52,32 @@ type Request struct {
 	Sid  string `json:"sid,omitempty"`  // session id, for every op but open and ping
 	Host string `json:"host,omitempty"` // open: destination
 	Port int    `json:"port,omitempty"` // open: destination
-	D    string `json:"d,omitempty"`    // push: base64 bytes towards the destination
+	D    string `json:"d,omitempty"`    // push/fetch: base64 bytes towards the destination
 	T    int    `json:"t,omitempty"`    // poll: how long the exit node may wait, in milliseconds
 	N    int    `json:"n,omitempty"`    // poll: most bytes to answer with
 	S    uint32 `json:"s,omitempty"`    // mux: stream id inside the session
 	MU   bool   `json:"mu,omitempty"`   // open/push/poll/close: the session carries many streams
+
+	// Fetch carries one complete HTTP request for a door that retrieves web pages itself.
+	// The existing short field names stay short because Apps Script charges the phone for every
+	// byte twice: once to Google and once back again.
+	Method  string              `json:"method,omitempty"`
+	URL     string              `json:"url,omitempty"`
+	Headers map[string][]string `json:"headers,omitempty"`
 }
 
 // Response is the answer of one guts/1 call.
 type Response struct {
 	OK    bool   `json:"ok"`
 	Sid   string `json:"sid,omitempty"`
-	D     string `json:"d,omitempty"` // poll: base64 bytes from the destination
+	D     string `json:"d,omitempty"` // poll/fetch: base64 bytes from the destination
 	EOF   bool   `json:"eof,omitempty"`
 	Error string `json:"e,omitempty"`
 	Info  string `json:"info,omitempty"`
+
+	// Fetch returns one complete HTTP response.
+	Status  int                 `json:"status,omitempty"`
+	Headers map[string][]string `json:"headers,omitempty"`
 }
 
 // Mux frames. A poll answer of a multiplexed session is a sequence of frames, each one a stream id,
@@ -125,13 +142,16 @@ func DecodeFrames(body []byte) ([]Frame, error) {
 
 // Defaults that both sides keep, so a request that leaves a field out still behaves the same.
 const (
-	DefaultPollMs   = 8_000 // a short poll, used while data is flowing
-	IdlePollMs      = 20_000
-	MaxPollMs       = 25_000
-	DefaultPollMax  = 128 * 1024
-	MaxPollMax      = 512 * 1024
-	MaxPushBytes    = 256 * 1024
-	SessionIdleSecs = 90
+	DefaultPollMs  = 8_000 // a short poll, used while data is flowing
+	IdlePollMs     = 20_000
+	MaxPollMs      = 25_000
+	DefaultPollMax = 128 * 1024
+	MaxPollMax     = 512 * 1024
+	MaxPushBytes   = 256 * 1024
+	// A fetch answer is one JSON document, so it is deliberately bounded. Browsers already use
+	// HTTP Range for media and resumable downloads; those ranges pass through unchanged.
+	MaxFetchBodyBytes = 8 << 20
+	SessionIdleSecs   = 90
 )
 
 // VersionTag is the release of this implementation, reported by a ping.

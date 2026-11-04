@@ -7,10 +7,11 @@ import java.security.MessageDigest
 /**
  * Validated inputs and the loopback topology of one GUTS session.
  *
- * A GUTS profile carries the doors (Google Apps Script web apps), the key they and the exit node
- * check, and the Google edge the client pins. The native client owns everything else: it opens a
- * SOCKS5 listener on [port], and Xray dials that listener as an ordinary SOCKS outbound, so the
- * core knows nothing about doors, Google fronting, or the exit node.
+ * A GUTS profile carries the doors (Google Apps Script web apps), the key they check, and the
+ * Google edge the client pins. Exit mode also has an exit node check that key; fetch mode has no
+ * exit node and instead terminates HTTPS with the user's local CA. The native client owns
+ * everything else: it opens a SOCKS5 listener on [port], and Xray dials that listener as an
+ * ordinary SOCKS outbound, so the core knows nothing about doors or Google fronting.
  *
  * The client is told the key through the environment rather than on its command line, because a
  * command line is readable by every process of the same user; see GutsCoreManager.
@@ -22,6 +23,7 @@ data class GutsCore(
     val sni: String = DEFAULT_SNI,
     val frontHost: String = DEFAULT_FRONT_HOST,
     val port: Int = DEFAULT_SOCKS_PORT,
+    val mode: Mode = Mode.EXIT,
 ) {
     init {
         require(port in 1024..65534) { "Invalid GUTS listen port" }
@@ -39,15 +41,31 @@ data class GutsCore(
     /** Stable identity for matching a live process without logging a door or the key. */
     val identity: String by lazy {
         val digest = MessageDigest.getInstance("SHA-256")
-        (doors + listOf(key, googleIp, sni, frontHost, port.toString())).forEach {
+        (doors + listOf(key, googleIp, sni, frontHost, port.toString(), mode.wire)).forEach {
             digest.update(it.toByteArray(Charsets.UTF_8))
             digest.update(0)
         }
         digest.digest().joinToString("") { "%02x".format(it) }
     }
 
+    /** How a door carries traffic: raw TCP through an exit node, or web fetches by Apps Script itself. */
+    enum class Mode(val wire: String) {
+        EXIT("exit"),
+        FETCH("fetch"),
+        ;
+
+        companion object {
+            fun fromWire(raw: String?): Mode? = when (raw?.trim()?.lowercase()) {
+                null, "" -> EXIT
+                EXIT.wire -> EXIT
+                FETCH.wire -> FETCH
+                else -> null
+            }
+        }
+    }
+
     /** What the editor reports about a profile; the order is the order the screen checks in. */
-    enum class Problem { DOOR_MISSING, DOOR_INVALID, KEY_MISSING, KEY_INVALID, EDGE_INVALID, SNI_INVALID }
+    enum class Problem { DOOR_MISSING, DOOR_INVALID, KEY_MISSING, KEY_INVALID, MODE_INVALID, EDGE_INVALID, SNI_INVALID }
 
     /** A log line of the client with the key taken out, in case an engine ever echoes it. */
     fun redact(text: String): String =
@@ -59,6 +77,12 @@ data class GutsCore(
         const val AUTO_EDGE = "auto"
         const val DEFAULT_SNI = "www.google.com"
         const val DEFAULT_FRONT_HOST = "script.google.com"
+        /**
+         * Fetch mode's readiness probe is deliberately plain HTTP and not a Google host:
+         * UrlFetchApp refuses Google-owned destinations, and Xray's own TLS stack need not trust
+         * the user's local CA for Omni to prove that the fetch path itself works.
+         */
+        const val FETCH_TEST_URL = "http://cp.cloudflare.com/generate_204"
         const val MAX_DOORS = 16
         const val MAX_DOOR_LENGTH = 2048
         const val MAX_KEY_LENGTH = 512
@@ -73,6 +97,7 @@ data class GutsCore(
             val key = profile.gutsKey.orEmpty().trim()
             if (key.isEmpty()) return Problem.KEY_MISSING
             if (key.length > MAX_KEY_LENGTH || key.any { it.isWhitespace() }) return Problem.KEY_INVALID
+            if (Mode.fromWire(profile.gutsMode) == null) return Problem.MODE_INVALID
             val edge = profile.gutsGoogleIp.orEmpty().trim().ifBlank { AUTO_EDGE }
             if (!validEdge(edge)) return Problem.EDGE_INVALID
             val sni = profile.gutsSni.orEmpty().trim().ifBlank { DEFAULT_SNI }
@@ -89,11 +114,15 @@ data class GutsCore(
                 googleIp = normalized.gutsGoogleIp.orEmpty().trim().ifBlank { AUTO_EDGE },
                 sni = normalized.gutsSni.orEmpty().trim().ifBlank { DEFAULT_SNI },
                 port = listenPort,
+                mode = Mode.fromWire(normalized.gutsMode) ?: Mode.EXIT,
             )
         }
 
         /** The doors of [profile], in the order the client should try them; see [doorsIn]. */
         fun doorsOf(profile: ProfileItem): List<String> = doorsIn(profile.gutsDoors)
+
+        /** The mode of [profile]; an old profile with no mode is an exit-mode profile. */
+        fun modeOf(profile: ProfileItem): Mode? = Mode.fromWire(profile.gutsMode)
 
         /**
          * Doors in the order the client should try them: one per line, or separated by commas,

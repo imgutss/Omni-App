@@ -125,6 +125,7 @@ class ServerUiState(
     masterDnsEngine: String = MasterDnsFmt.ENGINE_MASTERDNS,
     gutsDoors: String = "",
     gutsKey: String = "",
+    gutsFetchMode: Boolean = false,
     gutsGoogleIp: String = "",
     gutsSni: String = GutsCore.DEFAULT_SNI,
     dnsttTransport: String = "doh",
@@ -265,6 +266,7 @@ class ServerUiState(
     var masterDnsEngine by mutableStateOf(masterDnsEngine)
     var gutsDoors by mutableStateOf(gutsDoors)
     var gutsKey by mutableStateOf(gutsKey)
+    var gutsFetchMode by mutableStateOf(gutsFetchMode)
     var gutsGoogleIp by mutableStateOf(gutsGoogleIp)
     var gutsSni by mutableStateOf(gutsSni)
     var dnsttTransport by mutableStateOf(dnsttTransport)
@@ -471,6 +473,7 @@ class ServerUiState(
             masterDnsEngine = if (isMasterDns) masterDnsEngine else null,
             gutsDoors = if (isGuts) GutsCore.doorsIn(gutsDoors).joinToString("\n") else null,
             gutsKey = if (isGuts) gutsKey.trim().nullIfBlank() else null,
+            gutsMode = if (isGuts && gutsFetchMode) GutsCore.Mode.FETCH.wire else null,
             gutsGoogleIp = if (isGuts) gutsGoogleIp.trim().nullIfBlank() else null,
             gutsSni = if (isGuts) gutsSni.trim().nullIfBlank() else null,
             dnsttTransport = if (isDnstt) dnsttTransport else null,
@@ -620,6 +623,7 @@ class ServerUiState(
                 masterDnsEngine = initialConfig.masterDnsEngine ?: MasterDnsFmt.ENGINE_MASTERDNS,
                 gutsDoors = initialConfig.gutsDoors ?: "",
                 gutsKey = initialConfig.gutsKey ?: "",
+                gutsFetchMode = GutsCore.modeOf(initialConfig) == GutsCore.Mode.FETCH,
                 gutsGoogleIp = initialConfig.gutsGoogleIp ?: "",
                 gutsSni = initialConfig.gutsSni ?: GutsCore.DEFAULT_SNI,
                 dnsttTransport = initialConfig.dnsttTransport ?: "doh",

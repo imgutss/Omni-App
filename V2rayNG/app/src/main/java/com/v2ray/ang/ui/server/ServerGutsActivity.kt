@@ -1,5 +1,7 @@
 package com.v2ray.ang.ui.server
 
+import android.content.Intent
+import android.provider.Settings
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -15,18 +17,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.v2ray.ang.R
+import com.v2ray.ang.core.GutsCa
 import com.v2ray.ang.core.GutsCore
 import com.v2ray.ang.core.GutsEdgeScanner
 import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.extension.toast
 import com.v2ray.ang.ui.compose.FormTextField
+import com.v2ray.ang.ui.compose.SettingsSwitchItem
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
- * Editor for a GUTS profile: the doors it posts to, the key they and the exit node check, and the
- * Google edge the client dials. Everything the client needs is here, so a profile pasted as a
- * `guts://` link and one typed by hand are the same profile.
+ * Editor for a GUTS profile: its mode, the doors it posts to, the key they check, and the Google
+ * edge the client dials. Fetch mode also creates and offers the user's local CA from here.
+ * Everything the client needs is here, so a profile pasted as a `guts://` link and one typed by
+ * hand are the same profile.
  */
 class ServerGutsActivity : BaseServerActivity() {
 
@@ -43,6 +51,8 @@ class ServerGutsActivity : BaseServerActivity() {
         // The evidence of the last scan, kept on screen: which pairs this network carried and how
         // fast, or what it answered instead — so a failed scan says why, not just that it failed.
         var scanEvidence by rememberSaveable { mutableStateOf("") }
+        var caRunning by remember { mutableStateOf(false) }
+        var caFingerprint by remember { mutableStateOf(GutsCa.fingerprint(this)) }
 
         ServerEditorScaffold(
             title = stringResource(R.string.guts_title),
@@ -54,6 +64,12 @@ class ServerGutsActivity : BaseServerActivity() {
                 onValueChange = { uiState.remarks = it },
                 isError = uiState.isRemarksError,
             )
+            SettingsSwitchItem(
+                title = stringResource(R.string.guts_fetch_mode),
+                summary = stringResource(R.string.guts_fetch_mode_support),
+                checked = uiState.gutsFetchMode,
+                onCheckedChange = { uiState.gutsFetchMode = it },
+            )
             FormTextField(
                 label = stringResource(R.string.guts_lab_doors),
                 value = uiState.gutsDoors,
@@ -62,7 +78,9 @@ class ServerGutsActivity : BaseServerActivity() {
                     uiState.isGutsDoorsError = false
                 },
                 placeholder = stringResource(R.string.guts_hint_doors),
-                supportingText = stringResource(R.string.guts_doors_support),
+                supportingText = stringResource(
+                    if (uiState.gutsFetchMode) R.string.guts_doors_support_fetch else R.string.guts_doors_support
+                ),
                 maxLines = 6,
                 isError = uiState.isGutsDoorsError,
             )
@@ -74,9 +92,67 @@ class ServerGutsActivity : BaseServerActivity() {
                     uiState.isGutsKeyError = false
                 },
                 placeholder = stringResource(R.string.guts_hint_key),
-                supportingText = stringResource(R.string.guts_key_support),
+                supportingText = stringResource(
+                    if (uiState.gutsFetchMode) R.string.guts_key_support_fetch else R.string.guts_key_support
+                ),
                 isError = uiState.isGutsKeyError,
             )
+            if (uiState.gutsFetchMode) {
+                TextButton(
+                    enabled = !caRunning,
+                    onClick = {
+                        caRunning = true
+                        scope.launch {
+                            try {
+                                val material = GutsCa.ensure(this@ServerGutsActivity)
+                                caFingerprint = material.fingerprint
+                                val saved = withContext(Dispatchers.IO) {
+                                    GutsCa.saveToDownloads(
+                                        this@ServerGutsActivity,
+                                        material.files.cert,
+                                    )
+                                }
+                                val openedInstaller = runCatching {
+                                    startActivity(GutsCa.installIntent(material.files.cert))
+                                    true
+                                }.getOrDefault(false)
+                                if (!openedInstaller) {
+                                    runCatching { startActivity(Intent(Settings.ACTION_SETTINGS)) }
+                                }
+                                this@ServerGutsActivity.toast(
+                                    getString(R.string.guts_fetch_ca_saved, saved),
+                                    long = true,
+                                )
+                            } catch (cancelled: CancellationException) {
+                                throw cancelled
+                            } catch (error: Exception) {
+                                this@ServerGutsActivity.toast(
+                                    getString(
+                                        R.string.guts_fetch_ca_failed,
+                                        error.message ?: error.javaClass.simpleName,
+                                    ),
+                                    long = true,
+                                )
+                            } finally {
+                                caRunning = false
+                            }
+                        }
+                    },
+                ) {
+                    Text(
+                        text = stringResource(
+                            if (caRunning) R.string.guts_fetch_install_running else R.string.guts_fetch_install_ca
+                        )
+                    )
+                }
+                Text(
+                    text = caFingerprint?.let {
+                        stringResource(R.string.guts_fetch_ca_ready, it)
+                    } ?: stringResource(R.string.guts_fetch_ca_missing),
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                )
+            }
             FormTextField(
                 label = stringResource(R.string.guts_lab_google_ip),
                 value = uiState.gutsGoogleIp,
@@ -159,7 +235,9 @@ class ServerGutsActivity : BaseServerActivity() {
                 )
             }
             Text(
-                text = stringResource(R.string.guts_engine_notice),
+                text = stringResource(
+                    if (uiState.gutsFetchMode) R.string.guts_fetch_notice else R.string.guts_engine_notice
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
@@ -187,6 +265,7 @@ class ServerGutsActivity : BaseServerActivity() {
                     GutsCore.Problem.DOOR_INVALID -> R.string.guts_error_door
                     GutsCore.Problem.KEY_MISSING -> R.string.guts_error_key_missing
                     GutsCore.Problem.KEY_INVALID -> R.string.guts_error_key
+                    GutsCore.Problem.MODE_INVALID -> R.string.guts_error_mode
                     GutsCore.Problem.EDGE_INVALID -> R.string.guts_error_edge
                     GutsCore.Problem.SNI_INVALID -> R.string.guts_error_sni
                 }

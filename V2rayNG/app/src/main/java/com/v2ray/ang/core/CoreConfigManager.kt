@@ -994,6 +994,7 @@ object CoreConfigManager {
                 GutsCore.Problem.DOOR_INVALID -> context.getString(R.string.guts_error_door)
                 GutsCore.Problem.KEY_MISSING -> context.getString(R.string.guts_error_key_missing)
                 GutsCore.Problem.KEY_INVALID -> context.getString(R.string.guts_error_key)
+                GutsCore.Problem.MODE_INVALID -> context.getString(R.string.guts_error_mode)
                 GutsCore.Problem.EDGE_INVALID -> context.getString(R.string.guts_error_edge)
                 GutsCore.Problem.SNI_INVALID -> context.getString(R.string.guts_error_sni)
             }

@@ -86,6 +86,19 @@ class GutsFmtTest {
     }
 
     @Test
+    fun fetchModeSurvivesTheUri() {
+        val original = profile().apply { gutsMode = "fetch" }
+
+        val json = String(Base64.getUrlDecoder().decode(requiredBody(original)), StandardCharsets.UTF_8)
+        assertTrue(json.contains("\"mode\":\"fetch\""))
+
+        val restored = requiredParse(requiredUri(original))
+        assertEquals("fetch", restored.gutsMode)
+        assertEquals(GutsCore.Mode.FETCH, GutsCore.of(restored).mode)
+        assertEquals(GutsCore.of(original).identity, GutsCore.of(restored).identity)
+    }
+
+    @Test
     fun theBodyIsTheSameJsonTheClientWrites() {
         val json = String(Base64.getUrlDecoder().decode(requiredBody(profile())), StandardCharsets.UTF_8)
 
@@ -130,6 +143,7 @@ class GutsFmtTest {
         assertNull(GutsFmt.parse("guts://" + base64("{\"key\":\"k\"}")))
         assertNull(GutsFmt.parse("guts://" + base64("{\"door\":[\"https://a/exec\"]}")))
         assertNull(GutsFmt.parse("guts://" + base64("{\"door\":[\"ftp://a/x\"],\"key\":\"k\"}")))
+        assertNull(GutsFmt.parse("guts://" + base64("{\"door\":[\"https://a/exec\"],\"key\":\"k\",\"mode\":\"tunnel\"}")))
         assertFalse(GutsFmt.looksLikeUri("https://example.com"))
         assertTrue(GutsFmt.looksLikeUri(exportedByTheGoClient))
     }

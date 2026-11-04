@@ -52,6 +52,24 @@ func TestURIDefaultsWhatIsMissing(t *testing.T) {
 	}
 }
 
+func TestFetchModeSurvivesTheURI(t *testing.T) {
+	c := config.Config{Doors: []string{"https://door.example/exec"}, Mode: config.ModeFetch}
+	uri, err := c.URI()
+	if err != nil {
+		t.Fatalf("uri: %v", err)
+	}
+	got, err := config.ParseURI(uri)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if got.Mode != config.ModeFetch {
+		t.Fatalf("mode = %q, want fetch", got.Mode)
+	}
+	if _, err := (config.Config{Doors: []string{"https://door.example/exec"}, Mode: "tunnel"}).URI(); err == nil {
+		t.Fatal("an unknown mode was accepted")
+	}
+}
+
 func TestBrokenSetupsAreRefused(t *testing.T) {
 	if _, err := (config.Config{}).URI(); err == nil {
 		t.Fatal("a setup without a door was accepted")

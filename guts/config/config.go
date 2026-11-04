@@ -14,10 +14,16 @@ import (
 	"strings"
 )
 
+const (
+	ModeExit  = "exit"  // raw TCP through an exit node
+	ModeFetch = "fetch" // HTTP/HTTPS fetched by the door itself; HTTPS ends at the local CA
+)
+
 // Config is one guts client setup.
 type Config struct {
 	Doors    []string `json:"door"`                // door URLs, in the order to try
 	Key      string   `json:"key,omitempty"`       // shared key, also checked by the door
+	Mode     string   `json:"mode,omitempty"`      // exit (default) or fetch
 	GoogleIP string   `json:"google_ip,omitempty"` // edge address to dial; empty posts to the door directly
 	SNI      string   `json:"sni,omitempty"`       // certificate name used on that connection
 	Listen   string   `json:"listen,omitempty"`    // SOCKS5 listen address
@@ -28,6 +34,10 @@ type Config struct {
 func (c *Config) Defaults() {
 	if len(c.Doors) == 0 {
 		c.Doors = nil
+	}
+	c.Mode = strings.ToLower(strings.TrimSpace(c.Mode))
+	if c.Mode == "" {
+		c.Mode = ModeExit
 	}
 	if c.SNI == "" {
 		c.SNI = "www.google.com"
@@ -48,13 +58,22 @@ func (c Config) Validate() error {
 			return fmt.Errorf("guts: not a door URL: %q", d)
 		}
 	}
-	return nil
+	switch strings.ToLower(strings.TrimSpace(c.Mode)) {
+	case "", ModeExit, ModeFetch:
+		return nil
+	default:
+		return fmt.Errorf("guts: unknown mode %q", c.Mode)
+	}
 }
 
 // URI is the guts:// form of this setup, which a QR code can carry.
 func (c Config) URI() (string, error) {
 	if err := c.Validate(); err != nil {
 		return "", err
+	}
+	if mode := strings.ToLower(strings.TrimSpace(c.Mode)); mode == "" || mode == ModeExit {
+		// Exit mode is the historical default, so it stays absent and old QR readers keep working.
+		c.Mode = ""
 	}
 	body, err := json.Marshal(c)
 	if err != nil {

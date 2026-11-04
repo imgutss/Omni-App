@@ -18,11 +18,13 @@ class GutsCoreTest {
         key: String? = "a-long-enough-shared-secret",
         edge: String? = null,
         sni: String? = null,
+        mode: String? = null,
     ) = ProfileItem.create(EConfigType.GUTS).apply {
         gutsDoors = doors
         gutsKey = key
         gutsGoogleIp = edge
         gutsSni = sni
+        gutsMode = mode
     }
 
     @Test
@@ -44,6 +46,7 @@ class GutsCoreTest {
         assertEquals(GutsCore.Problem.DOOR_INVALID, GutsCore.normalize(profile(doors = "not a url")))
         assertEquals(GutsCore.Problem.KEY_MISSING, GutsCore.normalize(profile(key = " ")))
         assertEquals(GutsCore.Problem.KEY_INVALID, GutsCore.normalize(profile(key = "two words")))
+        assertEquals(GutsCore.Problem.MODE_INVALID, GutsCore.normalize(profile(mode = "tunnel")))
         assertEquals(GutsCore.Problem.EDGE_INVALID, GutsCore.normalize(profile(edge = "1.2.3.4/24")))
         assertEquals(GutsCore.Problem.SNI_INVALID, GutsCore.normalize(profile(sni = "www.google.com/x")))
         assertNull(GutsCore.normalize(profile()))
@@ -57,6 +60,16 @@ class GutsCoreTest {
         assertEquals("www.google.com", core.sni)
         assertEquals(18002, core.port)
         assertEquals(listOf(18002), core.sessionPorts)
+        assertEquals(GutsCore.Mode.EXIT, core.mode)
+    }
+
+    @Test
+    fun fetchModeIsExplicitAndChangesTheSessionIdentity() {
+        val exit = GutsCore.of(profile())
+        val fetch = GutsCore.of(profile(mode = "fetch"))
+
+        assertEquals(GutsCore.Mode.FETCH, fetch.mode)
+        assertNotEquals(exit.identity, fetch.identity)
     }
 
     @Test
@@ -116,6 +129,20 @@ class GutsCoreTest {
         assertTrue("-sni=www.google.com" in arguments)
         assertTrue("-fd-control-unix-socket=@omni-guts-1" in arguments)
         // The key reaches the client through GUTS_KEY in its environment instead.
+        assertTrue(arguments.none { it.contains(core.key) || it.startsWith("-key") })
+        assertTrue(arguments.none { it.startsWith("-mode=") })
+    }
+
+    @Test
+    fun fetchModeIsOnTheCommandLineAndTheKeyStillIsNot() {
+        val core = GutsCore.of(profile(mode = "fetch"))
+        val arguments = GutsCoreManager.processArguments(
+            binary = File("/data/app/lib/libguts.so"),
+            core = core,
+            protectAddress = null,
+        )
+
+        assertTrue("-mode=fetch" in arguments)
         assertTrue(arguments.none { it.contains(core.key) || it.startsWith("-key") })
     }
 

@@ -14,7 +14,7 @@ import java.util.Base64
  * Reads and writes the `guts://` profile the client itself emits and consumes.
  *
  * The body is the same JSON document `guts/config` uses on the command line — `door` (a list), and
- * the optional `key`, `google_ip`, `sni`, `listen` and `note` — Base64URL encoded without padding.
+ * the optional `key`, `mode`, `google_ip`, `sni`, `listen` and `note` — Base64URL encoded without padding.
  * One codec therefore serves the QR code the panel prints, the link a user pastes, and the
  * `-export` / `-import` flags of the desktop client: a profile made by either is read by the other.
  */
@@ -24,6 +24,7 @@ object GutsFmt {
 
     private const val DOOR = "door"
     private const val KEY = "key"
+    private const val MODE = "mode"
     private const val GOOGLE_IP = "google_ip"
     private const val SNI = "sni"
     private const val NOTE = "note"
@@ -39,6 +40,7 @@ object GutsFmt {
             add(DOOR, JsonArray().apply { doors.forEach { add(it) } })
             // Absent optional fields stay absent, so the URI stays short enough for a QR code.
             profile.gutsKey?.trim()?.takeIf { it.isNotEmpty() }?.let { addProperty(KEY, it) }
+            if (GutsCore.modeOf(profile) == GutsCore.Mode.FETCH) addProperty(MODE, GutsCore.Mode.FETCH.wire)
             profile.gutsGoogleIp?.trim()?.takeIf { it.isNotEmpty() && it != GutsCore.AUTO_EDGE }
                 ?.let { addProperty(GOOGLE_IP, it) }
             profile.gutsSni?.trim()?.takeIf { it.isNotEmpty() && it != GutsCore.DEFAULT_SNI }
@@ -63,6 +65,7 @@ object GutsFmt {
         val profile = ProfileItem.create(EConfigType.GUTS).apply {
             gutsDoors = doors.joinToString("\n")
             gutsKey = root.string(KEY)
+            gutsMode = root.string(MODE)
             gutsGoogleIp = root.string(GOOGLE_IP)
             gutsSni = root.string(SNI)
             remarks = root.string(NOTE) ?: hostOf(doors.first()).orEmpty()
