@@ -13,6 +13,8 @@ on:
       - omni-masterdns
       - omni-dnstt
       - guts
+    tags:
+      - 'v*'
 
 permissions:
   contents: read
@@ -577,7 +579,7 @@ jobs:
 
   release:
     name: Publish GitHub release
-    if: github.event_name == 'workflow_dispatch' && inputs.release_tag != ''
+    if: (github.event_name == 'workflow_dispatch' && inputs.release_tag != '') || github.ref_type == 'tag'
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -592,10 +594,11 @@ jobs:
     - name: Publish permanent release assets
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        RELEASE_VERSION: ${{ inputs.release_tag }}
+        RELEASE_VERSION: ${{ inputs.release_tag || github.ref_name }}
         RELEASE_REPOSITORY: ${{ github.repository }}
       run: |
         set -euo pipefail
+        RELEASE_VERSION="${RELEASE_VERSION#v}"
         if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
           echo "Release version must look like 0.3.0, without a leading v" >&2
           exit 1
