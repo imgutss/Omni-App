@@ -76,4 +76,29 @@ object TunnelRouting {
     /** Idempotent: a configuration built twice, as a reload does, keeps one copy of each rule. */
     private fun V2rayConfig.RoutingBean.RulesBean.describesSameRefusal(other: V2rayConfig.RoutingBean.RulesBean): Boolean =
         outboundTag == other.outboundTag && network == other.network && port == other.port && domain == other.domain
+
+    /**
+     * Answers every name from FakeDNS, so no lookup ever crosses the tunnel.
+     *
+     * Through a door whose round-trip is a second or more, resolving a page's hostnames the
+     * ordinary way — a DoH connection of its own, through the tunnel, per uncached name — costs
+     * more than the page itself, and a browser opening a dozen hosts pays it a dozen times
+     * before the first byte. A fake answer is instant, Xray hands the domain itself to the
+     * outbound (the inbounds already carry the fakedns destOverride), and the exit node at the
+     * far end of the tunnel resolves it on a fast network for free. The ordinary configuration
+     * already fakes some domains this way; a TCP-only tunnel needs all of them.
+     */
+    fun resolveNamesAtTheExit(config: V2rayConfig) {
+        val servers = config.dns?.servers ?: return
+        val fake = servers.filterIsInstance<V2rayConfig.DnsBean.ServersBean>()
+            .firstOrNull { it.address == "fakedns" }
+        if (fake != null) {
+            // No domain list: this server now answers every name, ahead of the real resolvers.
+            fake.domains = null
+            servers.remove(fake)
+            servers.add(0, fake)
+        } else if (servers.none { it == "fakedns" }) {
+            servers.add(0, V2rayConfig.DnsBean.ServersBean(address = "fakedns"))
+        }
+    }
 }

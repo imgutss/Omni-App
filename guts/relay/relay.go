@@ -54,8 +54,8 @@ func NewDirect(endpoint, key string) *Direct {
 		http: &http.Client{
 			Timeout: 60 * time.Second,
 			Transport: &http.Transport{
-				ForceAttemptHTTP2:   false,
-				MaxIdleConnsPerHost: 8,
+				ForceAttemptHTTP2:   true,
+				MaxIdleConnsPerHost: 32,
 				IdleConnTimeout:     90 * time.Second,
 				// On a phone this dial protects the socket from our own VPN before it connects;
 				// on a desktop it is an ordinary dial. See guts/protect.
@@ -79,10 +79,14 @@ func NewFronted(doorURL *url.URL, edgeAddr, sni, key string) (*Fronted, error) {
 	if _, _, err := net.SplitHostPort(addr); err != nil {
 		addr = net.JoinHostPort(addr, "443")
 	}
+	// HTTP/2 where the edge offers it: the pool's polls and pushes then share one TLS
+	// connection to the edge instead of each waiting behind its own, and a slow 700 KB poll
+	// answer no longer head-of-line blocks an interactive push. Where ALPN offers only
+	// HTTP/1.1 the transport falls back on its own.
 	tr := &http.Transport{
-		ForceAttemptHTTP2:   false,
-		MaxIdleConns:        16,
-		MaxIdleConnsPerHost: 8,
+		ForceAttemptHTTP2:   true,
+		MaxIdleConns:        64,
+		MaxIdleConnsPerHost: 32,
 		IdleConnTimeout:     90 * time.Second,
 		DialContext: func(ctx context.Context, network, _ string) (net.Conn, error) {
 			return protect.Dial(ctx, network, addr)
@@ -248,11 +252,12 @@ type Proxy struct {
 	listen string
 	log    func(string, ...any)
 
-	mu       sync.Mutex
-	listener net.Listener
-	closed   bool
-	useMux   bool
-	mux      *Mux
+	mu          sync.Mutex
+	listener    net.Listener
+	closed      bool
+	useMux      bool
+	muxSessions int
+	muxes       []*Mux
 }
 
 // NewProxy builds a SOCKS5 server that carries its connections through door.
@@ -271,14 +276,53 @@ func (p *Proxy) UseMux(enabled bool) {
 	p.mu.Unlock()
 }
 
-// muxer returns the session multiplexer, building it on first use.
+// SetMuxSessions sizes the pool of multiplexed sessions connections are spread over.
+//
+// One session means one poll in flight, and a poll answer is at most half a megabyte, so one
+// session's downstream ceiling is that divided by a door round-trip — measured at ~80 KB/s on a
+// real door, however many connections shared it, which no page survives. A pool of a few
+// sessions keeps that many polls in flight at once and multiplies the ceiling, while idle cost
+// stays at one poll per *session* per interval instead of one per connection. Sessions are
+// opened lazily, only as connections arrive to need them. The default is one, as before.
+func (p *Proxy) SetMuxSessions(n int) {
+	if n < 1 {
+		n = 1
+	}
+	if n > 8 {
+		n = 8
+	}
+	p.mu.Lock()
+	p.muxSessions = n
+	p.mu.Unlock()
+}
+
+// muxer returns the least loaded live multiplexer, opening another while the pool may still
+// grow and every live one already carries a stream.
 func (p *Proxy) muxer() *Mux {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.mux == nil {
-		p.mux = NewMux(p.door, p.log)
+	target := p.muxSessions
+	if target < 1 {
+		target = 1
 	}
-	return p.mux
+	live := p.muxes[:0]
+	for _, m := range p.muxes {
+		if !m.Failed() {
+			live = append(live, m)
+		}
+	}
+	p.muxes = live
+	var least *Mux
+	for _, m := range p.muxes {
+		if least == nil || m.Load() < least.Load() {
+			least = m
+		}
+	}
+	if least == nil || (len(p.muxes) < target && least.Load() >= 1) {
+		least = NewMux(p.door, p.log)
+		p.muxes = append(p.muxes, least)
+	}
+	return least
 }
 
 // Listen binds the SOCKS5 port and returns the address it holds. Call Serve after it.
@@ -321,9 +365,9 @@ func (p *Proxy) Close() error {
 	p.mu.Lock()
 	p.closed = true
 	ln := p.listener
-	mux := p.mux
+	muxes := p.muxes
 	p.mu.Unlock()
-	if mux != nil {
+	for _, mux := range muxes {
 		mux.Close()
 	}
 	if ln != nil {
@@ -367,32 +411,63 @@ func (p *Proxy) handle(c net.Conn) {
 	p.pipeDown(ctx, c, sess, stop)
 }
 
-// handleMux carries one SOCKS connection as a stream of the shared session, and reports whether it
+// firstDataWait is how long a warm session's new connection is held for the application's
+// first bytes — for HTTPS, the ClientHello it sends the moment SOCKS answers. Bundling those
+// bytes with the stream's open saves a whole door round-trip per connection.
+const firstDataWait = 60 * time.Millisecond
+
+// handleMux carries one SOCKS connection as a stream of a shared session, and reports whether it
 // did: the caller falls back to a session of its own when the exit node cannot multiplex.
 func (p *Proxy) handleMux(c net.Conn, ctx context.Context, host string, port int) bool {
-	st, err := p.muxer().Dial(ctx, host, port)
-	if errors.Is(err, ErrNoMux) {
-		p.UseMux(false)
-		p.log("socks: the exit node does not multiplex; this phone pays one call per connection until it is redeployed")
-		return false
-	}
-	if err != nil {
-		p.log("socks: open %s:%d: %v", host, port, err)
-		_, _ = c.Write([]byte{5, 5, 0, 1, 0, 0, 0, 0, 0, 0})
-		return true
+	mux := p.muxer()
+
+	var st *Stream
+	var err error
+	if mux.Ready() {
+		// The session is warm, so answer SOCKS first and take the application's first bytes
+		// with the open instead of paying open, then push, as two round-trips in a row. This
+		// needs the session already proven: an exit node that cannot multiplex must still be
+		// discoverable with no application bytes consumed, so the fallback stays clean.
+		_, _ = c.Write([]byte{5, 0, 0, 1, 0, 0, 0, 0, 0, 0})
+		var initial []byte
+		buf := make([]byte, 64<<10)
+		_ = c.SetReadDeadline(time.Now().Add(firstDataWait))
+		if n, readErr := c.Read(buf); n > 0 {
+			initial = buf[:n]
+		} else if errors.Is(readErr, io.EOF) {
+			return true
+		}
+		_ = c.SetDeadline(time.Time{})
+		st, err = mux.DialData(ctx, host, port, initial)
+		if err != nil {
+			p.log("socks: open %s:%d: %v", host, port, err)
+			return true
+		}
+	} else {
+		st, err = mux.Dial(ctx, host, port)
+		if errors.Is(err, ErrNoMux) {
+			p.UseMux(false)
+			p.log("socks: the exit node does not multiplex; this phone pays one call per connection until it is redeployed")
+			return false
+		}
+		if err != nil {
+			p.log("socks: open %s:%d: %v", host, port, err)
+			_, _ = c.Write([]byte{5, 5, 0, 1, 0, 0, 0, 0, 0, 0})
+			return true
+		}
+		_, _ = c.Write([]byte{5, 0, 0, 1, 0, 0, 0, 0, 0, 0})
+		// The read deadline the handshake set must not end a long-lived upload.
+		_ = c.SetDeadline(time.Time{})
 	}
 	defer st.Close()
-	_, _ = c.Write([]byte{5, 0, 0, 1, 0, 0, 0, 0, 0, 0})
 
 	done := make(chan struct{}, 2)
 	go func() {
-		// The read deadline the handshake set must not end a long-lived upload.
-		_ = c.SetDeadline(time.Time{})
-		_, _ = io.Copy(st, c)
+		_, _ = io.CopyBuffer(st, c, make([]byte, 128<<10))
 		done <- struct{}{}
 	}()
 	go func() {
-		_, _ = io.Copy(c, st)
+		_, _ = io.CopyBuffer(c, st, make([]byte, 128<<10))
 		done <- struct{}{}
 	}()
 	<-done
@@ -406,7 +481,7 @@ func (p *Proxy) handleMux(c net.Conn, ctx context.Context, host string, port int
 // pipeUp carries what the app writes into the session, one push per read.
 func (p *Proxy) pipeUp(ctx context.Context, c net.Conn, sess *Session, stop func()) {
 	defer stop()
-	buf := make([]byte, 32<<10)
+	buf := make([]byte, 128<<10)
 	for {
 		n, err := c.Read(buf)
 		if n > 0 {
@@ -434,7 +509,7 @@ func (p *Proxy) pipeDown(ctx context.Context, c net.Conn, sess *Session, stop fu
 		if quiet >= 2 {
 			wait = proto.IdlePollMs
 		}
-		data, eof, err := sess.Poll(ctx, proto.DefaultPollMax, wait)
+		data, eof, err := sess.Poll(ctx, proto.MaxPollMax, wait)
 		if err != nil {
 			if ctx.Err() == nil {
 				p.log("socks: poll: %v", err)

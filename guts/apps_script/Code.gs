@@ -48,13 +48,19 @@ function doPost(e) {
     }
 
     var body = (e && e.postData && e.postData.contents) || '';
-    var req;
-    try {
-      req = JSON.parse(body);
-    } catch (err) {
-      return out({ ok: false, e: 'json: ' + err });
+    // Only the key is needed from the body, and a push body is mostly base64: reading the key
+    // out with a pattern skips parsing all of it on every call. Anything the pattern does not
+    // match falls back to a real parse, so no well-formed request is refused for its shape.
+    var kMatch = /"k"\s*:\s*"([^"]*)"/.exec(body);
+    var key = kMatch ? kMatch[1] : null;
+    if (key === null) {
+      try {
+        key = JSON.parse(body).k;
+      } catch (err) {
+        return out({ ok: false, e: 'json: ' + err });
+      }
     }
-    if (req.k !== AUTH_KEY) return out({ ok: false, e: 'unauthorized' });
+    if (key !== AUTH_KEY) return out({ ok: false, e: 'unauthorized' });
 
     var resp = UrlFetchApp.fetch(EXIT_URL, {
       method: 'post',
@@ -70,9 +76,10 @@ function doPost(e) {
 
     // An exit node answers JSON. Anything else (a Cloudflare challenge, a captive portal, a broken
     // tunnel) is reported as an error instead of being handed to the phone as if it were data.
-    try {
-      JSON.parse(text);
-    } catch (err) {
+    // The check is only the opening brace: parsing the whole body here — up to a megabyte of
+    // base64 on a bulk poll — taxed every single round-trip for a validation the phone
+    // performs again when it decodes.
+    if (text.charAt(0) !== '{') {
       return out({ ok: false, e: 'exit answered non-JSON, status ' + code + ': ' + text.slice(0, 160) });
     }
     if (code !== 200) {

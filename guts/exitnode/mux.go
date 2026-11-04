@@ -21,9 +21,15 @@ import (
 )
 
 const (
-	muxReadChunk      = 32 << 10
+	muxReadChunk      = 64 << 10
 	muxStreamBuffer   = 1 << 20 // downstream bytes held per stream before backpressure
 	muxStreamsPerSess = 256
+
+	// muxGatherWindow is how long a poll that already has something may wait for more before
+	// answering. A door round-trip costs a second or more, so answering with the first 5 KB a
+	// destination flushed wastes almost all of it; a breath of gathering turns most answers
+	// into full ones and costs interactive traffic 30 ms it will never notice.
+	muxGatherWindow = 30 * time.Millisecond
 )
 
 // stream is one destination connection inside a multiplexed session.
@@ -96,6 +102,13 @@ func (st *stream) close() {
 	st.closed = true
 	st.mu.Unlock()
 	_ = st.conn.Close()
+}
+
+// held reports the bytes buffered for the phone and whether an unannounced end is queued.
+func (st *stream) held() (int, bool) {
+	st.mu.Lock()
+	defer st.mu.Unlock()
+	return st.buf.Len(), st.eof && !st.eofSent
 }
 
 // take removes up to max bytes, and says whether this stream ended: an end is answered once, after
@@ -215,7 +228,27 @@ func (m *muxSession) close() {
 	m.signal()
 }
 
+// buffered sums the bytes every stream holds, and whether any stream's end is unannounced.
+func (m *muxSession) buffered() (int, bool) {
+	m.mu.Lock()
+	streams := make([]*stream, 0, len(m.streams))
+	for _, st := range m.streams {
+		streams = append(streams, st)
+	}
+	m.mu.Unlock()
+	total, end := 0, false
+	for _, st := range streams {
+		n, stEnd := st.held()
+		total += n
+		end = end || stEnd
+	}
+	return total, end
+}
+
 // takeFrames collects what every stream holds into one poll answer of at most max bytes.
+// The budget is shared: each stream with bytes gets a fair slice first, so one bulk download
+// cannot eat a whole poll and starve the small interactive stream beside it; a second pass
+// then hands whatever budget remains to whoever still has bytes.
 func (m *muxSession) takeFrames(max int) []byte {
 	m.mu.Lock()
 	ids := make([]uint32, 0, len(m.streams))
@@ -234,24 +267,37 @@ func (m *muxSession) takeFrames(max int) []byte {
 	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
 
 	budget := max
-	if budget <= 0 {
-		budget = proto.DefaultPollMax
+	if budget <= 0 || budget > proto.MaxPollMax {
+		budget = proto.MaxPollMax
 	}
-	frames := make([]proto.Frame, 0, len(ids))
+	holders := 0
 	for _, id := range ids {
-		st := streams[id]
-		if st == nil {
-			continue
+		if n, end := streams[id].held(); n > 0 || end {
+			holders++
 		}
+	}
+	if holders == 0 {
+		return nil
+	}
+	share := budget / holders
+	if share < 64<<10 {
+		share = 64 << 10
+	}
+
+	frames := make([]proto.Frame, 0, len(ids))
+	take := func(id uint32, cap int) {
+		room := cap
 		// Room for a payload frame and, if the stream ends now, its end frame as well: both must
 		// fit, or the end would be lost behind a budget the phone never gets back.
-		room := budget - 2*proto.FrameHeader
-		if room <= 0 {
-			break
+		if left := budget - 2*proto.FrameHeader; left < room {
+			room = left
 		}
-		data, eof := st.take(room)
+		if room <= 0 {
+			return
+		}
+		data, eof := streams[id].take(room)
 		if len(data) == 0 && !eof {
-			continue
+			return
 		}
 		frames = append(frames, proto.Frame{S: id, D: data, EOF: eof})
 		if len(data) > 0 {
@@ -259,6 +305,14 @@ func (m *muxSession) takeFrames(max int) []byte {
 		}
 		if eof {
 			budget -= proto.FrameHeader
+		}
+	}
+	for _, id := range ids {
+		take(id, share)
+	}
+	if budget > 2*proto.FrameHeader {
+		for _, id := range ids {
+			take(id, budget)
 		}
 	}
 	if len(frames) == 0 {
@@ -347,7 +401,28 @@ func (n *Node) handleOpenMux(w http.ResponseWriter, req proto.Request) {
 		return
 	}
 	go st.readLoop(m.signal)
-	writeJSON(w, proto.Response{OK: true, Sid: sid, Info: proto.MuxCapability})
+	// The open may carry the stream's first bytes (v2): the phone already holds the
+	// ClientHello, and writing it here saves the separate push round-trip that used to
+	// follow every open.
+	if req.D != "" {
+		data, err := base64.StdEncoding.DecodeString(req.D)
+		if err != nil {
+			m.dropStream(req.S)
+			writeJSON(w, proto.Response{Error: "base64: " + err.Error()})
+			return
+		}
+		if len(data) > proto.MaxPushBytes {
+			m.dropStream(req.S)
+			writeJSON(w, proto.Response{Error: "first chunk too large"})
+			return
+		}
+		if err := st.write(data); err != nil {
+			m.dropStream(req.S)
+			writeJSON(w, proto.Response{Error: "write: " + err.Error()})
+			return
+		}
+	}
+	writeJSON(w, proto.Response{OK: true, Sid: sid, Info: proto.MuxCapabilityV2})
 }
 
 func (n *Node) serveMuxPush(w http.ResponseWriter, req proto.Request) {
@@ -386,11 +461,27 @@ func (n *Node) serveMuxPoll(w http.ResponseWriter, req proto.Request) {
 	if wait > proto.MaxPollMs*time.Millisecond {
 		wait = proto.MaxPollMs * time.Millisecond
 	}
+	budget := req.N
+	if budget <= 0 || budget > proto.MaxPollMax {
+		budget = proto.MaxPollMax
+	}
 	deadline := time.After(wait)
+	gathered := false
 	for {
-		if body := m.takeFrames(req.N); len(body) > 0 {
-			writeJSON(w, proto.Response{OK: true, Sid: req.Sid, D: base64.StdEncoding.EncodeToString(body)})
-			return
+		if held, end := m.buffered(); held > 0 || end {
+			// Something is here but far from a full answer: give the destinations one breath
+			// to deliver more before spending the round-trip. An unannounced end never waits.
+			if !gathered && !end && held < budget/2 {
+				gathered = true
+				select {
+				case <-m.notify:
+				case <-time.After(muxGatherWindow):
+				}
+			}
+			if body := m.takeFrames(budget); len(body) > 0 {
+				writeJSON(w, proto.Response{OK: true, Sid: req.Sid, D: base64.StdEncoding.EncodeToString(body)})
+				return
+			}
 		}
 		// A session with no live stream is not a dead session: the phone keeps it for the next
 		// connection instead of paying a new open. A session the node forgot answers "no session"

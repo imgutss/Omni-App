@@ -25,7 +25,7 @@ func legacyExit(node *exitnode.Node) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rec := httptest.NewRecorder()
 		node.ServeHTTP(rec, r)
-		body := strings.Replace(rec.Body.String(), `,"info":"mux"`, "", 1)
+		body := strings.Replace(rec.Body.String(), `,"info":"mux2"`, "", 1)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(rec.Code)
 		_, _ = io.WriteString(w, body)

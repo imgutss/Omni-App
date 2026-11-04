@@ -66,6 +66,9 @@ object CoreConfigManager {
                 )
             ) {
                 TunnelRouting.blockUnsupportedTransports(v2rayConfig)
+                // And no name lookup may cross it either: FakeDNS answers at once and the far
+                // end of the tunnel resolves the domain it is handed.
+                TunnelRouting.resolveNamesAtTheExit(v2rayConfig)
             }
             if (lacksMainOutbound(v2rayConfig)) return mainOutboundFailure(context, guid)
             unbuiltRoutingTarget(v2rayConfig)?.let { return routingTargetFailure(context, guid, it) }

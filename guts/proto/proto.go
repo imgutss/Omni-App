@@ -19,6 +19,12 @@ const Version = 1
 // exactly what the phone must say out loud rather than pretend.
 const MuxCapability = "mux"
 
+// MuxCapabilityV2 is answered by an exit node whose mux open also carries the stream's first
+// bytes (the request's D): the phone bundles the ClientHello it is already holding with the
+// open, which saves one whole door round-trip per connection. A node that answers plain "mux"
+// ignores D on open, so the phone re-sends those bytes as an ordinary push.
+const MuxCapabilityV2 = "mux2"
+
 // Ops of a request.
 const (
 	OpOpen  = "open"  // dial host:port, answer with a session id
@@ -129,7 +135,7 @@ const (
 )
 
 // VersionTag is the release of this implementation, reported by a ping.
-const VersionTag = "0.2.0"
+const VersionTag = "0.3.0"
 
 // VersionString names the protocol and this release.
 func VersionString() string { return "guts/" + VersionTag }

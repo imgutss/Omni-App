@@ -19,6 +19,12 @@ class TunnelRoutingTest {
 
     private fun userRule() = V2rayConfig.RoutingBean.RulesBean(domain = arrayListOf("domain:example.com"), outboundTag = "proxy")
 
+    private fun configWithDns(servers: ArrayList<Any>?): V2rayConfig {
+        val config = configWith(emptyList())
+        config.dns = V2rayConfig.DnsBean(servers = servers)
+        return config
+    }
+
     @Test
     fun quicAndStunAreRefusedAheadOfEveryOtherRule() {
         val config = configWith(listOf(userRule()))
@@ -62,6 +68,55 @@ class TunnelRoutingTest {
         TunnelRouting.blockUnsupportedTransports(config)
 
         assertEquals(2, config.routing.rules.size)
+    }
+
+    @Test
+    fun fakeDnsAnswersEveryNameBeforeARealResolver() {
+        val remote = "https://8.8.8.8/dns-query"
+        val fake = V2rayConfig.DnsBean.ServersBean(
+            address = "fakedns",
+            domains = listOf("geosite:cn"),
+        )
+        val config = configWithDns(arrayListOf(remote, fake))
+
+        TunnelRouting.resolveNamesAtTheExit(config)
+
+        val servers = config.dns!!.servers!!
+        assertEquals(fake, servers[0])
+        assertNull(fake.domains)
+        assertEquals(remote, servers[1])
+    }
+
+    @Test
+    fun fakeDnsIsInsertedWhenTheBuiltConfigHasNone() {
+        val config = configWithDns(arrayListOf("https://8.8.8.8/dns-query"))
+
+        TunnelRouting.resolveNamesAtTheExit(config)
+
+        val first = config.dns!!.servers!!.first() as V2rayConfig.DnsBean.ServersBean
+        assertEquals("fakedns", first.address)
+        assertNull(first.domains)
+    }
+
+    @Test
+    fun aStringFakeDnsServerIsNotDuplicated() {
+        val config = configWithDns(arrayListOf("fakedns", "8.8.8.8"))
+
+        TunnelRouting.resolveNamesAtTheExit(config)
+
+        assertEquals(listOf("fakedns", "8.8.8.8"), config.dns!!.servers)
+    }
+
+    @Test
+    fun aConfigWithoutDnsServersIsLeftAlone() {
+        val nullServers = configWithDns(null)
+        val noDns = configWith(emptyList())
+
+        TunnelRouting.resolveNamesAtTheExit(nullServers)
+        TunnelRouting.resolveNamesAtTheExit(noDns)
+
+        assertNull(nullServers.dns!!.servers)
+        assertNull(noDns.dns)
     }
 
     @Test

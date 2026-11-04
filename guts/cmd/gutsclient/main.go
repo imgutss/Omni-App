@@ -108,7 +108,8 @@ func main() {
 	timeout := flag.Duration("timeout", 6*time.Second, "per-stage timeout of a scan probe: the connect, the handshake and the fronted read each get it in full")
 	doorBudget := flag.Int("door-budget", envInt("GUTS_DOOR_BUDGET", 0), "calls one door may take per day (0 = no limit); spread over the doors so several Apps Script accounts add up")
 	quotaState := flag.String("quota-state", os.Getenv("GUTS_QUOTA_STATE"), "file that remembers today's calls per door across restarts (empty = in memory only)")
-	mux := flag.Bool("mux", true, "carry every connection as a stream of one session (one door call per interval)")
+	mux := flag.Bool("mux", true, "carry connections as streams of shared sessions instead of one session per connection")
+	sessions := flag.Int("sessions", envInt("GUTS_SESSIONS", 4), "multiplexed sessions to spread connections over; each keeps one poll in flight, so this multiplies the downstream ceiling at a few extra idle polls")
 	controlSocket := flag.String(
 		"fd-control-unix-socket",
 		os.Getenv("OMNI_FD_CONTROL_UNIX_SOCKET"),
@@ -352,15 +353,28 @@ func main() {
 	}
 
 	proxy := relay.NewProxy(door, *listen, func(format string, args ...any) { log.Printf(format, args...) })
-	// One session for every connection: the difference between one door call per interval and one
-	// per connection, which is what an Apps Script quota counts.
+	// Shared multiplexed sessions: the difference between a handful of polls per interval and
+	// one per connection, which is what an Apps Script quota counts.
 	proxy.UseMux(*mux)
+	proxy.SetMuxSessions(*sessions)
 	log.Printf("gutsclient: multiplexing %v", *mux)
 	addr, err := proxy.Listen()
 	if err != nil {
 		log.Fatalf("gutsclient: %v", err)
 	}
 	log.Printf("guts client on socks5://%s via %s", addr, door.Describe())
+
+	// Wake the door and the exit node now, in the background, so the first page the user opens
+	// does not pay Apps Script's cold start on top of its own round-trips. One call per start.
+	go func() {
+		wctx, wcancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer wcancel()
+		if info, err := relay.Check(wctx, door); err != nil {
+			log.Printf("gutsclient: door warm-up: %v", err)
+		} else {
+			log.Printf("gutsclient: door warm: %s", info)
+		}
+	}()
 
 	go func() {
 		sig := make(chan os.Signal, 1)
