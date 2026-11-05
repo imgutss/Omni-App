@@ -8,6 +8,16 @@ import org.junit.jupiter.api.Test
 
 class NaiveFmtTest {
     @Test
+    fun encodedAndShortUrlCredentialsAreRedacted() {
+        val profile = NaiveFmt.parse("naive+https://u:p%40ss@proxy.example.com")!!
+        val core = QuicCore.of(profile)!!
+        val line = core.redact("failed https://u:p%40ss@proxy.example.com p%40ss")
+        assertFalse(line.contains("u:p"))
+        assertFalse(line.contains("p%40ss"))
+        assertTrue(line.contains("proxy.example.com"))
+    }
+
+    @Test
     fun importExportAndProtectedRelayConfig() {
         val profile = NaiveFmt.parse("naive+https://alice:p%40ss@192.0.2.1:8443?sni=proxy.example.com#node")!!
         assertEquals(EConfigType.NAIVE, profile.configType)

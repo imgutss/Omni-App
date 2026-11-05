@@ -51,6 +51,7 @@ object CoreOutboundBuilder {
         applyTargetStrategy(outbound, profileItem)
         val ret = updateOutboundWithGlobalSettings(outbound)
         if (!ret) return null
+        DialAddressOverride.attach(outbound, profileItem)
         return outbound
     }
 
@@ -834,9 +835,6 @@ object CoreOutboundBuilder {
     }
 
     internal fun getServerAddress(profileItem: ProfileItem): String {
-        if (profileItem.configType in setOf(EConfigType.VLESS, EConfigType.TROJAN)) {
-            profileItem.dialAddress?.takeIf { Utils.isPureIpAddress(it) }?.let { return it }
-        }
         if (Utils.isPureIpAddress(profileItem.server.orEmpty())) {
             return profileItem.server.orEmpty()
         }

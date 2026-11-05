@@ -865,8 +865,8 @@
     <string name="quic_error_server">Enter the server address.</string>
     <string name="quic_error_port">Enter a valid server port (1–65535).</string>
     <string name="quic_error_credentials">Enter the username/UUID and password.</string>
-    <string name="quic_error_keys">Enter the AmneziaWG private key and the peer public key.</string>
-    <string name="quic_error_address">Enter the AmneziaWG local address (IPv4/IPv6).</string>
+    <string name="quic_error_keys">Enter the private key and the peer public key.</string>
+    <string name="quic_error_address">Enter the local address (IPv4/IPv6).</string>
     <string name="quic_error_params">The advanced parameters must be a valid JSON object.</string>
     <string name="guts_lab_doors">Doors (Apps Script web apps)</string>
     <string name="guts_hint_doors">https://script.google.com/macros/s/AKfy…/exec</string>
@@ -971,7 +971,7 @@
     <string name="guts_network_none">This phone has no network right now, so there is nothing for the GUTS tunnel to ride on.</string>
     <string name="guts_network_coming_back">Google answers again: opening the GUTS tunnel.</string>
     <string name="warp_scan_button">Scan for a WARP endpoint</string>
-    <string name="warp_scan_notice">Cloudflare WARP peers only. Stop the VPN before scanning. Uses AETHER WireGuard probes, not HTTPS ping. Finding an endpoint does not validate your imported keys or AmneziaWG parameters.</string>
+    <string name="warp_scan_notice">Cloudflare WARP peers only. Stop the VPN before scanning. Uses AETHER WireGuard probes, not HTTPS ping. Finding an endpoint does not validate your imported keys.</string>
     <string name="warp_scan_stop_vpn">Stop the active VPN before scanning.</string>
     <string name="quic_core_timeout">Tunnel traffic test timed out. Check the endpoint, UDP availability and credentials; socket protection details are in the app log.</string>
     <string name="naive_protocol_notice">Official NaiveProxy over HTTPS / HTTP2. A real NaiveProxy server and valid TLS certificate are required. QUIC mode and certificate bypass are not supported.</string>

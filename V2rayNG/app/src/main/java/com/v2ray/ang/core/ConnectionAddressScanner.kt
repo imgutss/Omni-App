@@ -30,11 +30,16 @@ internal class ConnectionAddressScanner {
         check(!CoreServiceManager.isRunning()) { "Stop VPN before scanning" }
         val supplied = input.split(',', ';', '\n', ' ', '\t').map { it.trim().removeSurrounding("[", "]") }
             .filter { Utils.isPureIpAddress(it) }
-        val resolved = runCatching {
-            val origin = profile.server.orEmpty()
-            if (Utils.isPureIpAddress(origin)) listOf(origin)
-            else InetAddress.getAllByName(origin).mapNotNull { it.hostAddress }
-        }.getOrDefault(emptyList())
+        val origins = (listOfNotNull(profile.server, profile.sni) + profile.host.orEmpty().split(','))
+            .map { it.trim() }.filter { it.isNotEmpty() && it.none { ch -> ch.isWhitespace() || ch in "/?#@" } }
+            .distinct().take(4)
+        val resolved = origins.flatMap { origin ->
+            ensureActive()
+            runCatching {
+                if (Utils.isPureIpAddress(origin)) listOf(origin)
+                else InetAddress.getAllByName(origin).mapNotNull { it.hostAddress }
+            }.getOrDefault(emptyList())
+        }
         val candidates = (supplied + resolved).distinct().take(32)
         if (candidates.isEmpty()) return@withContext null
         CoreNativeManager.initCoreEnv(context)

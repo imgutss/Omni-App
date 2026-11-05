@@ -53,8 +53,12 @@ data class QuicCore(
 
     /** A log line of the client with its secrets taken out, in case an engine ever echoes them. */
     fun redact(text: String): String {
-        var out = text
-        secrets().forEach { secret -> if (secret.length >= 4) out = out.replace(secret, REDACTED) }
+        var out = text.replace(Regex("(?i)(https?://)[^/\\s@]+@")) { "${it.groupValues[1]}$REDACTED@" }
+        secrets().forEach { secret ->
+            if (secret.length >= 4) out = out.replace(secret, REDACTED)
+            val encoded = java.net.URLEncoder.encode(secret, "UTF-8").replace("+", "%20")
+            if (encoded.length >= 4) out = out.replace(encoded, REDACTED)
+        }
         return out
     }
 

@@ -661,6 +661,7 @@ object CoreConfigManager {
         gutsCore: GutsCore? = null,
         quicCore: QuicCore? = null,
     ): ConfigResult {
+        DialAddressOverride.materialize(v2rayConfig.outbounds)
         v2rayConfig.aetherCommand = core?.command
         // PattNG: the ECH outbounds of the profiles get their tags and go after every other outbound, as written
         val content = when (val serialized = EchOutbound.serialize(v2rayConfig)) {
