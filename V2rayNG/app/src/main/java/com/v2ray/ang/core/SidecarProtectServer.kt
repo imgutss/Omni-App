@@ -44,7 +44,7 @@ internal class SidecarProtectServer(
     init {
         socketFile.parentFile?.mkdirs()
         // A stale socket file from a previous session would make bind fail with EADDRINUSE.
-        runCatching { Os.unlink(socketFile.absolutePath) }
+        runCatching { Os.remove(socketFile.absolutePath) }
         boundSocket.bind(LocalSocketAddress(socketFile.absolutePath, LocalSocketAddress.Namespace.FILESYSTEM))
         // LocalServerSocket(fd) calls listen() itself; the fd stays owned by boundSocket.
         server = LocalServerSocket(boundSocket.fileDescriptor)
@@ -121,7 +121,7 @@ internal class SidecarProtectServer(
         runCatching { boundSocket.close() }
         synchronized(clientLock) { runCatching { currentClient?.close() } }
         if (Thread.currentThread() !== acceptThread) acceptThread.join(1_000)
-        runCatching { Os.unlink(socketFile.absolutePath) }
+        runCatching { Os.remove(socketFile.absolutePath) }
     }
 
     companion object {
