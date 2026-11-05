@@ -67,14 +67,12 @@ class StructuredImportTest {
     fun clashYamlImportsTheQuicFamilyAndSkipsUnsupported() {
         assertTrue(ClashFmt.looksLikeClash(clashYaml))
         val profiles = ClashFmt.parse(clashYaml)
-        assertEquals(4, profiles.size)
+        assertEquals(3, profiles.size)
         val tuic = profiles.first { it.remarks == "tuic-node" }
         assertEquals(EConfigType.TUIC, tuic.configType)
         assertEquals("8f7a1c2e-0b3d-4e5f-9a6b-1c2d3e4f5a6b", tuic.username)
         assertEquals("bbr", tuic.tuicParameters?.let { com.google.gson.JsonParser.parseString(it).asJsonObject.get("congestion_control").asString })
-        val awg = profiles.first { it.remarks == "awg-node" }
-        assertEquals(EConfigType.AMNEZIAWG, awg.configType)
-        assertTrue(awg.awgParameters!!.contains("\"jc\":4"))
+        assertFalse(profiles.any { it.remarks == "awg-node" })
         val sq = profiles.first { it.remarks == "sq-node" }
         assertEquals(EConfigType.SHADOWQUIC, sq.configType)
         assertEquals("example.com", sq.sni)
@@ -108,7 +106,7 @@ class StructuredImportTest {
     fun singBoxJsonImportsOutboundsAndEndpoints() {
         assertTrue(SingBoxFmt.looksLikeSingBox(singBoxJson))
         val profiles = SingBoxFmt.parse(singBoxJson)
-        assertEquals(3, profiles.size)
+        assertEquals(2, profiles.size)
         val tuic = profiles.first { it.remarks == "t" }
         assertEquals(EConfigType.TUIC, tuic.configType)
         assertEquals("u", tuic.username)
@@ -118,11 +116,7 @@ class StructuredImportTest {
         assertEquals("reality", vless.security)
         assertEquals("xtls-rprx-vision", vless.flow)
         assertEquals("chrome", vless.fingerPrint)
-        val awg = profiles.first { it.remarks == "w" }
-        assertEquals(EConfigType.AMNEZIAWG, awg.configType)
-        assertEquals("example.com", awg.server)
-        assertEquals("51820", awg.serverPort)
-        assertTrue(awg.awgParameters!!.contains("\"jc\":4"))
+        assertFalse(profiles.any { it.remarks == "w" })
     }
 
     @Test

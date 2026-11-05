@@ -21,6 +21,6 @@ data class ConfigResult(
     var dnsttCore: DnsttCore? = null,
     /** The guts client process the loopback SOCKS outbound depends on. */
     var gutsCore: GutsCore? = null,
-    /** The QUIC-family sidecar (sing-box for TUIC/AmneziaWG, shadowquic) the loopback SOCKS outbound depends on. */
+    /** The QUIC-family sidecar (sing-box for TUIC / NaiveProxy, shadowquic) the loopback SOCKS outbound depends on. */
     var quicCore: QuicCore? = null,
 )

@@ -13,7 +13,7 @@ import org.yaml.snakeyaml.constructor.SafeConstructor
  * Imports a Clash / Mihomo YAML subscription (or a single `proxies:` document) into Omni profiles.
  *
  * Each proxy is mapped straight onto a [ProfileItem] of the matching protocol, including the QUIC
- * family Omni runs on sidecars (TUIC, ShadowQUIC, AmneziaWG). Proxy types Omni cannot run are
+ * family Omni runs on sidecars (TUIC, ShadowQUIC, NaiveProxy). Proxy types Omni cannot run are
  * skipped rather than imported broken. The converter is deliberately tolerant: a malformed proxy
  * never aborts the whole subscription.
  */
@@ -51,7 +51,7 @@ object ClashFmt {
             "http" -> EConfigType.HTTP
             "hysteria2", "hy2" -> EConfigType.HYSTERIA2
             "tuic" -> EConfigType.TUIC
-            "wireguard" -> if (raw.map("amnezia-wg-option") != null) EConfigType.AMNEZIAWG else EConfigType.WIREGUARD
+            "wireguard" -> if (raw.map("amnezia-wg-option") != null) return null else EConfigType.WIREGUARD
             "shadowquic", "shadow-quic" -> EConfigType.SHADOWQUIC
             else -> return null
         }
@@ -121,7 +121,7 @@ object ClashFmt {
                 raw.bool("udp-over-stream")?.let { params.addProperty("over_stream", it) }
                 if (params.size() > 0) config.shadowquicParameters = params.toString()
             }
-            EConfigType.WIREGUARD, EConfigType.AMNEZIAWG -> {
+            EConfigType.WIREGUARD -> {
                 config.secretKey = raw.str("private-key")
                 config.publicKey = raw.str("public-key")
                 config.preSharedKey = raw.str("pre-shared-key")
@@ -132,29 +132,10 @@ object ClashFmt {
                 config.localAddress = addresses.joinToString(",").ifBlank { AppConfig.WIREGUARD_LOCAL_ADDRESS_V4 }
                 config.mtu = raw.int("mtu") ?: 1420
                 config.reserved = raw.list("reserved")?.joinToString(",") ?: raw.str("reserved") ?: "0,0,0"
-                if (configType == EConfigType.AMNEZIAWG) {
-                    config.awgParameters = awgParams(raw.map("amnezia-wg-option"))
-                }
             }
             else -> return null
         }
         return config
-    }
-
-    private fun awgParams(option: Map<*, *>?): String? {
-        if (option == null) return null
-        val params = JsonObject()
-        listOf("jc", "jmin", "jmax", "s1", "s2", "s3", "s4").forEach { key ->
-            option.int(key)?.let { params.addProperty(key, it) }
-        }
-        listOf("h1", "h2", "h3", "h4").forEach { key ->
-            option.str(key)?.let { value ->
-                val asInt = value.toIntOrNull()
-                if (asInt != null) params.addProperty(key, asInt) else params.addProperty(key, value)
-            }
-        }
-        listOf("i1", "i2", "i3", "i4", "i5").forEach { key -> option.str(key)?.let { params.addProperty(key, it) } }
-        return params.toString().takeIf { it != "{}" }
     }
 
     private fun applyTransport(config: ProfileItem, raw: Map<*, *>) {

@@ -35,7 +35,7 @@ object CoreOutboundBuilder {
             EConfigType.MASTERDNS -> toOutboundMasterDns(profileItem)
             EConfigType.DNSTT -> toOutboundDnstt(profileItem)
             EConfigType.GUTS -> toOutboundGuts(profileItem)
-            EConfigType.TUIC, EConfigType.SHADOWQUIC, EConfigType.AMNEZIAWG -> toOutboundQuic(profileItem)
+            EConfigType.TUIC, EConfigType.SHADOWQUIC, EConfigType.NAIVE -> toOutboundQuic(profileItem)
             else -> null
         }
 
@@ -350,7 +350,7 @@ object CoreOutboundBuilder {
     }
 
     /**
-     * A SOCKS outbound to the QUIC-family sidecar's loopback listener (sing-box for TUIC/AmneziaWG,
+     * A SOCKS outbound to the QUIC-family sidecar's loopback listener (sing-box for TUIC / NaiveProxy,
      * shadowquic for ShadowQUIC). The protocol details stay in the profile and the spawned client;
      * Xray only dials the port, so a chain, route rule or policy group treats it like any outbound.
      */
@@ -833,7 +833,10 @@ object CoreOutboundBuilder {
         }
     }
 
-    private fun getServerAddress(profileItem: ProfileItem): String {
+    internal fun getServerAddress(profileItem: ProfileItem): String {
+        if (profileItem.configType in setOf(EConfigType.VLESS, EConfigType.TROJAN)) {
+            profileItem.dialAddress?.takeIf { Utils.isPureIpAddress(it) }?.let { return it }
+        }
         if (Utils.isPureIpAddress(profileItem.server.orEmpty())) {
             return profileItem.server.orEmpty()
         }

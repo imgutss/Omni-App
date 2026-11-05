@@ -7,7 +7,7 @@ import com.v2ray.ang.enums.EConfigType
 /**
  * The one QUIC-family sidecar session a configuration needs, if it needs one at all.
  *
- * TUIC, AmneziaWG and ShadowQUIC each ride a native client that opens a loopback SOCKS listener, so
+ * TUIC, NaiveProxy and ShadowQUIC each ride a native client that opens a loopback SOCKS listener, so
  * like GUTS they may be the proxy itself or the transport a chain is dialled through (the last hop),
  * but not a hop in the middle of a chain, a member of a policy group, or a session beside another
  * native core. Only one QUIC sidecar owns a session, whatever mix of the three protocols appears.

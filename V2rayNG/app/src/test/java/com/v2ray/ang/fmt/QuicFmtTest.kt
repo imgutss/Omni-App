@@ -49,64 +49,16 @@ class QuicFmtTest {
     }
 
     @Test
-    fun awgUriAndConf() {
-        val uri = "awg://AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA%3D@example.com:51820?publickey=BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB%3D&address=10.0.0.2/32&jc=4&jmin=40&h1=1#awg"
-        val config = AmneziaWgFmt.parse(uri)
-        assertNotNull(config)
-        config!!
-        assertEquals(EConfigType.AMNEZIAWG, config.configType)
-        assertEquals("example.com", config.server)
-        assertEquals("51820", config.serverPort)
-        assertTrue(config.awgParameters!!.contains("\"jc\":4"))
-
-        val conf = """
-            [Interface]
-            PrivateKey = AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-            Address = 10.0.0.2/32
-            MTU = 1420
-            Jc = 4
-            Jmin = 40
-            Jmax = 70
-            H1 = 1
-            [Peer]
-            PublicKey = BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=
-            Endpoint = example.com:51820
-            AllowedIPs = 0.0.0.0/0
-            PersistentKeepalive = 25
-        """.trimIndent()
-        val fromConf = AmneziaWgFmt.parseConf(conf)
-        assertNotNull(fromConf)
-        assertEquals(EConfigType.AMNEZIAWG, fromConf!!.configType)
-        assertEquals("example.com", fromConf.server)
-        assertTrue(fromConf.awgParameters!!.contains("\"jc\":4"))
-        assertTrue(fromConf.awgParameters!!.contains("\"persistent_keepalive_interval\":25"))
-    }
-
-    @Test
-    fun plainWireguardConfIsNotAwg() {
-        val conf = """
-            [Interface]
-            PrivateKey = AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-            Address = 10.0.0.2/32
-            [Peer]
-            PublicKey = BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=
-            Endpoint = example.com:51820
-        """.trimIndent()
-        assertNull(AmneziaWgFmt.parseConf(conf))
-    }
-
-    @Test
-    fun wireguardUriWithAwgKeysBecomesAwg() {
-        val uri = "wireguard://AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA%3D@example.com:51820?publickey=BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB%3D&address=10.0.0.2/32&jc=4"
-        val config = WireguardFmt.parse(uri)
-        assertNotNull(config)
-        assertEquals(EConfigType.AMNEZIAWG, config!!.configType)
+    fun retiredAwgIsNotImportedAsPlainWireguard() {
+        assertNull(WireguardFmt.parse("wireguard://key@example.com:51820?publickey=key&jc=4"))
+        assertTrue(RetiredProtocol.isAwgConf("[Interface]\nJc = 4"))
+        assertTrue(RetiredProtocol.isRetiredProfile("{\"configType\":\"AMNEZIAWG\"}"))
     }
 
     @Test
     fun nonMatchingSchemesReturnNull() {
         assertNull(TuicFmt.parse("vless://x@y:443"))
         assertNull(ShadowQuicFmt.parse("tuic://x:y@z:443"))
-        assertNull(AmneziaWgFmt.parse("trojan://x@y:443"))
+        assertNull(NaiveFmt.parse("trojan://x@y:443"))
     }
 }

@@ -23,7 +23,7 @@ private enum class ImportMenuAction(@StringRes val labelRes: Int, val action: Ma
     Http(R.string.menu_item_import_config_manually_http, MainAction.ImportManually(EConfigType.HTTP.value)),
     Trojan(R.string.menu_item_import_config_manually_trojan, MainAction.ImportManually(EConfigType.TROJAN.value)),
     WireGuard(R.string.menu_item_import_config_manually_wireguard, MainAction.ImportManually(EConfigType.WIREGUARD.value)),
-    AmneziaWg(R.string.menu_item_import_config_manually_amneziawg, MainAction.ImportManually(EConfigType.AMNEZIAWG.value)),
+    Naive(R.string.menu_item_import_config_manually_naive, MainAction.ImportManually(EConfigType.NAIVE.value)),
     Hysteria2(R.string.menu_item_import_config_manually_hysteria2, MainAction.ImportManually(EConfigType.HYSTERIA2.value)),
     Tuic(R.string.menu_item_import_config_manually_tuic, MainAction.ImportManually(EConfigType.TUIC.value)),
     ShadowQuic(R.string.menu_item_import_config_manually_shadowquic, MainAction.ImportManually(EConfigType.SHADOWQUIC.value)),

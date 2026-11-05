@@ -15,7 +15,7 @@ import com.v2ray.ang.dto.entities.SubscriptionUsageInfo
 import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.extension.isNotNullEmpty
 import com.v2ray.ang.fmt.AetherFmt
-import com.v2ray.ang.fmt.AmneziaWgFmt
+import com.v2ray.ang.fmt.NaiveFmt
 import com.v2ray.ang.fmt.ClashFmt
 import com.v2ray.ang.fmt.CustomFmt
 import com.v2ray.ang.fmt.DnsttFmt
@@ -59,7 +59,8 @@ object AngConfigManager {
             EConfigType.TROJAN.protocolScheme to TrojanFmt::parse,
             EConfigType.VLESS.protocolScheme to VlessFmt::parse,
             EConfigType.WIREGUARD.protocolScheme to WireguardFmt::parse,
-            EConfigType.AMNEZIAWG.protocolScheme to AmneziaWgFmt::parse,
+            EConfigType.NAIVE.protocolScheme to NaiveFmt::parse,
+            "naive://" to NaiveFmt::parse,
             EConfigType.TUIC.protocolScheme to TuicFmt::parse,
             EConfigType.SHADOWQUIC.protocolScheme to ShadowQuicFmt::parse,
             EConfigType.HYSTERIA2.protocolScheme to Hysteria2Fmt::parse,
@@ -190,9 +191,9 @@ object AngConfigManager {
                 EConfigType.VLESS -> VlessFmt.toUri(config)
                 EConfigType.TROJAN -> TrojanFmt.toUri(config)
                 EConfigType.WIREGUARD -> WireguardFmt.toUri(config)
-                EConfigType.AMNEZIAWG -> AmneziaWgFmt.toUri(config)
-                EConfigType.TUIC -> TuicFmt.toUri(config)
-                EConfigType.SHADOWQUIC -> ShadowQuicFmt.toUri(config)
+                EConfigType.NAIVE -> NaiveFmt.toUri(config).removePrefix(scheme)
+                EConfigType.TUIC -> TuicFmt.toUri(config).removePrefix(scheme)
+                EConfigType.SHADOWQUIC -> ShadowQuicFmt.toUri(config).removePrefix(scheme)
                 EConfigType.HYSTERIA2 -> Hysteria2Fmt.toUri(config)
                 EConfigType.AETHER -> AetherFmt.toUri(config)
                 EConfigType.MASTERDNS -> MasterDnsFmt.toUri(config)
@@ -420,7 +421,7 @@ object AngConfigManager {
             return 0
         } else if (server.startsWith("[Interface]") && server.contains("[Peer]")) {
             try {
-                val config = AmneziaWgFmt.parseConf(server) ?: WireguardFmt.parseWireguardConfFile(server)
+                val config = WireguardFmt.parseWireguardConfFile(server)
                 config.subscriptionId = subid
                 config.description = generateDescription(config)
                 commitProfiles(

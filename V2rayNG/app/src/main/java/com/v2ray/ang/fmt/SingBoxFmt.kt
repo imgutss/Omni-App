@@ -10,8 +10,8 @@ import com.v2ray.ang.enums.NetworkType
 
 /**
  * Imports a sing-box JSON configuration into Omni profiles by reading its `outbounds` (and the
- * `endpoints` a WireGuard/AmneziaWG profile lives in). Each outbound becomes a profile of the
- * matching protocol; the QUIC family Omni runs on sidecars (TUIC, AmneziaWG) is included. Outbound
+ * `endpoints` a WireGuard profile lives in). Each outbound becomes a profile of the
+ * matching protocol; the QUIC family Omni runs on sidecars (TUIC, NaiveProxy) is included. Outbound
  * types Omni cannot run are skipped. Inbounds, routing and DNS are ignored: Omni rebuilds those.
  */
 object SingBoxFmt {
@@ -50,10 +50,10 @@ object SingBoxFmt {
             "http" -> EConfigType.HTTP
             "hysteria2" -> EConfigType.HYSTERIA2
             "tuic" -> EConfigType.TUIC
-            "wireguard" -> if (hasAwg(obj)) EConfigType.AMNEZIAWG else EConfigType.WIREGUARD
+            "wireguard" -> if (hasAwg(obj)) return null else EConfigType.WIREGUARD
             else -> return null
         }
-        // A WireGuard/AmneziaWG endpoint names its server in the first peer, not at the root.
+        // A WireGuard endpoint names its server in the first peer, not at the root.
         val firstPeer = obj.array("peers")?.firstOrNull() as? JsonObject
         val server = obj.string("server") ?: firstPeer?.string("address")
         val port = obj.int("server_port") ?: firstPeer?.int("port")
@@ -116,7 +116,7 @@ object SingBoxFmt {
                 obj.bool("zero_rtt_handshake")?.let { params.addProperty("zero_rtt_handshake", it) }
                 if (params.size() > 0) config.tuicParameters = params.toString()
             }
-            EConfigType.WIREGUARD, EConfigType.AMNEZIAWG -> {
+            EConfigType.WIREGUARD -> {
                 config.secretKey = obj.string("private_key")
                 config.localAddress = obj.array("address")?.joinToString(",") { it.asString }
                     ?: AppConfig.WIREGUARD_LOCAL_ADDRESS_V4
@@ -130,7 +130,6 @@ object SingBoxFmt {
                     if (config.server.isNullOrBlank()) config.server = peer.string("address")
                     peer.int("port")?.let { config.serverPort = it.toString() }
                 }
-                if (configType == EConfigType.AMNEZIAWG) config.awgParameters = awgParams(obj)
             }
             else -> return null
         }
@@ -140,19 +139,6 @@ object SingBoxFmt {
     private fun hasAwg(obj: JsonObject): Boolean =
         listOf("jc", "jmin", "jmax", "s1", "s2", "h1", "h2", "h3", "h4", "i1", "i2", "i3", "i4", "i5")
             .any { obj.get(it) != null }
-
-    private fun awgParams(obj: JsonObject): String? {
-        val params = JsonObject()
-        listOf("jc", "jmin", "jmax", "s1", "s2", "s3", "s4").forEach { key -> obj.int(key)?.let { params.addProperty(key, it) } }
-        listOf("h1", "h2", "h3", "h4").forEach { key ->
-            obj.get(key)?.takeIf { it.isJsonPrimitive }?.let { value ->
-                val p = value.asJsonPrimitive
-                if (p.isNumber) params.addProperty(key, p.asNumber) else params.addProperty(key, p.asString)
-            }
-        }
-        listOf("i1", "i2", "i3", "i4", "i5", "header_protection_key").forEach { key -> obj.string(key)?.let { params.addProperty(key, it) } }
-        return params.toString().takeIf { it != "{}" }
-    }
 
     private fun applyTransport(config: ProfileItem, transport: JsonObject?) {
         if (transport == null) {

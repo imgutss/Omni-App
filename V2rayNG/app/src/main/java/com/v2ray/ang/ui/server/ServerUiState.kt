@@ -130,7 +130,6 @@ class ServerUiState(
     gutsSni: String = GutsCore.DEFAULT_SNI,
     tuicParameters: String = "",
     shadowquicParameters: String = "",
-    awgParameters: String = "",
     dnsttTransport: String = "doh",
     dnsttResolver: String = "https://cloudflare-dns.com/dns-query",
     dnsttResolverAuthorities: String = "",
@@ -168,10 +167,12 @@ class ServerUiState(
     dnsttSshAuthType: String = "password",
     dnsttSshPrivateKey: String = "",
     dnsttSshKeyPassphrase: String = "",
+    dialAddress: String = "",
 ) {
     var configType by mutableStateOf(configType)
     var remarks by mutableStateOf(remarks)
     var address by mutableStateOf(address)
+    var dialAddress by mutableStateOf(dialAddress)
     var port by mutableStateOf(port)
     var password by mutableStateOf(password)
     var method by mutableStateOf(method)
@@ -274,7 +275,6 @@ class ServerUiState(
     var gutsSni by mutableStateOf(gutsSni)
     var tuicParameters by mutableStateOf(tuicParameters)
     var shadowquicParameters by mutableStateOf(shadowquicParameters)
-    var awgParameters by mutableStateOf(awgParameters)
     var dnsttTransport by mutableStateOf(dnsttTransport)
     var dnsttResolver by mutableStateOf(dnsttResolver)
     var dnsttResolverAuthorities by mutableStateOf(dnsttResolverAuthorities)
@@ -368,8 +368,7 @@ class ServerUiState(
         val isShadowsocks = configType == EConfigType.SHADOWSOCKS
         val isSocksOrHttp = configType == EConfigType.SOCKS || configType == EConfigType.HTTP
         val isWireguard = configType == EConfigType.WIREGUARD
-        val isAmneziaWg = configType == EConfigType.AMNEZIAWG
-        val isTuic = configType == EConfigType.TUIC
+        val isTuic = configType == EConfigType.TUIC || configType == EConfigType.NAIVE
         val isShadowQuic = configType == EConfigType.SHADOWQUIC
         val isHysteria2 = configType == EConfigType.HYSTERIA2
         val isAether = configType == EConfigType.AETHER
@@ -394,21 +393,21 @@ class ServerUiState(
                 else -> null
             },
             flow = if (isVless) flow else null,
+            dialAddress = if (configType == EConfigType.VLESS || configType == EConfigType.TROJAN) dialAddress.trim().nullIfBlank() else null,
             username = if (isSocksOrHttp || isTuic || isShadowQuic) username else null,
-            secretKey = if (isWireguard || isAmneziaWg) secretKey else null,
+            secretKey = if (isWireguard) secretKey else null,
             publicKey = when {
-                isWireguard || isAmneziaWg -> publicKey
+                isWireguard -> publicKey
                 streamSecurity == REALITY -> publicKeyReality
                 else -> null
             },
-            preSharedKey = if (isWireguard || isAmneziaWg) preSharedKey else null,
-            reserved = if (isWireguard || isAmneziaWg) reserved else null,
-            localAddress = if (isWireguard || isAmneziaWg) localAddress else null,
-            mtu = if (isWireguard || isAmneziaWg) mtu.toIntOrNull() else null,
-            remoteDNS = if (isWireguard || isAmneziaWg) remoteDNS else null,
+            preSharedKey = if (isWireguard) preSharedKey else null,
+            reserved = if (isWireguard) reserved else null,
+            localAddress = if (isWireguard) localAddress else null,
+            mtu = if (isWireguard) mtu.toIntOrNull() else null,
+            remoteDNS = if (isWireguard) remoteDNS else null,
             tuicParameters = if (isTuic) tuicParameters.trim().nullIfBlank() else null,
             shadowquicParameters = if (isShadowQuic) shadowquicParameters.trim().nullIfBlank() else null,
-            awgParameters = if (isAmneziaWg) awgParameters.trim().nullIfBlank() else null,
             obfsPassword = if (isHysteria2) obfsPassword else null,
             portHopping = if (isHysteria2) portHopping else null,
             portHoppingInterval = if (isHysteria2) portHoppingInterval else null,
@@ -548,6 +547,7 @@ class ServerUiState(
                 configType = initialConfig.configType,
                 remarks = initialConfig.remarks,
                 address = initialConfig.server ?: "",
+                dialAddress = initialConfig.dialAddress ?: "",
                 port = initialConfig.serverPort
                     ?: if (initialConfig.configType == EConfigType.AETHER) "" else DEFAULT_PORT.toString(),
                 password = initialConfig.password ?: "",
@@ -640,7 +640,6 @@ class ServerUiState(
                 gutsSni = initialConfig.gutsSni ?: GutsCore.DEFAULT_SNI,
                 tuicParameters = initialConfig.tuicParameters ?: "",
                 shadowquicParameters = initialConfig.shadowquicParameters ?: "",
-                awgParameters = initialConfig.awgParameters ?: "",
                 dnsttTransport = initialConfig.dnsttTransport ?: "doh",
                 dnsttResolver = initialConfig.dnsttResolver ?: "https://cloudflare-dns.com/dns-query",
                 dnsttResolverAuthorities = initialConfig.dnsttResolverAuthorities ?: "",

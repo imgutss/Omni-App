@@ -17,9 +17,7 @@ object WireguardFmt : FmtBase() {
      * @return the parsed ProfileItem object, or null if parsing fails
      */
     fun parse(str: String): ProfileItem? {
-        // A wireguard:// link that carries AmneziaWG obfuscation keys is an AmneziaWG profile, which
-        // runs on the sing-box sidecar rather than Xray's plain WireGuard outbound.
-        if (AmneziaWgFmt.looksLikeAwg(str)) return AmneziaWgFmt.parse(str)
+        if (RetiredProtocol.isAwgUri(str)) return null
         val config = ProfileItem.create(EConfigType.WIREGUARD)
 
         val uri = URI(Utils.fixIllegalUrl(str))
@@ -50,6 +48,7 @@ object WireguardFmt : FmtBase() {
      * @return the parsed ProfileItem object, or null if parsing fails
      */
     fun parseWireguardConfFile(str: String): ProfileItem {
+        require(!RetiredProtocol.isAwgConf(str)) { "AmneziaWG has been removed" }
         val config = ProfileItem.create(EConfigType.WIREGUARD)
 
         val interfaceParams: MutableMap<String, String> = mutableMapOf()

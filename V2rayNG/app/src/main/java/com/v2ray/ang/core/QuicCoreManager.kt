@@ -24,7 +24,7 @@ import kotlin.concurrent.thread
 
 /**
  * Owns the one QUIC-family sidecar process the daemon's selected profile needs: a sing-box client
- * for TUIC v5 / AmneziaWG, or the official shadowquic client for ShadowQUIC.
+ * for TUIC v5 / NaiveProxy, or the official shadowquic client for ShadowQUIC.
  *
  * The client opens a SOCKS5 listener on the loopback and Xray dials it as an ordinary SOCKS
  * outbound. This manager adds only what a phone needs and a desktop does not: a protected socket
@@ -124,7 +124,12 @@ object QuicCoreManager {
             val directory = sessionDirectory(target)
             target.directory = directory
 
-            if (protect != null) {
+            if (target.core.engine == QuicCore.Engine.NAIVE) {
+                target.naiveBridge = NaiveTcpBridge(target.context, target.core.profile.server.orEmpty(),
+                    target.core.profile.serverPort!!.toInt(), protect) {
+                    LogUtil.w(AppConfig.TAG, "NaiveProxy: protected relay connection failed")
+                }
+            } else if (protect != null) {
                 // Match the abstract namespace used by the working MasterDNS protection bridge.
                 target.protectServer = SidecarProtectServer("omni-quic-${target.id}", protect) { error ->
                     LogUtil.w(AppConfig.TAG, "QUIC: protect server request failed", error)
@@ -132,7 +137,7 @@ object QuicCoreManager {
             }
 
             val configFile = File(directory, target.core.engine.configName)
-            configFile.writeText(target.core.configText(target.protectServer?.configPath))
+            configFile.writeText(target.core.configText(target.protectServer?.configPath, target.naiveBridge?.port ?: target.core.port + 1))
             Os.chmod(configFile.absolutePath, OsConstants.S_IRUSR or OsConstants.S_IWUSR)
 
             val process = ProcessBuilder(processArguments(target, configFile)).apply {
@@ -168,6 +173,7 @@ object QuicCoreManager {
         return when (target.core.engine) {
             QuicCore.Engine.SING_BOX -> listOf(binary, "run", "-c", configFile.absolutePath, "-D", target.directory?.absolutePath.orEmpty(), "--disable-color")
             QuicCore.Engine.SHADOW_QUIC -> listOf(binary, "-c", configFile.absolutePath)
+            QuicCore.Engine.NAIVE -> listOf(binary, configFile.absolutePath)
         }
     }
 
@@ -245,6 +251,7 @@ object QuicCoreManager {
             LogUtil.w(AppConfig.TAG, "QUIC: process cleanup failed", e)
         }
         target.protectServer?.close()
+        target.naiveBridge?.close()
         if (stopped) {
             target.directory?.deleteRecursively()
         } else {
@@ -310,6 +317,7 @@ object QuicCoreManager {
     ) {
         @Volatile var process: Process? = null
         @Volatile var protectServer: SidecarProtectServer? = null
+        @Volatile var naiveBridge: NaiveTcpBridge? = null
         @Volatile var directory: File? = null
         @Volatile var outputThread: Thread? = null
         @Volatile var watchThread: Thread? = null

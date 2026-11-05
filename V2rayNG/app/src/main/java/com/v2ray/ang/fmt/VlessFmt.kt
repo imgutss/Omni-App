@@ -28,6 +28,7 @@ object VlessFmt : FmtBase() {
         config.method = queryParam["encryption"] ?: "none"
 
         getItemFormQuery(config, queryParam)
+            config.dialAddress = queryParam["dialAddress"]?.takeIf { Utils.isPureIpAddress(it) }
 
         return config
     }
@@ -40,6 +41,7 @@ object VlessFmt : FmtBase() {
      */
     fun toUri(config: ProfileItem): String {
         val dicQuery = getQueryDic(config)
+        config.dialAddress?.let { dicQuery["dialAddress"] = it }
         dicQuery["encryption"] = config.method ?: "none"
 
         return toUri(config, config.password, dicQuery)

@@ -234,7 +234,9 @@ object MmkvManager {
         return if (json.isNullOrBlank()) {
             mutableListOf()
         } else {
-            JsonUtil.fromJsonSafe(json, Array<String>::class.java)?.toMutableList() ?: mutableListOf()
+            JsonUtil.fromJsonSafe(json, Array<String>::class.java)?.filterNot { guid ->
+                com.v2ray.ang.fmt.RetiredProtocol.isRetiredProfile(profileFullStorage.decodeString(guid))
+            }?.toMutableList() ?: mutableListOf()
         }
     }
 
@@ -276,6 +278,7 @@ object MmkvManager {
         if (json.isNullOrBlank()) {
             return null
         }
+        if (com.v2ray.ang.fmt.RetiredProtocol.isRetiredProfile(json)) return null
         return JsonUtil.fromJsonSafe(json, ProfileItem::class.java)
     }
 

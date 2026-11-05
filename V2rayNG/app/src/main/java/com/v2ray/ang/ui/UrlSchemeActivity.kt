@@ -23,7 +23,7 @@ class UrlSchemeActivity : BaseComponentActivity() {
 
     private val omniSchemes = setOf(
         "vless", "vmess", "trojan", "ss", "hysteria2", "hy2", "tuic", "wireguard", "aether",
-        "masterdns", "cottendns", "soar", "omni", "guts", "shadowquic", "awg",
+        "masterdns", "cottendns", "soar", "omni", "guts", "shadowquic", "naive+https", "naive",
     )
 
     // These carry an opaque Base64 payload whose '+' and '/' a URL decoder would change.
@@ -86,7 +86,7 @@ class UrlSchemeActivity : BaseComponentActivity() {
         val opaqueProfile = inputUri.scheme?.lowercase() in opaqueProfileSchemes
         // A form URL decoder turns '+' in a standard Base64 profile into a space.
         // These schemes carry an opaque payload, so preserve every character exactly.
-        var decodedUrl = if (opaqueProfile) uriString else URLDecoder.decode(uriString, "UTF-8")
+        var decodedUrl = if (opaqueProfile || inputUri.scheme?.lowercase() in omniSchemes) uriString else URLDecoder.decode(uriString, "UTF-8")
         val uri = Uri.parse(decodedUrl)
         if (uri.fragment.isNullOrEmpty() && !fragment.isNullOrEmpty()) {
             decodedUrl += "#${fragment}"

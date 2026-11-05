@@ -20,34 +20,12 @@ class QuicCoreTest {
         alpn = "h3"
     }
 
-    private fun awg() = ProfileItem.create(EConfigType.AMNEZIAWG).apply {
-        server = "example.com"
-        serverPort = "51820"
-        secretKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
-        publicKey = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB="
-        localAddress = "10.0.0.2/32"
-        awgParameters = "{\"jc\":4,\"jmin\":40,\"jmax\":70,\"h1\":1,\"h2\":\"100-200\",\"i1\":\"<b 0xdeadbeef>\"}"
-    }
-
     private fun shadowquic() = ProfileItem.create(EConfigType.SHADOWQUIC).apply {
         server = "example.com"
         serverPort = "443"
         username = "user"
         password = "pass"
         sni = "example.com"
-    }
-
-    @Test
-    fun awgDnsUsesImportedResolverInsideTunnel() {
-        val root = JsonParser.parseString(QuicCore.of(awg().apply {
-            remoteDNS = "1.0.0.1, 1.1.1.1"
-        }).configText("@omni-test")).asJsonObject
-        val dns = root.getAsJsonObject("dns")
-        val server = dns.getAsJsonArray("servers")[0].asJsonObject
-        assertEquals("udp", server.get("type").asString)
-        assertEquals("1.0.0.1", server.get("server").asString)
-        assertEquals("quic-out", server.get("detour").asString)
-        assertEquals("@omni-test", root.getAsJsonArray("endpoints")[0].asJsonObject.get("protect_path").asString)
     }
 
     @Test
@@ -59,7 +37,7 @@ class QuicCoreTest {
     @Test
     fun engineMapping() {
         assertEquals(QuicCore.Engine.SING_BOX, QuicCore.engineOf(EConfigType.TUIC))
-        assertEquals(QuicCore.Engine.SING_BOX, QuicCore.engineOf(EConfigType.AMNEZIAWG))
+        assertEquals(QuicCore.Engine.NAIVE, QuicCore.engineOf(EConfigType.NAIVE))
         assertEquals(QuicCore.Engine.SHADOW_QUIC, QuicCore.engineOf(EConfigType.SHADOWQUIC))
         assertNull(QuicCore.engineOf(EConfigType.VLESS))
         assertTrue(QuicCore.isQuicType(EConfigType.TUIC))
@@ -71,11 +49,8 @@ class QuicCoreTest {
         assertEquals(QuicCore.Problem.SERVER_MISSING, QuicCore.normalize(tuic().apply { server = "" }))
         assertEquals(QuicCore.Problem.PORT_INVALID, QuicCore.normalize(tuic().apply { serverPort = "abc" }))
         assertEquals(QuicCore.Problem.CREDENTIALS_MISSING, QuicCore.normalize(tuic().apply { password = "" }))
-        assertEquals(QuicCore.Problem.KEYS_MISSING, QuicCore.normalize(awg().apply { publicKey = "" }))
-        assertEquals(QuicCore.Problem.ADDRESS_MISSING, QuicCore.normalize(awg().apply { localAddress = "" }))
         assertEquals(QuicCore.Problem.PARAMS_INVALID, QuicCore.normalize(tuic().apply { tuicParameters = "not json" }))
         assertNull(QuicCore.normalize(tuic()))
-        assertNull(QuicCore.normalize(awg()))
         assertNull(QuicCore.normalize(shadowquic()))
     }
 
@@ -93,23 +68,6 @@ class QuicCoreTest {
         assertEquals("quic-out", root.getAsJsonObject("route").get("final").asString)
         val inbound = root.getAsJsonArray("inbounds")[0].asJsonObject
         assertEquals(QuicCore.DEFAULT_SOCKS_PORT, inbound.get("listen_port").asInt)
-    }
-
-    @Test
-    fun awgConfigPromotesObfuscationKnobs() {
-        val core = QuicCore.of(awg())
-        val root = JsonParser.parseString(core.configText(null)).asJsonObject
-        val endpoint = root.getAsJsonArray("endpoints")[0].asJsonObject
-        assertEquals("wireguard", endpoint.get("type").asString)
-        assertEquals(4, endpoint.get("jc").asInt)
-        assertEquals(40, endpoint.get("jmin").asInt)
-        assertEquals(1, endpoint.get("h1").asInt)
-        assertEquals("100-200", endpoint.get("h2").asString)
-        assertEquals("<b 0xdeadbeef>", endpoint.get("i1").asString)
-        assertFalse(endpoint.has("protect_path"))
-        val peer = endpoint.getAsJsonArray("peers")[0].asJsonObject
-        assertEquals("example.com", peer.get("address").asString)
-        assertEquals(51820, peer.get("port").asInt)
     }
 
     @Test

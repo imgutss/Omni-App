@@ -35,7 +35,7 @@ import com.v2ray.ang.ui.perappproxy.PerAppProxyActivity
 import com.v2ray.ang.ui.routing.RoutingSettingActivity
 import com.v2ray.ang.ui.server.ProfileEditorResult
 import com.v2ray.ang.ui.server.ServerAetherActivity
-import com.v2ray.ang.ui.server.ServerAmneziaWgActivity
+import com.v2ray.ang.ui.server.ServerNaiveActivity
 import com.v2ray.ang.ui.server.ServerCustomConfigActivity
 import com.v2ray.ang.ui.server.ServerDnsttActivity
 import com.v2ray.ang.ui.server.ServerGutsActivity
@@ -238,7 +238,7 @@ class MainActivity : HelperBaseComponentActivity() {
             EConfigType.GUTS.value -> Intent(this, ServerGutsActivity::class.java)
             EConfigType.TUIC.value -> Intent(this, ServerTuicActivity::class.java)
             EConfigType.SHADOWQUIC.value -> Intent(this, ServerShadowQuicActivity::class.java)
-            EConfigType.AMNEZIAWG.value -> Intent(this, ServerAmneziaWgActivity::class.java)
+            EConfigType.NAIVE.value -> Intent(this, ServerNaiveActivity::class.java)
             else -> Intent(this, ServerHttpActivity::class.java).apply {
                 putExtra("createConfigType", createConfigType)
             }
@@ -297,7 +297,7 @@ class MainActivity : HelperBaseComponentActivity() {
             EConfigType.GUTS -> ServerGutsActivity::class.java
             EConfigType.TUIC -> ServerTuicActivity::class.java
             EConfigType.SHADOWQUIC -> ServerShadowQuicActivity::class.java
-            EConfigType.AMNEZIAWG -> ServerAmneziaWgActivity::class.java
+            EConfigType.NAIVE -> ServerNaiveActivity::class.java
             else -> ServerHttpActivity::class.java
         }
         val intent = Intent(this, activityClass).apply {

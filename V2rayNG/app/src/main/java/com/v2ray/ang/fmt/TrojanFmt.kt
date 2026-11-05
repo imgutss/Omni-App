@@ -32,6 +32,7 @@ object TrojanFmt : FmtBase() {
             val queryParam = getQueryParam(uri)
 
             getItemFormQuery(config, queryParam)
+            config.dialAddress = queryParam["dialAddress"]?.takeIf { Utils.isPureIpAddress(it) }
             config.security = queryParam["security"] ?: AppConfig.TLS
         }
 
@@ -46,6 +47,7 @@ object TrojanFmt : FmtBase() {
      */
     fun toUri(config: ProfileItem): String {
         val dicQuery = getQueryDic(config)
+        config.dialAddress?.let { dicQuery["dialAddress"] = it }
 
         return toUri(config, config.password, dicQuery)
     }

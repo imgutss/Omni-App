@@ -39,10 +39,12 @@ class ServerTrojanActivity : BaseServerActivity() {
                 scope = scope,
                 buildProfileItem = { uiState.toProfileItem(initialConfig) }
             )
+            ConnectionAddressScanSection(uiState, initialConfig)
         }
     }
 
     override fun validateProtocolConfig(config: ProfileItem): Boolean {
+        if (!config.dialAddress.isNullOrBlank() && !com.v2ray.ang.util.Utils.isPureIpAddress(config.dialAddress.orEmpty())) return false
         if (config.password.isNullOrBlank()) {
             return false
         }

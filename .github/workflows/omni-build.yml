@@ -26,7 +26,7 @@ jobs:
       # One version for the whole build. The assemble step and the slim-copy step each used to
       # fall back to a different hard-coded version, so a push built Omni_<one>_*.apk and then
       # went looking for Omni_<other>_*.apk to slim — which is what failed the 0.11.2 build.
-      OMNI_VERSION: '0.12.1'
+      OMNI_VERSION: '0.13.0'
       # The latest stable release, as aether's own release workflow builds with. The libaether
       # cache is keyed by the rustc it installs, so a new stable release builds the core afresh.
       RUST_TOOLCHAIN: "stable"
@@ -282,6 +282,9 @@ jobs:
         path: ${{ github.workspace }}/libs-singbox
         key: singbox-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-singbox.sh') }}
 
+    - name: Download and verify official NaiveProxy Android clients
+      run: bash compile-naive.sh
+
     # The official ShadowQUIC client, built with the minimal gaming feature set from the pinned tag.
     - name: Restore cached ShadowQUIC client
       id: cache-shadowquic-restore
@@ -386,7 +389,7 @@ jobs:
       run: |
         READELF="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
         audit_elf() {
-          local file="$1" expected_type="$2" expected_machine="$3" header alignments
+          local file="$1" expected_type="$2" expected_machine="$3" expected_alignment="${4:-0x4000}" header alignments
           test -s "$file"
           header=$("$READELF" -h "$file")
           if ! grep -Eq "Type:[[:space:]]+$expected_type" <<<"$header" || ! grep -Eq "Machine:[[:space:]]+$expected_machine" <<<"$header"; then
@@ -394,8 +397,8 @@ jobs:
             return 1
           fi
           alignments=$("$READELF" -lW "$file" | awk '$1 == "LOAD" { print $NF }')
-          if [[ -z "$alignments" ]] || grep -Fvx '0x4000' <<<"$alignments" >/dev/null; then
-            echo "::error::$file does not use 16-KB LOAD alignment"
+          if [[ -z "$alignments" ]] || grep -Fvx "$expected_alignment" <<<"$alignments" >/dev/null; then
+            echo "::error::$file does not use required LOAD alignment $expected_alignment"
             return 1
           fi
         }
@@ -413,6 +416,11 @@ jobs:
           audit_elf "libs-guts/$abi/libguts.so" EXEC "$machine"
           audit_elf "libs-singbox/$abi/libsingbox.so" EXEC "$machine"
           audit_elf "libs-shadowquic/$abi/libshadowquic.so" DYN "$machine"
+          # Android 16-KiB page-size support applies to 64-bit ABIs. Official 32-bit
+          # Chromium binaries use 4-KiB pages; never rewrite ELF headers to fake alignment.
+          naive_alignment=0x4000
+          case "$abi" in armeabi-v7a|x86) naive_alignment=0x1000 ;; esac
+          audit_elf "libs-naive/$abi/libnaive.so" DYN "$machine" "$naive_alignment"
         done
 
     - name: Save Slipstream client
@@ -480,6 +488,7 @@ jobs:
         cp -r ${{ github.workspace }}/libs-guts/. ${{ github.workspace }}/V2rayNG/app/libs/
         cp -r ${{ github.workspace }}/libs-singbox/. ${{ github.workspace }}/V2rayNG/app/libs/
         cp -r ${{ github.workspace }}/libs-shadowquic/. ${{ github.workspace }}/V2rayNG/app/libs/
+        cp -r ${{ github.workspace }}/libs-naive/. ${{ github.workspace }}/V2rayNG/app/libs/
 
     # Psiphon's client starts with the newest server list the build could fetch, so a fresh install has
     # servers before it can reach the list on its own; see fetch-psiphon-servers.sh.
@@ -570,7 +579,7 @@ jobs:
               echo "::error::$(basename "$apk") lacks lib/$abi/libnoizdns.so"
               status=1
             fi
-            for lib in libvaydns.so libslipstream.so libcottendns.so libsoar.so; do
+            for lib in libvaydns.so libslipstream.so libcottendns.so libsoar.so libnaive.so libsingbox.so libshadowquic.so; do
               if ! echo "$entries" | grep -qx "lib/$abi/$lib"; then
                 echo "::error::$(basename "$apk") lacks lib/$abi/$lib"
                 status=1

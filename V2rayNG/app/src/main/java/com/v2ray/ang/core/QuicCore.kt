@@ -15,7 +15,7 @@ import java.security.MessageDigest
  * listener on the loopback; Xray dials that listener as an ordinary SOCKS outbound, exactly as it
  * dials GUTS, DNSTT and MasterDNS:
  *
- *  - TUIC v5 and AmneziaWG run on a sing-box client (the lx build carries the AmneziaWG endpoint);
+ *  - TUIC v5 runs on a sing-box client; NaiveProxy uses the official Chromium binary;
  *  - ShadowQUIC runs on the official shadowquic client, tuned for gaming by default.
  *
  * The client is told where to protect its sockets through an abstract-namespace Unix socket (see
@@ -35,6 +35,7 @@ data class QuicCore(
     enum class Engine(val binaryName: String, val configName: String) {
         SING_BOX("libsingbox.so", "config.json"),
         SHADOW_QUIC("libshadowquic.so", "config.yaml"),
+        NAIVE("libnaive.so", "config.json"),
     }
 
     /** The only loopback port the session reserves: the client's SOCKS5 listener. */
@@ -65,12 +66,13 @@ data class QuicCore(
     }
 
     /** The full client configuration, with [protectPath] wired in when the VPN owns socket protection. */
-    fun configText(protectPath: String?): String = when (engine) {
+    fun configText(protectPath: String?, naiveBridgePort: Int = port + 1): String = when (engine) {
         Engine.SING_BOX -> singBoxConfig(protectPath)
         Engine.SHADOW_QUIC -> shadowQuicConfig(protectPath)
+        Engine.NAIVE -> naiveConfig(naiveBridgePort)
     }
 
-    // ── sing-box (TUIC v5 / AmneziaWG) ──────────────────────────────────────────────────────────
+    // ── sing-box (TUIC v5 / NaiveProxy) ──────────────────────────────────────────────────────────
 
     private fun singBoxConfig(protectPath: String?): String {
         val root = JsonObject()
@@ -86,31 +88,7 @@ data class QuicCore(
                 addProperty("listen_port", port)
             })
         })
-        if (profile.configType == EConfigType.TUIC) {
-            root.add("outbounds", JsonArray().apply { add(tuicOutbound(protectPath)) })
-        } else {
-            root.add("endpoints", JsonArray().apply { add(awgEndpoint(protectPath)) })
-        }
-        if (profile.configType == EConfigType.AMNEZIAWG) {
-            // Resolve SOCKS domain requests inside the tunnel. The platform resolver on Android
-            // may itself use this VPN; using it here can recursively feed the same domain lookup
-            // back into the VPN. Honour the imported numeric DNS address instead.
-            val resolver = profile.remoteDNS.orEmpty().split(',', ';', ' ', '\n')
-                .map { it.trim() }.firstOrNull { it.matches(Regex("[0-9.]+")) && it.count { ch -> ch == '.' } == 3 }
-                ?: "1.1.1.1"
-            root.add("dns", JsonObject().apply {
-                add("servers", JsonArray().apply {
-                    add(JsonObject().apply {
-                        addProperty("type", "udp")
-                        addProperty("tag", "awg-dns")
-                        addProperty("server", resolver)
-                        addProperty("detour", OUT_TAG)
-                    })
-                })
-                addProperty("final", "awg-dns")
-                addProperty("strategy", "prefer_ipv4")
-            })
-        }
+        root.add("outbounds", JsonArray().apply { add(tuicOutbound(protectPath)) })
         root.add("route", JsonObject().apply { addProperty("final", OUT_TAG) })
         return root.toString()
     }
@@ -140,45 +118,18 @@ data class QuicCore(
         }
     }
 
-    private fun awgEndpoint(protectPath: String?): JsonObject {
-        val params = paramsObject(profile.awgParameters)
+    private fun naiveConfig(bridgePort: Int): String {
+        val host = profile.sni?.takeIf { it.isNotBlank() } ?: profile.server.orEmpty()
+        val proxyHost = if (':' in host) "[$host]" else host
+        val user = java.net.URLEncoder.encode(profile.username.orEmpty(), "UTF-8").replace("+", "%20")
+        val pass = java.net.URLEncoder.encode(profile.password.orEmpty(), "UTF-8").replace("+", "%20")
         return JsonObject().apply {
-            addProperty("type", "wireguard")
-            addProperty("tag", OUT_TAG)
-            addProperty("system", false)
-            addProperty("mtu", profile.mtu ?: 1420)
-            add("address", JsonArray().apply {
-                addressesOf(profile.localAddress).forEach { add(it) }
-            })
-            addProperty("private_key", profile.secretKey.orEmpty())
-            add("peers", JsonArray().apply {
-                add(JsonObject().apply {
-                    addProperty("address", profile.server.orEmpty())
-                    addProperty("port", profile.serverPort?.toIntOrNull() ?: 51820)
-                    addProperty("public_key", profile.publicKey.orEmpty())
-                    profile.preSharedKey?.takeIf { it.isNotBlank() }?.let { addProperty("pre_shared_key", it) }
-                    add("allowed_ips", JsonArray().apply { add("0.0.0.0/0"); add("::/0") })
-                    addProperty("persistent_keepalive_interval", params.int("persistent_keepalive_interval") ?: 25)
-                    reservedOf(profile.reserved)?.let { reserved ->
-                        add("reserved", JsonArray().apply { reserved.forEach { add(it) } })
-                    }
-                })
-            })
-            // AmneziaWG obfuscation knobs, promoted to the endpoint root as awg-quick/.conf writes them.
-            listOf("jc", "jmin", "jmax", "s1", "s2", "s3", "s4").forEach { key ->
-                params.int(key)?.let { addProperty(key, it) }
-            }
-            listOf("h1", "h2", "h3", "h4").forEach { key ->
-                params.get(key)?.takeIf { it.isJsonPrimitive }?.let { value ->
-                    val primitive = value.asJsonPrimitive
-                    if (primitive.isNumber) addProperty(key, primitive.asNumber) else addProperty(key, primitive.asString)
-                }
-            }
-            listOf("i1", "i2", "i3", "i4", "i5", "header_protection_key").forEach { key ->
-                params.string(key)?.let { addProperty(key, it) }
-            }
-            protectPath?.let { addProperty("protect_path", it) }
-        }
+            addProperty("listen", "socks://127.0.0.1:$port")
+            addProperty("proxy", "https://$user:$pass@$proxyHost:${profile.serverPort}")
+            // TLS and HTTP/2 remain end-to-end in official Chromium NaiveProxy. Only its TCP
+            // connection to the server goes through our protected opaque byte relay.
+            addProperty("host-resolver-rules", "MAP $host 127.0.0.1:$bridgePort")
+        }.toString()
     }
 
     // ── ShadowQUIC (gaming baseline) ────────────────────────────────────────────────────────────
@@ -226,7 +177,8 @@ data class QuicCore(
 
         /** The engine a protocol rides, or null when the protocol is not a QUIC sidecar. */
         fun engineOf(type: EConfigType): Engine? = when (type) {
-            EConfigType.TUIC, EConfigType.AMNEZIAWG -> Engine.SING_BOX
+            EConfigType.TUIC -> Engine.SING_BOX
+            EConfigType.NAIVE -> Engine.NAIVE
             EConfigType.SHADOWQUIC -> Engine.SHADOW_QUIC
             else -> null
         }
@@ -239,20 +191,22 @@ data class QuicCore(
             if (profile.server.isNullOrBlank()) return Problem.SERVER_MISSING
             val port = profile.serverPort?.toIntOrNull()
             if (port == null || port !in 1..65535) return Problem.PORT_INVALID
+            if (engine == Engine.NAIVE) {
+                if (profile.insecure == true) return Problem.PARAMS_INVALID
+                val host = profile.sni?.takeIf { it.isNotBlank() } ?: profile.server.orEmpty()
+                if (host.any { it.isWhitespace() || it in ",/\\@?#" }) return Problem.PARAMS_INVALID
+            }
             when (profile.configType) {
-                EConfigType.TUIC, EConfigType.SHADOWQUIC -> {
+                EConfigType.TUIC, EConfigType.SHADOWQUIC, EConfigType.NAIVE -> {
                     if (profile.username.isNullOrBlank() || profile.password.isNullOrBlank()) return Problem.CREDENTIALS_MISSING
-                }
-                EConfigType.AMNEZIAWG -> {
-                    if (profile.secretKey.isNullOrBlank() || profile.publicKey.isNullOrBlank()) return Problem.KEYS_MISSING
-                    if (addressesOf(profile.localAddress).isEmpty()) return Problem.ADDRESS_MISSING
                 }
                 else -> {}
             }
             // Reject malformed advanced-parameter JSON early rather than at core start.
             val raw = when (engine) {
                 Engine.SHADOW_QUIC -> profile.shadowquicParameters
-                Engine.SING_BOX -> if (profile.configType == EConfigType.TUIC) profile.tuicParameters else profile.awgParameters
+                Engine.SING_BOX -> profile.tuicParameters
+                Engine.NAIVE -> null
             }
             if (!raw.isNullOrBlank() && runCatching { JsonParser.parseString(raw).asJsonObject }.isFailure) {
                 return Problem.PARAMS_INVALID
@@ -275,14 +229,6 @@ data class QuicCore(
                     else if (addr.contains(':')) "$addr/128"
                     else "$addr/32"
                 }
-
-        private fun reservedOf(text: String?): List<Int>? {
-            val values = text.orEmpty().split(',', ' ')
-                .map { it.trim() }
-                .filter { it.isNotEmpty() }
-                .mapNotNull { it.toIntOrNull() }
-            return values.takeIf { it.isNotEmpty() && it != listOf(0, 0, 0) }
-        }
 
         private fun paramsObject(raw: String?): JsonObject =
             if (raw.isNullOrBlank()) JsonObject()

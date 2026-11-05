@@ -23,7 +23,7 @@ enum class EConfigType(val value: Int, val protocolScheme: String) {
     DNSTT(502, AppConfig.DNSTT),
     GUTS(503, AppConfig.GUTS),
     SHADOWQUIC(504, AppConfig.SHADOWQUIC),
-    AMNEZIAWG(505, AppConfig.AMNEZIAWG),
+    NAIVE(506, AppConfig.NAIVE),
     POLICYGROUP(101, AppConfig.CUSTOM),
     PROXYCHAIN(102, AppConfig.CUSTOM);
 

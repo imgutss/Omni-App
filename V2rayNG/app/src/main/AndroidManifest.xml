@@ -133,7 +133,7 @@
             android:exported="false"
             android:windowSoftInputMode="stateUnchanged|adjustResize" />
         <activity
-            android:name=".ui.server.ServerAmneziaWgActivity"
+            android:name=".ui.server.ServerNaiveActivity"
             android:exported="false"
             android:windowSoftInputMode="stateUnchanged|adjustResize" />
         <activity
@@ -272,7 +272,8 @@
                 <data android:scheme="omni" />
                 <data android:scheme="guts" />
                 <data android:scheme="shadowquic" />
-                <data android:scheme="awg" />
+                <data android:scheme="naive+https" />
+                <data android:scheme="naive" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />

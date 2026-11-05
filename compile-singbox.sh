@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # Builds the sing-box-lx client for every ABI the app ships, as libsingbox.so.
 #
-# sing-box-lx is the fork that carries the AmneziaWG endpoint (with_awg) on top of upstream
-# sing-box's TUIC v5 outbound. The app spawns it the way it spawns GUTS and lets Xray dial the
+# The pinned engine now supplies TUIC v5 only; removed AWG/WireGuard build tags are not compiled. The app spawns it the way it spawns GUTS and lets Xray dial the
 # loopback SOCKS port it opens, so it is packaged as a native library and executed from there.
 # Like the other Go engines it is built for linux (CGO-free), not android, with 16-KiB segment
 # alignment so Android 15's 16-KiB-page devices can load it.
@@ -18,7 +17,7 @@ SINGBOX_REF="v1.14.4-lx.32"
 SINGBOX_REPO="https://github.com/Leadaxe/sing-box-lx.git"
 # Minimal tag set for the two protocols Omni rides on this client: TUIC v5 (with_quic) and
 # AmneziaWG (with_wireguard + with_awg, gVisor netstack for the endpoint, uTLS for the handshake).
-SINGBOX_TAGS="with_gvisor,with_quic,with_wireguard,with_awg,with_utls"
+SINGBOX_TAGS="with_quic,with_utls"
 
 if [[ ! -f "$SOURCE_DIR/go.mod" ]]; then
   echo "Fetching sing-box-lx $SINGBOX_REF"
