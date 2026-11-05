@@ -285,6 +285,17 @@ object QuicCoreManager {
     }
 
     /** Reaps only processes whose executable is one of this app's exact QUIC sidecar binaries. */
+    internal fun matchesLiveProcess(context: Context, core: QuicCore): Boolean {
+        val executable = binary(context, core.engine).absolutePath
+        return File("/proc").listFiles().orEmpty().any { entry ->
+            if (entry.name.toIntOrNull() == null) return@any false
+            val command = runCatching { File(entry, "cmdline").readText().substringBefore('\u0000') }.getOrNull()
+            if (command != executable) return@any false
+            val environment = readProcWords(File(entry, "environ")).orEmpty()
+            "$SESSION_ENV=1" in environment && "$IDENTITY_ENV=${core.identity}" in environment && answersSocks(core.port)
+        }
+    }
+
     private fun reapStale(context: Context) {
         val expected = QuicCore.Engine.entries.map { binary(context, it).absolutePath }.toSet()
         val stale = mutableListOf<Int>()

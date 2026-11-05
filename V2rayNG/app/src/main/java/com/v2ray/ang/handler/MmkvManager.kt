@@ -193,7 +193,9 @@ object MmkvManager {
      * @return The selected server GUID.
      */
     fun getSelectServer(): String? {
-        return mainStorage.decodeString(KEY_SELECTED_SERVER)
+        val selected = mainStorage.decodeString(KEY_SELECTED_SERVER)
+        if (selected != null && com.v2ray.ang.fmt.RetiredProtocol.isRetiredProfile(profileFullStorage.decodeString(selected))) return null
+        return selected
     }
 
     /**

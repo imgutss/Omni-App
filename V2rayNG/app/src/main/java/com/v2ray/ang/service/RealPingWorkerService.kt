@@ -8,6 +8,7 @@ import com.v2ray.ang.core.CoreNativeManager
 import com.v2ray.ang.core.DnsttDelayTester
 import com.v2ray.ang.core.GutsCore
 import com.v2ray.ang.core.GutsDelayTester
+import com.v2ray.ang.core.QuicDelayTester
 import com.v2ray.ang.core.MasterDnsDelayTester
 import com.v2ray.ang.dto.RealPingEvent
 import com.v2ray.ang.enums.EConfigType
@@ -212,6 +213,11 @@ class RealPingWorkerService(
                     }
                 }
             )
+        }
+        configResult.quicCore?.let { core ->
+            return summarizeHttp(QuicDelayTester.measureVia(context, core, samples) {
+                CoreNativeManager.measureOutboundDelay(configResult.content, SettingsManager.getDelayTestUrl(), batch)
+            })
         }
         val aether = configResult.aetherCore
         if (aether != null) {

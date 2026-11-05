@@ -137,7 +137,7 @@ object SingBoxFmt {
     }
 
     private fun hasAwg(obj: JsonObject): Boolean =
-        listOf("jc", "jmin", "jmax", "s1", "s2", "h1", "h2", "h3", "h4", "i1", "i2", "i3", "i4", "i5")
+        listOf("jc", "jmin", "jmax", "s1", "s2", "s3", "s4", "header_protection_key", "h1", "h2", "h3", "h4", "i1", "i2", "i3", "i4", "i5")
             .any { obj.get(it) != null }
 
     private fun applyTransport(config: ProfileItem, transport: JsonObject?) {
