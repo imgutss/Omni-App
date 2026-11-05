@@ -100,7 +100,12 @@ object UpdateCheckerManager {
         val asset = if (BuildConfig.APPLICATION_ID.contains(fDroid, ignoreCase = true)) {
             assetsByAbi.firstOrNull { it.name.contains(fDroid) }
         } else {
-            assetsByAbi.firstOrNull { !it.name.contains(fDroid) }
+            // Prefer the full APK: the -slim and -nolibs-guts copies drop geo data / native engines,
+            // so an update must not land a user on a reduced build when the full one is present.
+            val playstore = assetsByAbi.filter { !it.name.contains(fDroid) }
+            playstore.firstOrNull { !it.name.contains("nolibs", true) && !it.name.contains("slim", true) }
+                ?: playstore.firstOrNull { !it.name.contains("nolibs", true) }
+                ?: playstore.firstOrNull()
         }
 
         return asset?.browserDownloadUrl

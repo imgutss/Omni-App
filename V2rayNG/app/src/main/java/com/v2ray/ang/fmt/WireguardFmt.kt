@@ -17,6 +17,9 @@ object WireguardFmt : FmtBase() {
      * @return the parsed ProfileItem object, or null if parsing fails
      */
     fun parse(str: String): ProfileItem? {
+        // A wireguard:// link that carries AmneziaWG obfuscation keys is an AmneziaWG profile, which
+        // runs on the sing-box sidecar rather than Xray's plain WireGuard outbound.
+        if (AmneziaWgFmt.looksLikeAwg(str)) return AmneziaWgFmt.parse(str)
         val config = ProfileItem.create(EConfigType.WIREGUARD)
 
         val uri = URI(Utils.fixIllegalUrl(str))

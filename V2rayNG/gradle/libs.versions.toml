@@ -26,6 +26,7 @@ coil = "3.6.3"
 jsch = "2.27.7"
 bouncyCastle = "1.80"
 sshd = "2.20.1"
+snakeyaml = "2.5"
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
@@ -68,6 +69,7 @@ androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "u
 lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycleViewmodelKtx" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 jsch = { module = "com.github.mwiede:jsch", version.ref = "jsch" }
+snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
 bcprov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncyCastle" }
 sshd-test = { module = "org.apache.sshd:sshd-core", version.ref = "sshd" }
 [plugins]

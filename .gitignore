@@ -93,3 +93,11 @@ V2rayNG/app/src/main/assets/psiphon_servers.stamp
 /libs-cottendns/
 /libs-soar/
 libs-guts/
+
+# Generated sing-box-lx and ShadowQUIC Android executables
+/libs-singbox/
+/libs-shadowquic/
+
+# Sidecar sources fetched at build time by compile-singbox.sh / compile-shadowquic.sh
+/third_party/sing-box-lx/
+/third_party/shadowquic/

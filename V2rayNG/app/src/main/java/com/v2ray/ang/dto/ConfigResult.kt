@@ -4,6 +4,7 @@ import com.v2ray.ang.core.AetherCore
 import com.v2ray.ang.core.DnsttCore
 import com.v2ray.ang.core.GutsCore
 import com.v2ray.ang.core.MasterDnsCore
+import com.v2ray.ang.core.QuicCore
 
 data class ConfigResult(
     var status: Boolean,
@@ -20,4 +21,6 @@ data class ConfigResult(
     var dnsttCore: DnsttCore? = null,
     /** The guts client process the loopback SOCKS outbound depends on. */
     var gutsCore: GutsCore? = null,
+    /** The QUIC-family sidecar (sing-box for TUIC/AmneziaWG, shadowquic) the loopback SOCKS outbound depends on. */
+    var quicCore: QuicCore? = null,
 )

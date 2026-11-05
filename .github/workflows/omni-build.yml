@@ -26,7 +26,7 @@ jobs:
       # One version for the whole build. The assemble step and the slim-copy step each used to
       # fall back to a different hard-coded version, so a push built Omni_<one>_*.apk and then
       # went looking for Omni_<other>_*.apk to slim — which is what failed the 0.11.2 build.
-      OMNI_VERSION: ${{ inputs.release_tag || '0.11.9' }}
+      OMNI_VERSION: '0.12.0'
       # The latest stable release, as aether's own release workflow builds with. The libaether
       # cache is keyed by the rustc it installs, so a new stable release builds the core afresh.
       RUST_TOOLCHAIN: "stable"
@@ -41,6 +41,17 @@ jobs:
       with:
         submodules: 'recursive'
         fetch-depth: '0'
+
+    # One version for the whole build, derived from the dispatch input or the pushed tag (leading v
+    # stripped), so a tag build no longer falls back to a stale hard-coded version (audit F2).
+    - name: Resolve build version
+      run: |
+        VERSION="${{ inputs.release_tag }}"
+        if [[ -z "$VERSION" && "${{ github.ref_type }}" == "tag" ]]; then VERSION="${{ github.ref_name }}"; fi
+        if [[ -z "$VERSION" ]]; then VERSION="${OMNI_VERSION}"; fi
+        VERSION="${VERSION#v}"
+        echo "OMNI_VERSION=$VERSION" >> "$GITHUB_ENV"
+        echo "Building Omni $VERSION"
 
     - name: Setup Android SDK
       uses: android-actions/setup-android@v4
@@ -251,6 +262,47 @@ jobs:
         path: ${{ github.workspace }}/libs-guts
         key: guts-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-guts.sh', 'guts/**') }}
 
+    # sing-box-lx carries TUIC v5 and the AmneziaWG endpoint; the app spawns it as a sidecar and
+    # Xray dials its loopback SOCKS listener. Built CGO-free from the pinned fork tag.
+    - name: Restore cached sing-box-lx client
+      id: cache-singbox-restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ github.workspace }}/libs-singbox
+        key: singbox-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-singbox.sh') }}
+
+    - name: Build sing-box-lx client
+      if: steps.cache-singbox-restore.outputs.cache-hit != 'true'
+      run: bash compile-singbox.sh
+
+    - name: Save sing-box-lx client
+      if: steps.cache-singbox-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ github.workspace }}/libs-singbox
+        key: singbox-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-singbox.sh') }}
+
+    # The official ShadowQUIC client, built with the minimal gaming feature set from the pinned tag.
+    - name: Restore cached ShadowQUIC client
+      id: cache-shadowquic-restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ github.workspace }}/libs-shadowquic
+        key: shadowquic-${{ runner.os }}-${{ env.NDK_HOME }}-${{ steps.rust-toolchain.outputs.cachekey }}-${{ hashFiles('compile-shadowquic.sh') }}
+
+    - name: Build ShadowQUIC client
+      if: steps.cache-shadowquic-restore.outputs.cache-hit != 'true'
+      env:
+        CARGO_BUILD_JOBS: 2
+      run: bash compile-shadowquic.sh
+
+    - name: Save ShadowQUIC client
+      if: steps.cache-shadowquic-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ github.workspace }}/libs-shadowquic
+        key: shadowquic-${{ runner.os }}-${{ env.NDK_HOME }}-${{ steps.rust-toolchain.outputs.cachekey }}-${{ hashFiles('compile-shadowquic.sh') }}
+
     - name: Restore cached NoizDNS client
       id: cache-noizdns-restore
       uses: actions/cache/restore@v6
@@ -356,6 +408,8 @@ jobs:
           audit_elf "libs-vaydns/$abi/libvaydns.so" EXEC "$machine"
           audit_elf "libs-slipstream/$abi/libslipstream.so" DYN "$machine"
           audit_elf "libs-guts/$abi/libguts.so" EXEC "$machine"
+          audit_elf "libs-singbox/$abi/libsingbox.so" EXEC "$machine"
+          audit_elf "libs-shadowquic/$abi/libshadowquic.so" DYN "$machine"
         done
 
     - name: Save Slipstream client
@@ -421,6 +475,8 @@ jobs:
         cp -r ${{ github.workspace }}/libs-vaydns/. ${{ github.workspace }}/V2rayNG/app/libs/
         cp -r ${{ github.workspace }}/libs-slipstream/. ${{ github.workspace }}/V2rayNG/app/libs/
         cp -r ${{ github.workspace }}/libs-guts/. ${{ github.workspace }}/V2rayNG/app/libs/
+        cp -r ${{ github.workspace }}/libs-singbox/. ${{ github.workspace }}/V2rayNG/app/libs/
+        cp -r ${{ github.workspace }}/libs-shadowquic/. ${{ github.workspace }}/V2rayNG/app/libs/
 
     # Psiphon's client starts with the newest server list the build could fetch, so a fresh install has
     # servers before it can reach the list on its own; see fetch-psiphon-servers.sh.
@@ -606,8 +662,16 @@ jobs:
         cd release-apks
         test -n "$(find . -maxdepth 1 -name '*.apk' -print -quit)"
         sha256sum ./*.apk > SHA256SUMS
-        gh release create "v${RELEASE_VERSION}" ./*.apk ./SHA256SUMS \
-          --repo "$RELEASE_REPOSITORY" \
-          --target "${{ github.sha }}" \
-          --title "Omni v${RELEASE_VERSION}" \
-          --generate-notes
+        # Idempotent publish (audit F3): a re-run or a dispatch racing a tag push must not fail on
+        # "release already exists". Create once, then (re)upload the assets with --clobber.
+        if gh release view "v${RELEASE_VERSION}" --repo "$RELEASE_REPOSITORY" >/dev/null 2>&1; then
+          echo "Release v${RELEASE_VERSION} already exists; uploading assets"
+        else
+          gh release create "v${RELEASE_VERSION}" \
+            --repo "$RELEASE_REPOSITORY" \
+            --target "${{ github.sha }}" \
+            --title "Omni v${RELEASE_VERSION}" \
+            --generate-notes
+        fi
+        gh release upload "v${RELEASE_VERSION}" ./*.apk ./SHA256SUMS \
+          --repo "$RELEASE_REPOSITORY" --clobber

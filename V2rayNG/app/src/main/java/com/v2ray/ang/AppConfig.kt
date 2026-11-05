@@ -294,6 +294,8 @@ object AppConfig {
     const val DNSTT = "dnstt://"
     const val SLIPNET = "slipnet://"
     const val GUTS = "guts://"
+    const val SHADOWQUIC = "shadowquic://"
+    const val AMNEZIAWG = "awg://"
 
     /** Give a good name to this, IDK*/
     const val VPN = "VPN"

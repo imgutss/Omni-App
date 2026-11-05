@@ -55,6 +55,8 @@ object CoreConfigManager {
             dnsttFailure(context, guid, dnsttDependency)?.let { return it }
             val gutsDependency = GutsDependency.of(configContext.resolvedOutbounds)
             gutsFailure(context, guid, gutsDependency)?.let { return it }
+            val quicDependency = QuicDependency.of(configContext.resolvedOutbounds)
+            quicFailure(context, guid, quicDependency)?.let { return it }
             if (takesExitNodeName(dependency, configContext.resolvedOutbounds)) return exitNodeNameFailure(context, guid)
             val v2rayConfig = buildUnifiedConfig(configContext)
             // A tunnel that speaks TCP only must refuse QUIC, STUN and DoH itself, so applications
@@ -89,7 +91,8 @@ object CoreConfigManager {
             val masterDnsCore = (masterDnsDependency as? MasterDnsDependency.Single)?.core
             val dnsttCore = (dnsttDependency as? DnsttDependency.Single)?.core
             val gutsCore = (gutsDependency as? GutsDependency.Single)?.core
-            return toConfigResult(context, configContext, v2rayConfig, core, masterDnsCore, dnsttCore, gutsCore)
+            val quicCore = (quicDependency as? QuicDependency.Single)?.core
+            return toConfigResult(context, configContext, v2rayConfig, core, masterDnsCore, dnsttCore, gutsCore, quicCore)
         } catch (e: Exception) {
             LogUtil.e(AppConfig.TAG, "Failed to get V2ray config", e)
             return ConfigResult(
@@ -139,6 +142,8 @@ object CoreConfigManager {
             dnsttFailure(context, guid, dnsttDependency)?.let { return it }
             val gutsDependency = GutsDependency.of(configContext.resolvedOutbounds.take(1))
             gutsFailure(context, guid, gutsDependency)?.let { return it }
+            val quicDependency = QuicDependency.of(configContext.resolvedOutbounds.take(1))
+            quicFailure(context, guid, quicDependency)?.let { return it }
             speedtestCoresRefusal(configContext.resolvedOutbounds)?.let { refusal -> aetherFailure(context, guid, refusal)?.let { return it } }
             if (takesExitNodeName(dependency, configContext.resolvedOutbounds)) return exitNodeNameFailure(context, guid)
             val v2rayConfig = buildUnifiedConfig(configContext)
@@ -155,7 +160,8 @@ object CoreConfigManager {
             val masterDnsCore = (masterDnsDependency as? MasterDnsDependency.Single)?.core
             val dnsttCore = (dnsttDependency as? DnsttDependency.Single)?.core
             val gutsCore = (gutsDependency as? GutsDependency.Single)?.core
-            return toConfigResult(context, configContext, v2rayConfig, core, masterDnsCore, dnsttCore, gutsCore)
+            val quicCore = (quicDependency as? QuicDependency.Single)?.core
+            return toConfigResult(context, configContext, v2rayConfig, core, masterDnsCore, dnsttCore, gutsCore, quicCore)
         } catch (e: Exception) {
             LogUtil.e(AppConfig.TAG, "Failed to get V2ray config for speedtest", e)
             return ConfigResult(
@@ -653,6 +659,7 @@ object CoreConfigManager {
         masterDnsCore: MasterDnsCore? = null,
         dnsttCore: DnsttCore? = null,
         gutsCore: GutsCore? = null,
+        quicCore: QuicCore? = null,
     ): ConfigResult {
         v2rayConfig.aetherCommand = core?.command
         // PattNG: the ECH outbounds of the profiles get their tags and go after every other outbound, as written
@@ -678,6 +685,7 @@ object CoreConfigManager {
             masterDnsCore = masterDnsCore,
             dnsttCore = dnsttCore,
             gutsCore = gutsCore,
+            quicCore = quicCore,
         )
     }
 
@@ -1000,6 +1008,23 @@ object CoreConfigManager {
             }
         }
         LogUtil.w(AppConfig.TAG, "GUTS cannot serve this configuration: $dependency, guid=$guid")
+        return ConfigResult(status = false, guid = guid, errorMessage = message, localizedError = true)
+    }
+
+    private fun quicFailure(context: Context, guid: String, dependency: QuicDependency): ConfigResult? {
+        val message = when (dependency) {
+            QuicDependency.None, is QuicDependency.Single -> return null
+            QuicDependency.Unsupported -> context.getString(R.string.quic_unsupported_combination)
+            is QuicDependency.Invalid -> when (dependency.problem) {
+                QuicCore.Problem.SERVER_MISSING -> context.getString(R.string.quic_error_server)
+                QuicCore.Problem.PORT_INVALID -> context.getString(R.string.quic_error_port)
+                QuicCore.Problem.CREDENTIALS_MISSING -> context.getString(R.string.quic_error_credentials)
+                QuicCore.Problem.KEYS_MISSING -> context.getString(R.string.quic_error_keys)
+                QuicCore.Problem.ADDRESS_MISSING -> context.getString(R.string.quic_error_address)
+                QuicCore.Problem.PARAMS_INVALID -> context.getString(R.string.quic_error_params)
+            }
+        }
+        LogUtil.w(AppConfig.TAG, "QUIC sidecar cannot serve this configuration: $dependency, guid=$guid")
         return ConfigResult(status = false, guid = guid, errorMessage = message, localizedError = true)
     }
 

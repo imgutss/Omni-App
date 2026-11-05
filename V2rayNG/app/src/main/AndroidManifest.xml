@@ -125,6 +125,18 @@
             android:exported="false"
             android:windowSoftInputMode="stateUnchanged|adjustResize" />
         <activity
+            android:name=".ui.server.ServerTuicActivity"
+            android:exported="false"
+            android:windowSoftInputMode="stateUnchanged|adjustResize" />
+        <activity
+            android:name=".ui.server.ServerShadowQuicActivity"
+            android:exported="false"
+            android:windowSoftInputMode="stateUnchanged|adjustResize" />
+        <activity
+            android:name=".ui.server.ServerAmneziaWgActivity"
+            android:exported="false"
+            android:windowSoftInputMode="stateUnchanged|adjustResize" />
+        <activity
             android:name=".ui.server.ServerAetherKeysActivity"
             android:exported="false"
             android:windowSoftInputMode="stateUnchanged|adjustResize" />
@@ -259,6 +271,8 @@
                 <data android:scheme="soar" />
                 <data android:scheme="omni" />
                 <data android:scheme="guts" />
+                <data android:scheme="shadowquic" />
+                <data android:scheme="awg" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />

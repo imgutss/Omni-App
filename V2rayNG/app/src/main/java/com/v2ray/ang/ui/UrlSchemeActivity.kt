@@ -23,7 +23,7 @@ class UrlSchemeActivity : BaseComponentActivity() {
 
     private val omniSchemes = setOf(
         "vless", "vmess", "trojan", "ss", "hysteria2", "hy2", "tuic", "wireguard", "aether",
-        "masterdns", "cottendns", "soar", "omni", "guts",
+        "masterdns", "cottendns", "soar", "omni", "guts", "shadowquic", "awg",
     )
 
     // These carry an opaque Base64 payload whose '+' and '/' a URL decoder would change.

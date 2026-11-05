@@ -13,8 +13,8 @@ android {
         applicationId = "net.omnigate.app"
         minSdk = 29
         targetSdk = 37
-        versionCode = 19
-        versionName = ((project.findProperty("pattngVersion") as? String)?.takeIf { it.isNotBlank() } ?: "0.11.9").trim().removePrefix("v")
+        versionCode = 20
+        versionName = ((project.findProperty("pattngVersion") as? String)?.takeIf { it.isNotBlank() } ?: "0.12.0").trim().removePrefix("v")
 
         val abiFilterList = (properties["ABI_FILTERS"] as? String)?.split(';')
         splits {
@@ -202,6 +202,9 @@ dependencies {
     // Real SSH session and direct-tcpip forwarding for DNSTT + SSH profiles.
     implementation(libs.jsch)
     implementation(libs.bcprov)
+
+    // Clash/Mihomo YAML subscription import.
+    implementation(libs.snakeyaml)
 
     // Reactive and Utility Libraries
     implementation(libs.kotlinx.coroutines.android)

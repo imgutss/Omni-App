@@ -264,6 +264,15 @@ data class ProfileItem(
 
     /** The SNI presented to that edge; the connection must look like a Google one. */
     var gutsSni: String? = null,
+
+    /** TUIC v5 tuning JSON (congestion_control, udp_relay_mode, zero_rtt_handshake); the uuid is username. */
+    var tuicParameters: String? = null,
+
+    /** ShadowQUIC tuning JSON; absent keys fall back to the gaming baseline the sidecar applies. */
+    var shadowquicParameters: String? = null,
+
+    /** AmneziaWG obfuscation JSON (jc/jmin/jmax/s1..s4/h1..h4/i1..i5/header_protection_key). */
+    var awgParameters: String? = null,
 ) {
 
     companion object {

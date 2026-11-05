@@ -289,9 +289,9 @@ data class V2rayConfig(
                     ) {
                         data class NoiseMaskBean(
                             val rand: String? = null,
-                            // val randRange: String? = null,
-                            // val type: String? = null,
-                            // val packet: String? = null,
+                            val randRange: String? = null,
+                            val type: String? = null,
+                            val packet: String? = null,
                             val delay: String? = null,
                         )
                     }

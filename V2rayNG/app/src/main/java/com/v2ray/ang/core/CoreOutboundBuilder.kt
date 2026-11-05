@@ -35,6 +35,7 @@ object CoreOutboundBuilder {
             EConfigType.MASTERDNS -> toOutboundMasterDns(profileItem)
             EConfigType.DNSTT -> toOutboundDnstt(profileItem)
             EConfigType.GUTS -> toOutboundGuts(profileItem)
+            EConfigType.TUIC, EConfigType.SHADOWQUIC, EConfigType.AMNEZIAWG -> toOutboundQuic(profileItem)
             else -> null
         }
 
@@ -42,7 +43,8 @@ object CoreOutboundBuilder {
         // PattNG: an Aether profile's outbound only reaches its core on the loopback address; its dialMode is
         // that of the exit-node its traffic leaves Xray by, see toOutboundAetherExit.
         if (profileItem.configType != EConfigType.AETHER && profileItem.configType != EConfigType.MASTERDNS &&
-            profileItem.configType != EConfigType.DNSTT && profileItem.configType != EConfigType.GUTS
+            profileItem.configType != EConfigType.DNSTT && profileItem.configType != EConfigType.GUTS &&
+            !QuicCore.isQuicType(profileItem.configType)
         ) {
             applyDialMode(outbound, profileItem)
         }
@@ -343,6 +345,20 @@ object CoreOutboundBuilder {
         outboundBean?.settings?.let { settings ->
             settings.address = AppConfig.LOOPBACK
             settings.port = GutsCore.of(profileItem).port
+        }
+        return outboundBean
+    }
+
+    /**
+     * A SOCKS outbound to the QUIC-family sidecar's loopback listener (sing-box for TUIC/AmneziaWG,
+     * shadowquic for ShadowQUIC). The protocol details stay in the profile and the spawned client;
+     * Xray only dials the port, so a chain, route rule or policy group treats it like any outbound.
+     */
+    internal fun toOutboundQuic(profileItem: ProfileItem): OutboundBean? {
+        val outboundBean = createInitOutbound(EConfigType.SOCKS)
+        outboundBean?.settings?.let { settings ->
+            settings.address = AppConfig.LOOPBACK
+            settings.port = QuicCore.of(profileItem).port
         }
         return outboundBean
     }

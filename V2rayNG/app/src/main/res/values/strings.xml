@@ -848,6 +848,27 @@
     <string name="guts_error_edge">Enter auto, one Google edge IP address or host name, or a list of edge addresses (one per line).</string>
     <string name="guts_error_sni">The SNI must be a Google host name, such as www.google.com.</string>
     <string name="menu_item_import_config_manually_guts">GUTS</string>
+    <string name="menu_item_import_config_manually_tuic">Add [TUIC v5]</string>
+    <string name="menu_item_import_config_manually_shadowquic">Add [ShadowQUIC]</string>
+    <string name="menu_item_import_config_manually_amneziawg">Add [AmneziaWG]</string>
+    <string name="server_lab_tuic_uuid">UUID</string>
+    <string name="server_lab_username">username</string>
+    <string name="server_lab_alpn" translatable="false">ALPN</string>
+    <string name="server_lab_tuic_parameters">TUIC parameters (JSON, optional)</string>
+    <string name="server_lab_shadowquic_server_name">server-name (must match the server JLS domain)</string>
+    <string name="server_lab_shadowquic_parameters">ShadowQUIC parameters (JSON, optional — gaming defaults)</string>
+    <string name="server_lab_awg_parameters">AmneziaWG parameters (JSON: jc/jmin/jmax/s1/s2/h1..h4/i1..i5)</string>
+    <string name="quic_unsupported_abi">This build has no QUIC client (sing-box / shadowquic) for this device.</string>
+    <string name="quic_core_connecting">QUIC client is connecting…</string>
+    <string name="quic_core_stopped">The QUIC client stopped.</string>
+    <string name="quic_port_taken">The QUIC client cannot use local port %1$d because it is already in use.</string>
+    <string name="quic_unsupported_combination">TUIC, ShadowQUIC and AmneziaWG work as the profile itself, or as the last step of a proxy chain. They cannot sit in the middle of a chain, inside a policy group, or beside another native core.</string>
+    <string name="quic_error_server">Enter the server address.</string>
+    <string name="quic_error_port">Enter a valid server port (1–65535).</string>
+    <string name="quic_error_credentials">Enter the username/UUID and password.</string>
+    <string name="quic_error_keys">Enter the AmneziaWG private key and the peer public key.</string>
+    <string name="quic_error_address">Enter the AmneziaWG local address (IPv4/IPv6).</string>
+    <string name="quic_error_params">The advanced parameters must be a valid JSON object.</string>
     <string name="guts_lab_doors">Doors (Apps Script web apps)</string>
     <string name="guts_hint_doors">https://script.google.com/macros/s/AKfy…/exec</string>
     <string name="guts_doors_support">One door per line: the /exec URL of a deployed Apps Script web app. Several doors share the daily quota and survive one deployment going down; the client tries them fastest first.</string>

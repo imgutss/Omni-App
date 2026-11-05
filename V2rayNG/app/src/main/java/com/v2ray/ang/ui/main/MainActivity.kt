@@ -35,6 +35,7 @@ import com.v2ray.ang.ui.perappproxy.PerAppProxyActivity
 import com.v2ray.ang.ui.routing.RoutingSettingActivity
 import com.v2ray.ang.ui.server.ProfileEditorResult
 import com.v2ray.ang.ui.server.ServerAetherActivity
+import com.v2ray.ang.ui.server.ServerAmneziaWgActivity
 import com.v2ray.ang.ui.server.ServerCustomConfigActivity
 import com.v2ray.ang.ui.server.ServerDnsttActivity
 import com.v2ray.ang.ui.server.ServerGutsActivity
@@ -43,9 +44,11 @@ import com.v2ray.ang.ui.server.ServerHttpActivity
 import com.v2ray.ang.ui.server.ServerHysteria2Activity
 import com.v2ray.ang.ui.server.ServerMasterDnsActivity
 import com.v2ray.ang.ui.server.ServerProxyChainActivity
+import com.v2ray.ang.ui.server.ServerShadowQuicActivity
 import com.v2ray.ang.ui.server.ServerShadowsocksActivity
 import com.v2ray.ang.ui.server.ServerSocksActivity
 import com.v2ray.ang.ui.server.ServerTrojanActivity
+import com.v2ray.ang.ui.server.ServerTuicActivity
 import com.v2ray.ang.ui.server.ServerVlessActivity
 import com.v2ray.ang.ui.server.ServerVmessActivity
 import com.v2ray.ang.ui.server.ServerWireguardActivity
@@ -233,6 +236,9 @@ class MainActivity : HelperBaseComponentActivity() {
             EConfigType.MASTERDNS.value -> Intent(this, ServerMasterDnsActivity::class.java)
             EConfigType.DNSTT.value -> Intent(this, ServerDnsttActivity::class.java)
             EConfigType.GUTS.value -> Intent(this, ServerGutsActivity::class.java)
+            EConfigType.TUIC.value -> Intent(this, ServerTuicActivity::class.java)
+            EConfigType.SHADOWQUIC.value -> Intent(this, ServerShadowQuicActivity::class.java)
+            EConfigType.AMNEZIAWG.value -> Intent(this, ServerAmneziaWgActivity::class.java)
             else -> Intent(this, ServerHttpActivity::class.java).apply {
                 putExtra("createConfigType", createConfigType)
             }
@@ -289,6 +295,9 @@ class MainActivity : HelperBaseComponentActivity() {
             EConfigType.MASTERDNS -> ServerMasterDnsActivity::class.java
             EConfigType.DNSTT -> ServerDnsttActivity::class.java
             EConfigType.GUTS -> ServerGutsActivity::class.java
+            EConfigType.TUIC -> ServerTuicActivity::class.java
+            EConfigType.SHADOWQUIC -> ServerShadowQuicActivity::class.java
+            EConfigType.AMNEZIAWG -> ServerAmneziaWgActivity::class.java
             else -> ServerHttpActivity::class.java
         }
         val intent = Intent(this, activityClass).apply {

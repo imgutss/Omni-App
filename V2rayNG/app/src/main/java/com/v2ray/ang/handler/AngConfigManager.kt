@@ -15,15 +15,20 @@ import com.v2ray.ang.dto.entities.SubscriptionUsageInfo
 import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.extension.isNotNullEmpty
 import com.v2ray.ang.fmt.AetherFmt
+import com.v2ray.ang.fmt.AmneziaWgFmt
+import com.v2ray.ang.fmt.ClashFmt
 import com.v2ray.ang.fmt.CustomFmt
 import com.v2ray.ang.fmt.DnsttFmt
 import com.v2ray.ang.fmt.Hysteria2Fmt
 import com.v2ray.ang.fmt.GutsFmt
 import com.v2ray.ang.fmt.MasterDnsFmt
+import com.v2ray.ang.fmt.ShadowQuicFmt
 import com.v2ray.ang.fmt.ShadowsocksFmt
+import com.v2ray.ang.fmt.SingBoxFmt
 import com.v2ray.ang.fmt.SlipNetFmt
 import com.v2ray.ang.fmt.SocksFmt
 import com.v2ray.ang.fmt.TrojanFmt
+import com.v2ray.ang.fmt.TuicFmt
 import com.v2ray.ang.fmt.V2rayNFmt
 import com.v2ray.ang.fmt.VlessFmt
 import com.v2ray.ang.fmt.VmessFmt
@@ -54,6 +59,9 @@ object AngConfigManager {
             EConfigType.TROJAN.protocolScheme to TrojanFmt::parse,
             EConfigType.VLESS.protocolScheme to VlessFmt::parse,
             EConfigType.WIREGUARD.protocolScheme to WireguardFmt::parse,
+            EConfigType.AMNEZIAWG.protocolScheme to AmneziaWgFmt::parse,
+            EConfigType.TUIC.protocolScheme to TuicFmt::parse,
+            EConfigType.SHADOWQUIC.protocolScheme to ShadowQuicFmt::parse,
             EConfigType.HYSTERIA2.protocolScheme to Hysteria2Fmt::parse,
             AppConfig.HY2 to Hysteria2Fmt::parse,
             EConfigType.AETHER.protocolScheme to AetherFmt::parse,
@@ -182,6 +190,9 @@ object AngConfigManager {
                 EConfigType.VLESS -> VlessFmt.toUri(config)
                 EConfigType.TROJAN -> TrojanFmt.toUri(config)
                 EConfigType.WIREGUARD -> WireguardFmt.toUri(config)
+                EConfigType.AMNEZIAWG -> AmneziaWgFmt.toUri(config)
+                EConfigType.TUIC -> TuicFmt.toUri(config)
+                EConfigType.SHADOWQUIC -> ShadowQuicFmt.toUri(config)
                 EConfigType.HYSTERIA2 -> Hysteria2Fmt.toUri(config)
                 EConfigType.AETHER -> AetherFmt.toUri(config)
                 EConfigType.MASTERDNS -> MasterDnsFmt.toUri(config)
@@ -205,7 +216,11 @@ object AngConfigManager {
      */
     fun importBatchConfig(server: String?, subid: String, append: Boolean): Pair<Int, Int> {
         return try {
-            var count = parseBatchConfig(Utils.decode(server), subid, append)
+            val decoded = Utils.decode(server)
+            var count = parseBatchConfig(decoded, subid, append)
+            if (count <= 0) {
+                count = parseStructuredSubscription(decoded, subid, append) ?: 0
+            }
             if (count <= 0) {
                 count = parseBatchConfig(server, subid, append)
             }
@@ -357,6 +372,8 @@ object AngConfigManager {
             commitProfiles(listOf(ParsedProfile(config)), subid, append)
             return 1
         }
+        // Clash/Mihomo YAML and sing-box JSON subscriptions become native profiles of their protocols.
+        parseStructuredSubscription(server, subid, append)?.let { return it }
         if (server.contains("inbounds")
             && server.contains("outbounds")
             && server.contains("routing")
@@ -403,7 +420,7 @@ object AngConfigManager {
             return 0
         } else if (server.startsWith("[Interface]") && server.contains("[Peer]")) {
             try {
-                val config = WireguardFmt.parseWireguardConfFile(server)
+                val config = AmneziaWgFmt.parseConf(server) ?: WireguardFmt.parseWireguardConfFile(server)
                 config.subscriptionId = subid
                 config.description = generateDescription(config)
                 commitProfiles(
@@ -421,6 +438,27 @@ object AngConfigManager {
         } else {
             return 0
         }
+    }
+
+    /**
+     * Imports a Clash/Mihomo YAML or sing-box JSON document as native profiles. Returns the number
+     * imported, or null when [server] is neither (so the caller falls through to its other parsers).
+     */
+    private fun parseStructuredSubscription(server: String, subid: String, append: Boolean): Int? {
+        val profiles = when {
+            ClashFmt.looksLikeClash(server) -> ClashFmt.parse(server)
+            SingBoxFmt.looksLikeSingBox(server) -> SingBoxFmt.parse(server)
+            else -> return null
+        }
+        if (profiles.isEmpty()) return 0
+        val parsed = profiles.map { config ->
+            config.subscriptionId = subid
+            config.description = generateDescription(config)
+            TlsSettingsCheck.fixImportedAlpn(config)
+            ParsedProfile(config)
+        }
+        commitProfiles(parsed, subid, append)
+        return parsed.size
     }
 
     /**
@@ -646,7 +684,11 @@ object AngConfigManager {
      * @return The number of configurations parsed.
      */
     private fun parseConfigViaSub(server: String?, subid: String, append: Boolean): Int {
-        var count = parseBatchConfig(Utils.decode(server), subid, append)
+        val decoded = Utils.decode(server)
+        var count = parseBatchConfig(decoded, subid, append)
+        if (count <= 0) {
+            count = parseStructuredSubscription(decoded, subid, append) ?: 0
+        }
         if (count <= 0) {
             count = parseBatchConfig(server, subid, append)
         }

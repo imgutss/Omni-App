@@ -128,6 +128,9 @@ class ServerUiState(
     gutsFetchMode: Boolean = false,
     gutsGoogleIp: String = "",
     gutsSni: String = GutsCore.DEFAULT_SNI,
+    tuicParameters: String = "",
+    shadowquicParameters: String = "",
+    awgParameters: String = "",
     dnsttTransport: String = "doh",
     dnsttResolver: String = "https://cloudflare-dns.com/dns-query",
     dnsttResolverAuthorities: String = "",
@@ -269,6 +272,9 @@ class ServerUiState(
     var gutsFetchMode by mutableStateOf(gutsFetchMode)
     var gutsGoogleIp by mutableStateOf(gutsGoogleIp)
     var gutsSni by mutableStateOf(gutsSni)
+    var tuicParameters by mutableStateOf(tuicParameters)
+    var shadowquicParameters by mutableStateOf(shadowquicParameters)
+    var awgParameters by mutableStateOf(awgParameters)
     var dnsttTransport by mutableStateOf(dnsttTransport)
     var dnsttResolver by mutableStateOf(dnsttResolver)
     var dnsttResolverAuthorities by mutableStateOf(dnsttResolverAuthorities)
@@ -362,6 +368,9 @@ class ServerUiState(
         val isShadowsocks = configType == EConfigType.SHADOWSOCKS
         val isSocksOrHttp = configType == EConfigType.SOCKS || configType == EConfigType.HTTP
         val isWireguard = configType == EConfigType.WIREGUARD
+        val isAmneziaWg = configType == EConfigType.AMNEZIAWG
+        val isTuic = configType == EConfigType.TUIC
+        val isShadowQuic = configType == EConfigType.SHADOWQUIC
         val isHysteria2 = configType == EConfigType.HYSTERIA2
         val isAether = configType == EConfigType.AETHER
         val isMasterDns = configType == EConfigType.MASTERDNS
@@ -385,18 +394,21 @@ class ServerUiState(
                 else -> null
             },
             flow = if (isVless) flow else null,
-            username = if (isSocksOrHttp) username else null,
-            secretKey = if (isWireguard) secretKey else null,
+            username = if (isSocksOrHttp || isTuic || isShadowQuic) username else null,
+            secretKey = if (isWireguard || isAmneziaWg) secretKey else null,
             publicKey = when {
-                isWireguard -> publicKey
+                isWireguard || isAmneziaWg -> publicKey
                 streamSecurity == REALITY -> publicKeyReality
                 else -> null
             },
-            preSharedKey = if (isWireguard) preSharedKey else null,
-            reserved = if (isWireguard) reserved else null,
-            localAddress = if (isWireguard) localAddress else null,
-            mtu = if (isWireguard) mtu.toIntOrNull() else null,
-            remoteDNS = if (isWireguard) remoteDNS else null,
+            preSharedKey = if (isWireguard || isAmneziaWg) preSharedKey else null,
+            reserved = if (isWireguard || isAmneziaWg) reserved else null,
+            localAddress = if (isWireguard || isAmneziaWg) localAddress else null,
+            mtu = if (isWireguard || isAmneziaWg) mtu.toIntOrNull() else null,
+            remoteDNS = if (isWireguard || isAmneziaWg) remoteDNS else null,
+            tuicParameters = if (isTuic) tuicParameters.trim().nullIfBlank() else null,
+            shadowquicParameters = if (isShadowQuic) shadowquicParameters.trim().nullIfBlank() else null,
+            awgParameters = if (isAmneziaWg) awgParameters.trim().nullIfBlank() else null,
             obfsPassword = if (isHysteria2) obfsPassword else null,
             portHopping = if (isHysteria2) portHopping else null,
             portHoppingInterval = if (isHysteria2) portHoppingInterval else null,
@@ -626,6 +638,9 @@ class ServerUiState(
                 gutsFetchMode = GutsCore.modeOf(initialConfig) == GutsCore.Mode.FETCH,
                 gutsGoogleIp = initialConfig.gutsGoogleIp ?: "",
                 gutsSni = initialConfig.gutsSni ?: GutsCore.DEFAULT_SNI,
+                tuicParameters = initialConfig.tuicParameters ?: "",
+                shadowquicParameters = initialConfig.shadowquicParameters ?: "",
+                awgParameters = initialConfig.awgParameters ?: "",
                 dnsttTransport = initialConfig.dnsttTransport ?: "doh",
                 dnsttResolver = initialConfig.dnsttResolver ?: "https://cloudflare-dns.com/dns-query",
                 dnsttResolverAuthorities = initialConfig.dnsttResolverAuthorities ?: "",
