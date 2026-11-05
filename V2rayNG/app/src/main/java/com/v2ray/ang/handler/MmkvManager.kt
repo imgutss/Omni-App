@@ -236,9 +236,9 @@ object MmkvManager {
         return if (json.isNullOrBlank()) {
             mutableListOf()
         } else {
-            JsonUtil.fromJsonSafe(json, Array<String>::class.java)?.filterNot { guid ->
-                com.v2ray.ang.fmt.RetiredProtocol.isRetiredProfile(profileFullStorage.decodeString(guid))
-            }?.toMutableList() ?: mutableListOf()
+            // The storage index must include retired payloads for transactional deletion/rollback.
+            // Runtime/UI filtering belongs in decodeServerConfig, which refuses retired protocols.
+            JsonUtil.fromJsonSafe(json, Array<String>::class.java)?.toMutableList() ?: mutableListOf()
         }
     }
 

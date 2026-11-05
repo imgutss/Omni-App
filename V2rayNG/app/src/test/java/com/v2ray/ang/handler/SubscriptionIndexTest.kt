@@ -106,6 +106,22 @@ class SubscriptionIndexTest {
     }
 
     @Test
+    fun retiredProfilesStayInTheStorageIndexAndAreRemovedWithTheirSubscription() {
+        mainValues["SUB_IDS"] = "[\"a\"]"
+        mainValues["SUB_SERVERS_a"] = "[\"old\"]"
+        subValues["a"] = JsonUtil.toJson(SubscriptionItem(remarks = "Alpha"))
+        profileValues["old"] = """{"configType":"AMNEZIAWG","server":"old.example.com"}"""
+        assertEquals(listOf("old"), MmkvManager.decodeServerList("a"))
+        verifyNoInteractions(profiles)
+        assertNull(MmkvManager.decodeServerConfig("old"))
+        mockStatic(Log::class.java).use {
+            assertTrue(MmkvManager.tryRemoveSubscription("a"))
+        }
+        verify(profiles).removeValuesForKeys(arrayOf("old"))
+        assertEquals("[]", mainValues["SUB_SERVERS_a"])
+    }
+
+    @Test
     fun duplicateIdsKeepTheirFirstPositionWithoutWritingStorage() {
         val stored = """["second","first","second","third","first"]"""
         mainValues["SUB_IDS"] = stored
