@@ -38,6 +38,25 @@ class QuicCoreTest {
     }
 
     @Test
+    fun awgDnsUsesImportedResolverInsideTunnel() {
+        val root = JsonParser.parseString(QuicCore.of(awg().apply {
+            remoteDNS = "1.0.0.1, 1.1.1.1"
+        }).configText("@omni-test")).asJsonObject
+        val dns = root.getAsJsonObject("dns")
+        val server = dns.getAsJsonArray("servers")[0].asJsonObject
+        assertEquals("udp", server.get("type").asString)
+        assertEquals("1.0.0.1", server.get("server").asString)
+        assertEquals("quic-out", server.get("detour").asString)
+        assertEquals("@omni-test", root.getAsJsonArray("endpoints")[0].asJsonObject.get("protect_path").asString)
+    }
+
+    @Test
+    fun shadowquicSupportsAbstractProtectAddress() {
+        assertTrue(QuicCore.of(shadowquic()).configText("@omni-test")
+            .contains("protect-path: \"@omni-test\""))
+    }
+
+    @Test
     fun engineMapping() {
         assertEquals(QuicCore.Engine.SING_BOX, QuicCore.engineOf(EConfigType.TUIC))
         assertEquals(QuicCore.Engine.SING_BOX, QuicCore.engineOf(EConfigType.AMNEZIAWG))

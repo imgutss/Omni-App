@@ -18,7 +18,7 @@ import java.security.MessageDigest
  *  - TUIC v5 and AmneziaWG run on a sing-box client (the lx build carries the AmneziaWG endpoint);
  *  - ShadowQUIC runs on the official shadowquic client, tuned for gaming by default.
  *
- * The client is told where to protect its sockets through a filesystem Unix socket (see
+ * The client is told where to protect its sockets through an abstract-namespace Unix socket (see
  * [SidecarProtectServer]); without it the client's own calls would be routed back into the VPN it
  * feeds. Everything secret stays in the profile and in the private session directory, never on a
  * command line.
@@ -90,6 +90,26 @@ data class QuicCore(
             root.add("outbounds", JsonArray().apply { add(tuicOutbound(protectPath)) })
         } else {
             root.add("endpoints", JsonArray().apply { add(awgEndpoint(protectPath)) })
+        }
+        if (profile.configType == EConfigType.AMNEZIAWG) {
+            // Resolve SOCKS domain requests inside the tunnel. The platform resolver on Android
+            // may itself use this VPN; using it here can recursively feed the same domain lookup
+            // back into the VPN. Honour the imported numeric DNS address instead.
+            val resolver = profile.remoteDNS.orEmpty().split(',', ';', ' ', '\n')
+                .map { it.trim() }.firstOrNull { it.matches(Regex("[0-9.]+")) && it.count { ch -> ch == '.' } == 3 }
+                ?: "1.1.1.1"
+            root.add("dns", JsonObject().apply {
+                add("servers", JsonArray().apply {
+                    add(JsonObject().apply {
+                        addProperty("type", "udp")
+                        addProperty("tag", "awg-dns")
+                        addProperty("server", resolver)
+                        addProperty("detour", OUT_TAG)
+                    })
+                })
+                addProperty("final", "awg-dns")
+                addProperty("strategy", "prefer_ipv4")
+            })
         }
         root.add("route", JsonObject().apply { addProperty("final", OUT_TAG) })
         return root.toString()

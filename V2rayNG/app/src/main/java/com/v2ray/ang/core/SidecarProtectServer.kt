@@ -2,54 +2,36 @@ package com.v2ray.ang.core
 
 import android.net.LocalServerSocket
 import android.net.LocalSocket
-import android.net.LocalSocketAddress
 import android.os.ParcelFileDescriptor
 import android.os.Process
 import android.system.Os
 import java.io.Closeable
-import java.io.File
 import java.io.FileDescriptor
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 
 /**
- * Serves the `protect_path` protocol of the sing-box and shadowquic clients over a FILESYSTEM Unix
- * socket (both connect with `UnixStream::connect(path)` / `connect(SockaddrUnix)`, which the abstract
- * namespace [MasterDnsProtectServer] uses cannot satisfy).
- *
- * The two clients differ only in the dummy byte they send and how they read the reply:
- *  - sing-box sends 0x01 and treats any single reply byte as success;
- *  - shadowquic sends 0x00 and treats 0xFF as failure, anything else as success.
- *
- * Accepting either dummy byte and replying 0x01 on success / 0xFF on failure therefore satisfies
- * both. The peer must have this app's UID; a public ParcelFileDescriptor duplicate exposes the fd
- * number for VpnService.protect without any hidden API.
+ * SCM_RIGHTS protection bridge in the abstract namespace, shared by sing-box and the patched
+ * ShadowQUIC client. The namespace avoids filesystem path lifetime and label dependencies;
+ * device-side counters remain necessary to diagnose whether VpnService.protect actually succeeds.
  */
 internal class SidecarProtectServer(
-    private val socketFile: File,
+    name: String,
     private val protect: (Int) -> Boolean,
     private val expectedUid: Int = Process.myUid(),
     private val onError: (Exception) -> Unit = {},
 ) : Closeable {
-    /** The filesystem path the client config names as protect_path / protect-path. */
-    val configPath: String = socketFile.absolutePath
+    /** The `@`-prefixed abstract address the client config names as protect_path / protect-path. */
+    val configPath: String = "@$name"
 
-    private val boundSocket = LocalSocket()
-    private val server: LocalServerSocket
+    val requests = java.util.concurrent.atomic.AtomicInteger()
+    val failures = java.util.concurrent.atomic.AtomicInteger()
+
+    private val server = LocalServerSocket(name)
     private val closed = AtomicBoolean(false)
     private val clientLock = Any()
     private var currentClient: LocalSocket? = null
-    private val acceptThread: Thread
-
-    init {
-        socketFile.parentFile?.mkdirs()
-        // A stale socket file from a previous session would make bind fail with EADDRINUSE.
-        runCatching { Os.remove(socketFile.absolutePath) }
-        boundSocket.bind(LocalSocketAddress(socketFile.absolutePath, LocalSocketAddress.Namespace.FILESYSTEM))
-        // LocalServerSocket(fd) calls listen() itself; the fd stays owned by boundSocket.
-        server = LocalServerSocket(boundSocket.fileDescriptor)
-        acceptThread = thread(name = "QuicProtect", isDaemon = true) { acceptLoop() }
-    }
+    private val acceptThread = thread(name = "QuicProtect", isDaemon = true) { acceptLoop() }
 
     private fun acceptLoop() {
         while (!closed.get()) {
@@ -86,10 +68,15 @@ internal class SidecarProtectServer(
         val request = client.inputStream.read()
         val descriptors = runCatching { client.ancillaryFileDescriptors?.toList().orEmpty() }
             .getOrElse { emptyList() }
+        requests.incrementAndGet()
         var status = FAILURE
         try {
             if (accepts(request, descriptors.size, sameOwner)) {
                 status = protectDescriptor(descriptors[0])
+            }
+            if (status == FAILURE) {
+                failures.incrementAndGet()
+                onError(IllegalStateException("Socket protection rejected: owner=$sameOwner descriptors=${descriptors.size} request=$request"))
             }
             client.outputStream.write(status)
             client.outputStream.flush()
@@ -99,6 +86,8 @@ internal class SidecarProtectServer(
     }
 
     private fun protectDescriptor(descriptor: FileDescriptor): Int = try {
+        // Protecting a duplicate marks the same underlying socket. Both the duplicate and the
+        // SCM_RIGHTS descriptor received by this process are closed exactly once afterwards.
         ParcelFileDescriptor.dup(descriptor).use { duplicate ->
             if (protect(duplicate.fd)) SUCCESS else FAILURE
         }
@@ -118,10 +107,10 @@ internal class SidecarProtectServer(
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         runCatching { server.close() }
-        runCatching { boundSocket.close() }
         synchronized(clientLock) { runCatching { currentClient?.close() } }
+        // The close above wakes accept/read. A bounded join keeps teardown from returning while a
+        // new protect request can still enter, without holding the service indefinitely.
         if (Thread.currentThread() !== acceptThread) acceptThread.join(1_000)
-        runCatching { Os.remove(socketFile.absolutePath) }
     }
 
     companion object {

@@ -35,6 +35,7 @@ class ServerAmneziaWgActivity : BaseServerActivity() {
                 placeholder = "{\"jc\":4,\"jmin\":40,\"jmax\":70,\"s1\":0,\"s2\":0,\"h1\":1,\"h2\":2,\"h3\":3,\"h4\":4}"
             )
             CommonTargetStrategyField(uiState)
+            WarpEndpointScanSection(uiState)
         }
     }
 

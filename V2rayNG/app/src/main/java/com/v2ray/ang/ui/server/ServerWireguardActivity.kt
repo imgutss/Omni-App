@@ -32,6 +32,7 @@ class ServerWireguardActivity : BaseServerActivity() {
             WireguardProtocolFields(uiState)
             CommonDialModeField(uiState)
             CommonTargetStrategyField(uiState)
+            WarpEndpointScanSection(uiState)
 
         }
     }

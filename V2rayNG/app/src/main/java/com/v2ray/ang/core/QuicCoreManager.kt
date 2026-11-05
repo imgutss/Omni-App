@@ -110,6 +110,11 @@ object QuicCoreManager {
         lifecycle.execute { finish(current, notifyExit = false) }
     }
 
+    internal fun protectionDiagnostics(): String {
+        val bridge = session?.protectServer ?: return "protection=not-required-or-unavailable"
+        return "protect_requests=${bridge.requests.get()} protect_failures=${bridge.failures.get()}"
+    }
+
     private fun owns(target: Session): Boolean = session === target && !target.stopRequested.get()
 
     private fun open(target: Session, protect: ((Int) -> Boolean)?) {
@@ -120,7 +125,8 @@ object QuicCoreManager {
             target.directory = directory
 
             if (protect != null) {
-                target.protectServer = SidecarProtectServer(File(directory, "protect.sock"), protect) { error ->
+                // Match the abstract namespace used by the working MasterDNS protection bridge.
+                target.protectServer = SidecarProtectServer("omni-quic-${target.id}", protect) { error ->
                     LogUtil.w(AppConfig.TAG, "QUIC: protect server request failed", error)
                 }
             }

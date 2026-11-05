@@ -769,15 +769,30 @@ object CoreServiceManager {
         MessageHelper.sendMsg2UI(service, AppConfig.MSG_STATE_RUNNING, "")
         MessageHelper.sendMsg2UI(service, AppConfig.MSG_STATE_CONNECTING, connecting)
         NotificationManager.setStatusLine(connecting)
+        val expectedIdentity = QuicCoreManager.currentIdentity
         quicWarmUpJob = quicScope.launch {
+            val deadline = android.os.SystemClock.elapsedRealtime() + 90_000L
             var listening = false
             var reachable = false
-            while (isActive && !reachable && QuicCoreManager.isRunning) {
+            while (isActive && !reachable && QuicCoreManager.isRunning && android.os.SystemClock.elapsedRealtime() < deadline) {
                 if (!listening) listening = QuicCoreManager.awaitListening(AETHER_WARM_UP_MS)
                 if (listening) {
                     reachable = confirmNativePath()
                     if (!reachable) kotlinx.coroutines.delay(1_000L)
                 }
+            }
+            if (isActive && !reachable && QuicCoreManager.isRunning) {
+                LogUtil.w(AppConfig.TAG, "QUIC readiness timed out: ${QuicCoreManager.protectionDiagnostics()}")
+                val control = serviceControl?.get()
+                ContextCompat.getMainExecutor(service).execute {
+                    if (serviceControl?.get() === control && control != null && isRunning() &&
+                        QuicCoreManager.currentIdentity == expectedIdentity) {
+                        MessageHelper.sendMsg2UI(service, AppConfig.MSG_STATE_START_FAILURE,
+                            service.getString(R.string.quic_core_timeout))
+                        control.stopService()
+                    }
+                }
+                return@launch
             }
             when (AetherCoreManager.warmUpOutcome(reachable, isActive, isRunning())) {
                 AetherCoreManager.WarmUpOutcome.ABANDONED -> Unit

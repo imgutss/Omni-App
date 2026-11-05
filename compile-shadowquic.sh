@@ -30,6 +30,19 @@ if [[ ! -f "$SOURCE_DIR/Cargo.toml" ]]; then
   git clone --quiet --depth 1 --branch "$SHADOWQUIC_REF" "$SHADOWQUIC_REPO" "$SOURCE_DIR"
 fi
 
+# Omni patch: teach the protect client the abstract namespace ('@' prefix), matching the abstract
+# protect socket the app serves (filesystem sockets can be refused by SELinux on some devices).
+PROTECT_SRC="$SOURCE_DIR/shadowquic/src/utils/protect_socket.rs"
+PROTECT_PATCH="$ROOT_DIR/patches/shadowquic/protect_socket.rs"
+if [[ -f "$PROTECT_PATCH" ]]; then
+  if [[ ! -f "$PROTECT_SRC" ]]; then
+    echo "shadowquic protect_socket.rs not found at $PROTECT_SRC (upstream layout changed?)" >&2
+    exit 1
+  fi
+  cp "$PROTECT_PATCH" "$PROTECT_SRC"
+  echo "[shadowquic] applied abstract-namespace protect patch"
+fi
+
 ABIS="armeabi-v7a arm64-v8a x86_64 x86"
 API_LEVEL=29
 

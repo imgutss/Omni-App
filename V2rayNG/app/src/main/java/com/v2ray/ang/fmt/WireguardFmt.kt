@@ -91,10 +91,10 @@ object WireguardFmt : FmtBase() {
         config.publicKey = peerParams["publickey"].orEmpty()
         config.preSharedKey = peerParams["presharedkey"]?.nullIfBlank()
         val endpoint = peerParams["endpoint"].orEmpty()
-        val endpointParts = endpoint.split(":", limit = 2)
-        if (endpointParts.size == 2) {
-            config.server = endpointParts[0]
-            config.serverPort = endpointParts[1]
+        val separator = endpoint.lastIndexOf(':')
+        if (separator > 0) {
+            config.server = endpoint.substring(0, separator).removeSurrounding("[", "]")
+            config.serverPort = endpoint.substring(separator + 1)
         } else {
             config.server = endpoint
             config.serverPort = ""
