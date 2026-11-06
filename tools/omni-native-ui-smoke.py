@@ -11,9 +11,10 @@ def dump():
     adb('shell','uiautomator','dump','/sdcard/omni-ui.xml')
     data=adb('shell','cat','/sdcard/omni-ui.xml')
     return ET.fromstring(data[data.index('<?xml'):])
-def swipe():
+def swipe(up=True):
     size=list(map(int,re.findall(r'\d+',adb('shell','wm','size'))[-2:]));w,h=size
-    adb('shell','input','swipe',str(w//2),str(h*85//100),str(w//2),str(h*30//100),'350')
+    start,end=(85,30)if up else(30,85)
+    adb('shell','input','swipe',str(w//2),str(h*start//100),str(w//2),str(h*end//100),'350')
 
 def labels(tree):
     return [(n.attrib.get('text',''),n.attrib.get('content-desc',''))for n in tree.iter('node')]
@@ -23,13 +24,17 @@ def find(label):
             return n
     return None
 def tap(label):
-    for _ in range(7):
-        n=find(label)
-        if n is not None:
-            nums=list(map(int,re.findall(r'\d+',n.attrib['bounds'])));
-            if nums[2]>nums[0] and nums[3]>nums[1]:
-                adb('shell','input','tap',str((nums[0]+nums[2])//2),str((nums[1]+nums[3])//2));time.sleep(1);return
-        swipe();time.sleep(.6)
+    # Drawer scroll is retained when closed: search both directions, not only down.
+    w,h=list(map(int,re.findall(r'\d+',adb('shell','wm','size'))[-2:]))
+    for up in (True,False):
+        for _ in range(8):
+            n=find(label)
+            if n is not None:
+                nums=list(map(int,re.findall(r'-?\d+',n.attrib['bounds'])))
+                x,y=(nums[0]+nums[2])//2,(nums[1]+nums[3])//2
+                if nums[2]>nums[0] and nums[3]>nums[1] and 0<=x<w and 0<=y<h:
+                    adb('shell','input','tap',str(x),str(y));time.sleep(1);return
+            swipe(up);time.sleep(.6)
     raise AssertionError('UI control not found: '+label+'; '+repr(labels(dump())))
 def screenshot(name):
     with (OUT/(name+'.png')).open('wb')as f:subprocess.run(['adb','exec-out','screencap','-p'],stdout=f,check=True)
@@ -38,8 +43,16 @@ def launch():
     assert adb('shell','pidof',PACKAGE).strip(),'App did not remain running'
 def menu():tap('Open navigation menu')
 def selected(label):
-    n=find(label)
-    return n is not None and (n.attrib.get('checked')=='true'or n.attrib.get('selected')=='true')
+    # Compose exposes the chip label as a TextView child; checked state belongs to
+    # its nearest checkable parent. Assert that real accessibility owner, not text.
+    tree=dump();parents={child:parent for parent in tree.iter()for child in parent}
+    for node in tree.iter('node'):
+        if label not in(node.get('text'),node.get('content-desc')):continue
+        while node is not None:
+            if node.get('checkable')=='true':return node.get('checked')=='true'
+            if node.get('selected')=='true':return True
+            node=parents.get(node)
+    return False
 
 try:
     # The fresh emulator has no user-granted notification permission. Grant only
