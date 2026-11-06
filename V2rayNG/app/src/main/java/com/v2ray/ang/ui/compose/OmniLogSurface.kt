@@ -52,18 +52,21 @@ fun OmniLogSurface(live: Boolean, onLive: (Boolean) -> Unit, onRefresh: () -> Un
     val ink=omniTerminalAccent(accent)
     val time by omniReferenceClock()
     val fx=LocalOmniAppearance.current.effects
+    val pointerMotion=fx!=OmniEffects.OFF && android.animation.ValueAnimator.areAnimatorsEnabled()
     var x by remember { mutableFloatStateOf(0f) };var y by remember { mutableFloatStateOf(0f) }
-    val rx by animateFloatAsState(if(fx==OmniEffects.OFF)0f else 5f-y*14f,label="log-slab-x")
-    val ry by animateFloatAsState(if(fx==OmniEffects.OFF)0f else x*16f,label="log-slab-y")
+    val rx by animateFloatAsState(if(fx==OmniEffects.OFF)0f else if(pointerMotion)5f-y*14f else 5f,label="log-slab-x")
+    val ry by animateFloatAsState(if(pointerMotion)x*16f else 0f,label="log-slab-y")
     Box(modifier.fillMaxSize()
         .graphicsLayer { rotationX=rx;rotationY=ry;cameraDistance=1100f*density;translationY=if(fx==OmniEffects.OFF)0f else (-2.5f*(1f-kotlin.math.cos(time*2f*kotlin.math.PI.toFloat()/7f)))*density }
-        .pointerInput(fx) {
-            if(fx!=OmniEffects.OFF) try {
+        .pointerInput(pointerMotion) {
+            // Observe blank-slab gestures AFTER native children. A button/long-click
+            // must never have its hit target tilted away between DOWN and UP.
+            if(pointerMotion) try {
                 awaitEachGesture {
-                    val first=awaitFirstDown(requireUnconsumed=false,pass=PointerEventPass.Initial)
+                    val first=awaitFirstDown(requireUnconsumed=true,pass=PointerEventPass.Final)
                     fun aim(at:Offset) { x=(at.x/size.width.coerceAtLeast(1)-.5f).coerceIn(-.5f,.5f);y=(at.y/size.height.coerceAtLeast(1)-.5f).coerceIn(-.5f,.5f) }
                     aim(first.position)
-                    do { val event=awaitPointerEvent(PointerEventPass.Initial);event.changes.firstOrNull { it.pressed }?.let { aim(it.position) } } while(event.changes.any { it.pressed })
+                    do { val event=awaitPointerEvent(PointerEventPass.Final);if(event.changes.any { it.isConsumed })break;event.changes.firstOrNull { it.pressed }?.let { aim(it.position) } } while(event.changes.any { it.pressed })
                     x=0f;y=0f
                 }
             } finally { x=0f;y=0f }
