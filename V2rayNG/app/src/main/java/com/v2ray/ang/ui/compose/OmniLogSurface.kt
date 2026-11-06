@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -115,7 +116,9 @@ fun OmniLogSurface(live: Boolean, onLive: (Boolean) -> Unit, onRefresh: () -> Un
                 }
             }
         }
-        Box(Modifier.weight(1f).fillMaxWidth().graphicsLayer { compositingStrategy=CompositingStrategy.Offscreen }.drawWithContent {
+        // Source .lg-view has overflow:hidden. Clip BOTH paint and hit testing:
+        // the bottom-origin 16-degree list otherwise projects over LIVE/Refresh.
+        Box(Modifier.weight(1f).fillMaxWidth().clipToBounds().graphicsLayer { compositingStrategy=CompositingStrategy.Offscreen }.drawWithContent {
             drawContent()
             drawRect(Brush.verticalGradient(0f to Color.Transparent,.42f to Color.Black,1f to Color.Black),blendMode=BlendMode.DstIn)
         }) {

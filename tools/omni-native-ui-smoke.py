@@ -122,18 +122,7 @@ try:
     adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
     back_to_main();menu();tap('Violet');tap('Full');reveal('Menu');screenshot('07-reference-drawer')
     adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
-    # Real activities only. Merely opening the tools never starts a VPN or a probe.
-    for i,label in enumerate(('Omni Hub','Omni Doctor','Omni Privacy & Backup','Omni DNS Lab','Omni Routing Studio','Omni Sync Center','Omni Speed & Ping Lab','DNS Scanner','Omni Scanner'),8):
-        menu();tap(label);time.sleep(.8)
-        assert adb('shell','pidof',PACKAGE).strip(),'Activity crashed: '+label
-        screenshot(f'{i:02d}-'+re.sub(r'[^a-z0-9]+','-',label.lower()).strip('-'))
-        if label=='Omni Scanner':
-            assert find('WARP / Aether scanner') is not None,'Scanner chooser missing real WARP route'
-            assert find('DNS Scanner') is not None,'Scanner chooser missing real DNS route'
-            tap('WARP / Aether scanner');screenshot('17-real-warp-tool')
-            assert adb('shell','pidof',PACKAGE).strip(),'WARP tool crashed'
-            adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
-        adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
+    # Prove projected-view hit testing before the longer destination sweep.
     menu();tap('Logcat');time.sleep(3);screenshot('18-real-log-slab')
     assert find('LIVE') is not None,'Native log polling did not start'
     assert any('Original mesh and PBR shaders rendered successfully' in t for t,d in labels(dump())),'Real renderer log never reached the native viewer'
@@ -148,6 +137,18 @@ try:
     adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1);menu();reveal('Menu');screenshot('21-light-drawer')
     assert adb('shell','pidof',PACKAGE).strip()
     back_to_main();adb('shell','cmd','uimode','night','yes');time.sleep(2)
+    # Real activities only. Merely opening the tools never starts a VPN or a probe.
+    for i,label in enumerate(('Omni Hub','Omni Doctor','Omni Privacy & Backup','Omni DNS Lab','Omni Routing Studio','Omni Sync Center','Omni Speed & Ping Lab','DNS Scanner','Omni Scanner'),8):
+        menu();tap(label);time.sleep(.8)
+        assert adb('shell','pidof',PACKAGE).strip(),'Activity crashed: '+label
+        screenshot(f'{i:02d}-'+re.sub(r'[^a-z0-9]+','-',label.lower()).strip('-'))
+        if label=='Omni Scanner':
+            assert find('WARP / Aether scanner') is not None,'Scanner chooser missing real WARP route'
+            assert find('DNS Scanner') is not None,'Scanner chooser missing real DNS route'
+            tap('WARP / Aether scanner');screenshot('17-real-warp-tool')
+            assert adb('shell','pidof',PACKAGE).strip(),'WARP tool crashed'
+            adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
+        adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
     # Empty editors are real native screens, not browser previews or prefilled demo forms.
     editor_labels=('Add [VMess]','Add [VLESS]','Add [Trojan]','Add [Shadowsocks]','Add [SOCKS]','Add [HTTP]','Add [Hysteria2]','Add [WireGuard]','Add [NaiveProxy]','Add [TUIC v5]','Add [ShadowQUIC]','MasterDNS','DNSTT','GUTS','Add [Policy group]','Add [Proxy chain]','Add Aether config manually')
     for i,label in enumerate(editor_labels,22):
