@@ -32,6 +32,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.clip
@@ -133,8 +135,10 @@ private fun SettingsItemRow(
             if (!description.isNullOrEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
+                    // HTML collapses source-resource line breaks inside setting summaries.
+                    // Only presentation changes; editor values and persisted strings stay intact.
+                    text = if(grouped) description.replace(Regex("\\s+"), " ") else description,
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize=12.sp,lineHeight=16.sp),
                     color = descriptionColor
                 )
             }
@@ -276,7 +280,11 @@ fun SettingsSwitchItem(
             Switch(
                 checked = checked,
                 onCheckedChange = if (enabled) onCheckedChange else null,
-                modifier = Modifier,
+                modifier = Modifier.graphicsLayer {
+                    // Source .switch.scale-80, with its right-origin and -5px margin.
+                    scaleX=.8f;scaleY=.8f;transformOrigin=TransformOrigin(1f,.5f)
+                    translationX=5.dp.toPx()
+                },
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = MaterialTheme.colorScheme.onSecondary,
                     checkedTrackColor = MaterialTheme.colorScheme.secondary
