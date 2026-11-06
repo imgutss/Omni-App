@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+"""Reuse audited native bits ONLY for a UI-only release; fail closed on engine/source changes."""
+from pathlib import Path
+import hashlib,json,subprocess,tempfile,urllib.request,zipfile
+
+root=Path(__file__).resolve().parents[1]
+pin=json.loads((root/'tools/omni-ui-native-base.json').read_text())
+protected=['AndroidLibXrayLite','aether','hev-socks5-tunnel','third_party','guts','compile-*.sh',
+ 'V2rayNG/gradle/libs.versions.toml','V2rayNG/app/src/main/AndroidManifest.xml',
+ 'V2rayNG/app/src/main/java/com/v2ray/ang/core','V2rayNG/app/src/main/java/com/v2ray/ang/service',
+ 'V2rayNG/app/src/main/java/com/v2ray/ang/handler','V2rayNG/app/src/main/java/com/v2ray/ang/dto',
+ 'V2rayNG/app/src/main/java/com/v2ray/ang/fmt','V2rayNG/app/src/main/java/com/v2ray/ang/root',
+ 'V2rayNG/app/src/main/java/com/v2ray/ang/contracts','V2rayNG/app/src/main/java/com/v2ray/ang/AppConfig.kt']
+subprocess.run(['git','diff','--exit-code',pin['commit'],'HEAD','--',*protected],cwd=root,check=True)
+assert len(pin['sha256'])==4,'All four baseline ABI artifacts must be pinned'
+owned={'libaether.so','libcottendns.so','libdnstt.so','libguts.so','libhev-socks5-tunnel.so',
+ 'libhevsockstun.so','liblyrebird.so','libmasterdns.so','libnaive.so','libnoizdns.so',
+ 'libpsiphon-tunnel-core.so','libshadowquic.so','libsingbox.so','libslipstream.so','libsoar.so','libvaydns.so'}
+audit={}
+with tempfile.TemporaryDirectory(prefix='omni-native-')as temp:
+ for name,expected in pin['sha256'].items():
+  target=Path(temp)/name
+  urllib.request.urlretrieve('https://github.com/imgutss/omni-android/releases/download/'+pin['release']+'/'+name,target)
+  assert hashlib.file_digest(target.open('rb'),'sha256').hexdigest()==expected,'Baseline APK checksum mismatch: '+name
+  with zipfile.ZipFile(target)as apk:
+   for member in apk.namelist():
+    parts=member.split('/')
+    if len(parts)!=3 or parts[0]!='lib' or parts[2]not in owned:continue
+    binary=apk.read(member);assert binary[:4]==b'\x7fELF',member
+    dest=root/'V2rayNG/app/libs'/parts[1]/parts[2];dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(binary)
+    audit[member]=hashlib.sha256(binary).hexdigest()
+  print('Verified and restored',name,flush=True)
+(root/'native-ui-reuse-audit.json').write_text(json.dumps({'sourceCommit':pin['commit'],'release':pin['release'],'libraries':audit},indent=2))
+print('Native libraries are byte-for-byte the audited 0.13.1 binaries; no core upgrade.')

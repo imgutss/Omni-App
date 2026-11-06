@@ -3,6 +3,11 @@ name: Omni APK
 on:
   workflow_dispatch:
     inputs:
+      ui_only:
+        description: 'UI-only: reuse hash-pinned 0.13.1 native binaries; rejects any engine change'
+        required: false
+        type: boolean
+        default: false
       release_tag:
         description: 'Version to build and publish, without the leading v (for example 0.3.0)'
         required: false
@@ -65,6 +70,7 @@ jobs:
         packages: 'platforms;android-37.0 build-tools;37.0.0 platform-tools'
 
     - name: Install NDK
+      if: ${{ !inputs.ui_only }}
       run: |
         echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
           --channel=0 \
@@ -75,6 +81,7 @@ jobs:
             ndkVersion = "30.0.16248370"' ${{ github.workspace }}/V2rayNG/app/build.gradle.kts
 
     - name: Restore cached libhevtun
+      if: ${{ !inputs.ui_only }}
       id: cache-libhevtun-restore
       uses: actions/cache/restore@v6
       with:
@@ -82,18 +89,19 @@ jobs:
         key: libhevtun-${{ runner.os }}-${{ env.NDK_HOME }}-${{ hashFiles('.git/modules/hev-socks5-tunnel/HEAD') }}-${{ hashFiles('compile-hevtun.sh') }}
 
     - name: Build libhevtun
-      if: steps.cache-libhevtun-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-libhevtun-restore.outputs.cache-hit != 'true') }}
       run: |
         bash compile-hevtun.sh
     
     - name: Save libhevtun
-      if: steps.cache-libhevtun-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-libhevtun-restore.outputs.cache-hit != 'true') }}
       uses: actions/cache/save@v6
       with:
         path: ${{ github.workspace }}/libs
         key: libhevtun-${{ runner.os }}-${{ env.NDK_HOME }}-${{ hashFiles('.git/modules/hev-socks5-tunnel/HEAD') }}-${{ hashFiles('compile-hevtun.sh') }}
 
     - name: Install Rust
+      if: ${{ !inputs.ui_only }}
       id: rust-toolchain
       uses: dtolnay/rust-toolchain@master
       with:
@@ -101,6 +109,7 @@ jobs:
         targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android,i686-linux-android
 
     - name: Restore cached libaether
+      if: ${{ !inputs.ui_only }}
       id: cache-libaether-restore
       uses: actions/cache/restore@v6
       with:
@@ -108,18 +117,19 @@ jobs:
         key: libaether-${{ runner.os }}-${{ env.NDK_HOME }}-${{ steps.rust-toolchain.outputs.cachekey }}-${{ hashFiles('.git/modules/aether/HEAD') }}-${{ hashFiles('compile-aether.sh') }}
 
     - name: Build libaether
-      if: steps.cache-libaether-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-libaether-restore.outputs.cache-hit != 'true') }}
       run: |
         bash compile-aether.sh
 
     - name: Save libaether
-      if: steps.cache-libaether-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-libaether-restore.outputs.cache-hit != 'true') }}
       uses: actions/cache/save@v6
       with:
         path: ${{ github.workspace }}/libs-aether
         key: libaether-${{ runner.os }}-${{ env.NDK_HOME }}-${{ steps.rust-toolchain.outputs.cachekey }}-${{ hashFiles('.git/modules/aether/HEAD') }}-${{ hashFiles('compile-aether.sh') }}
 
     - name: Install Go
+      if: ${{ !inputs.ui_only }}
       uses: actions/setup-go@v5
       with:
         go-version: ${{ env.GO_VERSION }}
@@ -127,6 +137,7 @@ jobs:
         cache: false
 
     - name: Restore cached MasterDnsVPN client
+      if: ${{ !inputs.ui_only }}
       id: cache-masterdns-restore
       uses: actions/cache/restore@v6
       with:
@@ -134,15 +145,17 @@ jobs:
         key: masterdns-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-masterdns.sh', 'third_party/masterdnsvpn/**') }}
 
     - name: Build MasterDnsVPN client
-      if: steps.cache-masterdns-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-masterdns-restore.outputs.cache-hit != 'true') }}
       run: bash compile-masterdns.sh
 
     - name: Test MasterDnsVPN upstream packages
+      if: ${{ !inputs.ui_only }}
       run: |
         cd third_party/masterdnsvpn
         GOTOOLCHAIN=local CGO_ENABLED=0 go test ./...
 
     - name: Test MasterDNS Android client and Omni profile loopback
+      if: ${{ !inputs.ui_only }}
       env:
         MASTERDNS_E2E_CLIENT_BIN: ${{ github.workspace }}/libs-masterdns/x86_64/libmasterdns.so
       run: |
@@ -150,13 +163,14 @@ jobs:
         GOTOOLCHAIN=local CGO_ENABLED=0 go test -tags e2e -run '^TestOmniNativeProfilesThroughAndroidClient$' -count=1 -timeout 180s ./test/e2e
 
     - name: Save MasterDnsVPN client
-      if: steps.cache-masterdns-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-masterdns-restore.outputs.cache-hit != 'true') }}
       uses: actions/cache/save@v6
       with:
         path: ${{ github.workspace }}/libs-masterdns
         key: masterdns-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-masterdns.sh', 'third_party/masterdnsvpn/**') }}
 
     - name: Restore cached CottenDNS client
+      if: ${{ !inputs.ui_only }}
       id: cache-cottendns-restore
       uses: actions/cache/restore@v6
       with:
@@ -164,15 +178,17 @@ jobs:
         key: cottendns-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-cottendns.sh', 'third_party/cottendns/**') }}
 
     - name: Build CottenDNS client
-      if: steps.cache-cottendns-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-cottendns-restore.outputs.cache-hit != 'true') }}
       run: bash compile-cottendns.sh
 
     - name: Test CottenDNS packages
+      if: ${{ !inputs.ui_only }}
       run: |
         cd third_party/cottendns
         GOTOOLCHAIN=local CGO_ENABLED=0 go test ./...
 
     - name: Test CottenDNS Android client and real SOCKS5 profile loopback
+      if: ${{ !inputs.ui_only }}
       env:
         COTTENDNS_E2E_CLIENT_BIN: ${{ github.workspace }}/libs-cottendns/x86_64/libcottendns.so
       run: |
@@ -180,13 +196,14 @@ jobs:
         GOTOOLCHAIN=local CGO_ENABLED=0 go test -tags e2e -count=1 -timeout 300s ./test/e2e
 
     - name: Save CottenDNS client
-      if: steps.cache-cottendns-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-cottendns-restore.outputs.cache-hit != 'true') }}
       uses: actions/cache/save@v6
       with:
         path: ${{ github.workspace }}/libs-cottendns
         key: cottendns-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-cottendns.sh', 'third_party/cottendns/**') }}
 
     - name: Restore cached Soar client
+      if: ${{ !inputs.ui_only }}
       id: cache-soar-restore
       uses: actions/cache/restore@v6
       with:
@@ -194,15 +211,17 @@ jobs:
         key: soar-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-soar.sh', 'third_party/soar/**') }}
 
     - name: Build Soar client
-      if: steps.cache-soar-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-soar-restore.outputs.cache-hit != 'true') }}
       run: bash compile-soar.sh
 
     - name: Test Soar packages
+      if: ${{ !inputs.ui_only }}
       run: |
         cd third_party/soar
         GOTOOLCHAIN=local CGO_ENABLED=0 go test ./...
 
     - name: Test packaged Soar Android launcher loopback
+      if: ${{ !inputs.ui_only }}
       env:
         SOAR_E2E_CLIENT_BIN: ${{ github.workspace }}/libs-soar/x86_64/libsoar.so
       run: |
@@ -210,13 +229,14 @@ jobs:
         GOTOOLCHAIN=local CGO_ENABLED=0 go test ./cmd/omni-client -run '^TestSOARLauncherThroughRealLoopback$' -count=1 -timeout 120s
 
     - name: Save Soar client
-      if: steps.cache-soar-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-soar-restore.outputs.cache-hit != 'true') }}
       uses: actions/cache/save@v6
       with:
         path: ${{ github.workspace }}/libs-soar
         key: soar-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-soar.sh', 'third_party/soar/**') }}
 
     - name: Restore cached DNSTT client
+      if: ${{ !inputs.ui_only }}
       id: cache-dnstt-restore
       uses: actions/cache/restore@v6
       with:
@@ -224,16 +244,17 @@ jobs:
         key: dnstt-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-dnstt.sh', 'third_party/dnstt/**') }}
 
     - name: Build DNSTT client
-      if: steps.cache-dnstt-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-dnstt-restore.outputs.cache-hit != 'true') }}
       run: bash compile-dnstt.sh
 
     - name: Test DNSTT upstream packages
+      if: ${{ !inputs.ui_only }}
       run: |
         cd third_party/dnstt
         GOTOOLCHAIN=local CGO_ENABLED=0 go test ./...
 
     - name: Save DNSTT client
-      if: steps.cache-dnstt-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-dnstt-restore.outputs.cache-hit != 'true') }}
       uses: actions/cache/save@v6
       with:
         path: ${{ github.workspace }}/libs-dnstt
@@ -243,6 +264,7 @@ jobs:
     # for a network where only Google is reachable. The app spawns it exactly as it spawns the DNS
     # tunnel engines, and Xray dials the loopback SOCKS listener it opens.
     - name: Restore cached GUTS client
+      if: ${{ !inputs.ui_only }}
       id: cache-guts-restore
       uses: actions/cache/restore@v6
       with:
@@ -250,17 +272,18 @@ jobs:
         key: guts-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-guts.sh', 'guts/**') }}
 
     - name: Build GUTS client
-      if: steps.cache-guts-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-guts-restore.outputs.cache-hit != 'true') }}
       run: bash compile-guts.sh
 
     - name: Test GUTS packages
+      if: ${{ !inputs.ui_only }}
       run: |
         cd guts
         GOTOOLCHAIN=local CGO_ENABLED=0 go vet ./...
         GOTOOLCHAIN=local CGO_ENABLED=0 go test ./... -count=1
 
     - name: Save GUTS client
-      if: steps.cache-guts-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-guts-restore.outputs.cache-hit != 'true') }}
       uses: actions/cache/save@v6
       with:
         path: ${{ github.workspace }}/libs-guts
@@ -269,6 +292,7 @@ jobs:
     # sing-box-lx carries TUIC v5 and the AmneziaWG endpoint; the app spawns it as a sidecar and
     # Xray dials its loopback SOCKS listener. Built CGO-free from the pinned fork tag.
     - name: Restore cached sing-box-lx client
+      if: ${{ !inputs.ui_only }}
       id: cache-singbox-restore
       uses: actions/cache/restore@v6
       with:
@@ -276,21 +300,23 @@ jobs:
         key: singbox-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-singbox.sh') }}
 
     - name: Build sing-box-lx client
-      if: steps.cache-singbox-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-singbox-restore.outputs.cache-hit != 'true') }}
       run: bash compile-singbox.sh
 
     - name: Save sing-box-lx client
-      if: steps.cache-singbox-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-singbox-restore.outputs.cache-hit != 'true') }}
       uses: actions/cache/save@v6
       with:
         path: ${{ github.workspace }}/libs-singbox
         key: singbox-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-singbox.sh') }}
 
     - name: Download and verify official NaiveProxy Android clients
+      if: ${{ !inputs.ui_only }}
       run: bash compile-naive.sh
 
     # The official ShadowQUIC client, built with the minimal gaming feature set from the pinned tag.
     - name: Restore cached ShadowQUIC client
+      if: ${{ !inputs.ui_only }}
       id: cache-shadowquic-restore
       uses: actions/cache/restore@v6
       with:
@@ -298,22 +324,24 @@ jobs:
         key: shadowquic-${{ runner.os }}-${{ env.NDK_HOME }}-${{ steps.rust-toolchain.outputs.cachekey }}-${{ hashFiles('compile-shadowquic.sh', 'patches/shadowquic/**') }}
 
     - name: Test ShadowQUIC protect bridge (abstract socket and SCM_RIGHTS)
+      if: ${{ !inputs.ui_only }}
       run: bash test-shadowquic-protect.sh
 
     - name: Build ShadowQUIC client
-      if: steps.cache-shadowquic-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-shadowquic-restore.outputs.cache-hit != 'true') }}
       env:
         CARGO_BUILD_JOBS: 2
       run: bash compile-shadowquic.sh
 
     - name: Save ShadowQUIC client
-      if: steps.cache-shadowquic-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-shadowquic-restore.outputs.cache-hit != 'true') }}
       uses: actions/cache/save@v6
       with:
         path: ${{ github.workspace }}/libs-shadowquic
         key: shadowquic-${{ runner.os }}-${{ env.NDK_HOME }}-${{ steps.rust-toolchain.outputs.cachekey }}-${{ hashFiles('compile-shadowquic.sh', 'patches/shadowquic/**') }}
 
     - name: Restore cached NoizDNS client
+      if: ${{ !inputs.ui_only }}
       id: cache-noizdns-restore
       uses: actions/cache/restore@v6
       with:
@@ -321,25 +349,28 @@ jobs:
         key: noizdns-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-noizdns.sh', 'third_party/slipnet/noizdns/**', 'third_party/slipnet/dnstt/**') }}
 
     - name: Build NoizDNS client
-      if: steps.cache-noizdns-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-noizdns-restore.outputs.cache-hit != 'true') }}
       run: bash compile-noizdns.sh
 
     - name: Test NoizDNS upstream packages
+      if: ${{ !inputs.ui_only }}
       run: |
         cd third_party/slipnet/noizdns
         GOTOOLCHAIN=local CGO_ENABLED=0 go test ./...
 
     - name: Test NoizDNS real loopback tunnel
+      if: ${{ !inputs.ui_only }}
       run: bash test-noizdns-loopback.sh
 
     - name: Save NoizDNS client
-      if: steps.cache-noizdns-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-noizdns-restore.outputs.cache-hit != 'true') }}
       uses: actions/cache/save@v6
       with:
         path: ${{ github.workspace }}/libs-noizdns
         key: noizdns-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-noizdns.sh', 'third_party/slipnet/noizdns/**', 'third_party/slipnet/dnstt/**') }}
 
     - name: Restore cached VayDNS client
+      if: ${{ !inputs.ui_only }}
       id: cache-vaydns-restore
       uses: actions/cache/restore@v6
       with:
@@ -347,30 +378,34 @@ jobs:
         key: vaydns-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-vaydns.sh', 'third_party/vaydns/**') }}
 
     - name: Build VayDNS client
-      if: steps.cache-vaydns-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-vaydns-restore.outputs.cache-hit != 'true') }}
       run: bash compile-vaydns.sh
 
     - name: Test VayDNS packages
+      if: ${{ !inputs.ui_only }}
       run: |
         cd third_party/vaydns
         GOTOOLCHAIN=local CGO_ENABLED=0 go test ./...
 
     - name: Test VayDNS real raw and SOCKS loopback tunnels
+      if: ${{ !inputs.ui_only }}
       run: bash test-vaydns-loopback.sh
 
     - name: Save VayDNS client
-      if: steps.cache-vaydns-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-vaydns-restore.outputs.cache-hit != 'true') }}
       uses: actions/cache/save@v6
       with:
         path: ${{ github.workspace }}/libs-vaydns
         key: vaydns-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-vaydns.sh', 'third_party/vaydns/**') }}
 
     - name: Install Slipstream native build tools
+      if: ${{ !inputs.ui_only }}
       run: |
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends cmake ninja-build nasm
 
     - name: Restore cached Slipstream client
+      if: ${{ !inputs.ui_only }}
       id: cache-slipstream-restore
       uses: actions/cache/restore@v6
       with:
@@ -378,18 +413,20 @@ jobs:
         key: slipstream-${{ runner.os }}-${{ env.NDK_HOME }}-${{ steps.rust-toolchain.outputs.cachekey }}-${{ hashFiles('compile-slipstream.sh', 'third_party/slipstream-rust/**') }}
 
     - name: Test Slipstream protocol crates
+      if: ${{ !inputs.ui_only }}
       run: |
         cd third_party/slipstream-rust
         cargo test --locked -p slipstream-core -p slipstream-dns
 
     - name: Build Slipstream client
-      if: steps.cache-slipstream-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-slipstream-restore.outputs.cache-hit != 'true') }}
       env:
         CARGO_BUILD_JOBS: 2
         RUSTFLAGS: -C link-arg=-Wl,-z,max-page-size=16384 -C link-arg=-Wl,-z,separate-loadable-segments
       run: bash compile-slipstream.sh
 
     - name: Audit DNS tunnel native binaries
+      if: ${{ !inputs.ui_only }}
       run: |
         READELF="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
         audit_elf() {
@@ -428,7 +465,7 @@ jobs:
         done
 
     - name: Save Slipstream client
-      if: steps.cache-slipstream-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-slipstream-restore.outputs.cache-hit != 'true') }}
       uses: actions/cache/save@v6
       with:
         path: ${{ github.workspace }}/libs-slipstream
@@ -437,6 +474,7 @@ jobs:
     # The Aether core runs Psiphon as a program of its own, the psiphon-tunnel-core console client,
     # which the app ships beside the core as libpsiphon-tunnel-core.so; see compile-psiphon.sh.
     - name: Restore cached Psiphon client
+      if: ${{ !inputs.ui_only }}
       id: cache-psiphon-restore
       uses: actions/cache/restore@v6
       with:
@@ -444,12 +482,12 @@ jobs:
         key: psiphon-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('aether/psiphon-build.sh') }}-${{ hashFiles('compile-psiphon.sh') }}
 
     - name: Build the Psiphon client
-      if: steps.cache-psiphon-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-psiphon-restore.outputs.cache-hit != 'true') }}
       run: |
         bash compile-psiphon.sh
 
     - name: Save the Psiphon client
-      if: steps.cache-psiphon-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-psiphon-restore.outputs.cache-hit != 'true') }}
       uses: actions/cache/save@v6
       with:
         path: ${{ github.workspace }}/libs-psiphon
@@ -458,6 +496,7 @@ jobs:
     # Tor's bridges run through a pluggable transport, a program of its own: lyrebird, which aether
     # builds and the app ships beside the core as liblyrebird.so; see compile-pt.sh.
     - name: Restore cached pluggable transport
+      if: ${{ !inputs.ui_only }}
       id: cache-pt-restore
       uses: actions/cache/restore@v6
       with:
@@ -465,18 +504,19 @@ jobs:
         key: pt-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('aether/pt-build.sh') }}-${{ hashFiles('compile-pt.sh') }}
 
     - name: Build the pluggable transport
-      if: steps.cache-pt-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-pt-restore.outputs.cache-hit != 'true') }}
       run: |
         bash compile-pt.sh
 
     - name: Save the pluggable transport
-      if: steps.cache-pt-restore.outputs.cache-hit != 'true'
+      if: ${{ !inputs.ui_only && (steps.cache-pt-restore.outputs.cache-hit != 'true') }}
       uses: actions/cache/save@v6
       with:
         path: ${{ github.workspace }}/libs-pt
         key: pt-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('aether/pt-build.sh') }}-${{ hashFiles('compile-pt.sh') }}
 
     - name: Stage the native libraries
+      if: ${{ !inputs.ui_only }}
       run: |
         cp -r ${{ github.workspace }}/libs ${{ github.workspace }}/V2rayNG/app
         cp -r ${{ github.workspace }}/libs-aether/. ${{ github.workspace }}/V2rayNG/app/libs/
@@ -493,6 +533,10 @@ jobs:
         cp -r ${{ github.workspace }}/libs-singbox/. ${{ github.workspace }}/V2rayNG/app/libs/
         cp -r ${{ github.workspace }}/libs-shadowquic/. ${{ github.workspace }}/V2rayNG/app/libs/
         cp -r ${{ github.workspace }}/libs-naive/. ${{ github.workspace }}/V2rayNG/app/libs/
+
+    - name: Restore audited UI-only native libraries
+      if: ${{ inputs.ui_only }}
+      run: python3 tools/reuse-omni-ui-native.py
 
     # Psiphon's client starts with the newest server list the build could fetch, so a fresh install has
     # servers before it can reach the list on its own; see fetch-psiphon-servers.sh.

@@ -1,0 +1,10 @@
+{
+  "commit": "92765db2655761ec74c45ee21eedb91e33a929eb",
+  "release": "v0.13.1",
+  "sha256": {
+    "Omni_0.13.1_arm64-v8a.apk": "16c2efb9918f6a9617830aee6a015f624c0941d2253109a1d5ea2e98903db213",
+    "Omni_0.13.1_armeabi-v7a.apk": "1344056ae70e6277a52946d7ca902f5417b728b68c76094fbe97a955c9f8d028",
+    "Omni_0.13.1_x86.apk": "e08d8f0448a1ea742348aa6e7824089135bdd38da4d990419d3e8ae1380a489a",
+    "Omni_0.13.1_x86_64.apk": "59d6d7e86b8a71d78d4e4d8416025df2acd1ab2f0315203d9dee3bd9c1de05f7"
+  }
+}
