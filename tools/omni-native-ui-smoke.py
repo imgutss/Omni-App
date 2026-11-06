@@ -79,15 +79,18 @@ def selected(label):
     return False
 
 try:
-    # Match 412x892 app dp plus 24dp OS insets, at 2x raster resolution to avoid
-    # overwhelming the software-rendered emulator launcher with a 3.5MP display.
-    adb('shell','wm','size','824x1880');adb('shell','wm','density','320')
-    adb('shell','settings','put','system','font_scale','1.0')
-    (OUT/'viewport.txt').write_text(adb('shell','wm','size')+adb('shell','wm','density'))
-    # The fresh emulator has no user-granted notification permission. Grant only
-    # that permission so the OS prompt cannot obscure the app's UI controls.
+    # Put the native app in front before changing display metrics. Resizing an
+    # active Pixel Launcher caused an external ANR on the software-rendered AVD.
     adb('shell','pm','grant',PACKAGE,'android.permission.POST_NOTIFICATIONS')
-    adb('logcat','-c');launch();screenshot('01-home')
+    adb('logcat','-c');launch()
+    # Reference content is 412x892dp; gesture navigation has 24dp OS insets.
+    # Two-times raster resolution keeps the software renderer below 1.6MP.
+    adb('shell','cmd','overlay','enable-exclusive','--category','com.android.internal.systemui.navbar.gestural')
+    adb('shell','wm','size','824x1880');adb('shell','wm','density','320')
+    adb('shell','settings','put','system','font_scale','1.0');time.sleep(3)
+    (OUT/'viewport.txt').write_text(adb('shell','wm','size')+adb('shell','wm','density'))
+    (OUT/'window-insets.txt').write_text(adb('shell','dumpsys','window','displays'))
+    screenshot('01-home')
     menu();reveal('Menu')
     deadline=time.monotonic()+45
     while True:
@@ -142,11 +145,13 @@ try:
     assert adb('shell','pidof',PACKAGE).strip()
     back_to_main();adb('shell','cmd','uimode','night','yes');time.sleep(2)
     # Empty editors are real native screens, not browser previews or prefilled demo forms.
-    editor_labels=('Add [VMess]','Add [VLESS]','Add [Trojan]','Add [Shadowsocks]','Add [SOCKS]','Add [HTTP]','Add [Hysteria2]','Add [WireGuard]','Add [Policy group]','Add [Proxy chain]','Add Aether config manually')
+    editor_labels=('Add [VMess]','Add [VLESS]','Add [Trojan]','Add [Shadowsocks]','Add [SOCKS]','Add [HTTP]','Add [Hysteria2]','Add [WireGuard]','Add [NaiveProxy]','Add [TUIC v5]','Add [ShadowQUIC]','MasterDNS','DNSTT','GUTS','Add [Policy group]','Add [Proxy chain]','Add Aether config manually')
     for i,label in enumerate(editor_labels,22):
         tap('Add configuration');tap(label);time.sleep(.7)
         screenshot(f'{i:02d}-native-editor-'+re.sub(r'[^a-z0-9]+','-',label.lower()).strip('-'))
         assert adb('shell','pidof',PACKAGE).strip(),'Native editor crashed: '+label
+        if label=='Add Aether config manually':
+            tap('Get new WARP keys…');screenshot('native-aether-keys');assert adb('shell','pidof',PACKAGE).strip(),'WARP keys editor crashed'
         back_to_main()
     # Test-only loopback fixture, entered through the real editor and persisted normally.
     # No tunnel, credentials, successful ping or server metrics are manufactured.
