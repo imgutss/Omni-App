@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -41,7 +42,7 @@ internal fun omniProject(x0: Float, y0: Float, z0: Float, ay: Float, ax: Float, 
 }
 
 @Composable
-fun OmniSceneHero(scene: OmniScene, modifier: Modifier = Modifier) {
+fun OmniSceneHero(scene: OmniScene, modifier: Modifier = Modifier,bottomSpacing:Dp=10.dp) {
     val appearance = LocalOmniAppearance.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var visible by remember { mutableStateOf(true) }
@@ -55,7 +56,7 @@ fun OmniSceneHero(scene: OmniScene, modifier: Modifier = Modifier) {
         }
     }
     val accent = appearance.skin.accent
-    Canvas(modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 10.dp)
+    Canvas(modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = bottomSpacing)
         .height(196.dp).onGloballyPositioned { visible = it.boundsInWindow().height > 0f }
         .clip(RoundedCornerShape(30.dp)).drawBehind {
             val r = CornerRadius(30.dp.toPx())

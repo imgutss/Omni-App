@@ -45,7 +45,7 @@ import com.v2ray.ang.handler.SettingsManager
 import com.v2ray.ang.handler.SettingsChangeManager
 import com.v2ray.ang.root.RootManager
 import com.v2ray.ang.ui.base.BaseComponentActivity
-import com.v2ray.ang.ui.compose.OmniAppearanceControls
+import com.v2ray.ang.ui.compose.OmniSettingsGroup
 import com.v2ray.ang.ui.compose.AppTopBar
 import com.v2ray.ang.ui.compose.CollapsiblePreferenceGroupHeader
 import com.v2ray.ang.ui.compose.NavigationBarsSpacer
@@ -243,18 +243,14 @@ fun SettingsScreen(
                 .verticalScrollbar(scrollState)
                 .verticalScroll(scrollState)
         ) {
-            OmniSceneHero(OmniScene.SETTINGS)
+            OmniSceneHero(OmniScene.SETTINGS,bottomSpacing=0.dp)
+            OmniSettingsGroup {
             CollapsiblePreferenceGroupHeader(
                 title = stringResource(R.string.title_ui_settings),
                 expanded = uiSettingsExpanded,
                 onExpandedChange = { uiSettingsExpanded = it }
             )
             if (uiSettingsExpanded) {
-                OmniAppearanceControls(
-                    appearance = appearance,
-                    onSkin = appearanceViewModel::selectSkin,
-                    onEffects = appearanceViewModel::selectEffects
-                )
                 SettingsSwitchItem(
                     title = stringResource(R.string.title_pref_speed_enabled),
                     summary = stringResource(R.string.summary_pref_speed_enabled),
@@ -316,7 +312,9 @@ fun SettingsScreen(
                     }
                 )
             }
+            }
 
+            OmniSettingsGroup {
             CollapsiblePreferenceGroupHeader(
                 title = stringResource(R.string.title_vpn_settings),
                 expanded = vpnSettingsExpanded,
@@ -413,7 +411,9 @@ fun SettingsScreen(
                     onValueChanged = { hevTunRwTimeout = it }
                 )
             }
+            }
 
+            OmniSettingsGroup {
             CollapsiblePreferenceGroupHeader(
                 title = stringResource(R.string.title_core_settings),
                 expanded = coreSettingsExpanded,
@@ -524,7 +524,9 @@ fun SettingsScreen(
                     onSelected = { outboundResolveMethod = it }
                 )
             }
+            }
 
+            OmniSettingsGroup {
             CollapsiblePreferenceGroupHeader(
                 title = stringResource(R.string.title_guts_settings),
                 expanded = gutsSettingsExpanded,
@@ -544,7 +546,9 @@ fun SettingsScreen(
                     onValueChanged = { gutsDoorBudget = it }
                 )
             }
+            }
 
+            OmniSettingsGroup {
             CollapsiblePreferenceGroupHeader(
                 title = stringResource(R.string.title_mux_settings),
                 expanded = muxSettingsExpanded,
@@ -580,7 +584,9 @@ fun SettingsScreen(
                     onSelected = { muxXudpQuic = it }
                 )
             }
+            }
 
+            OmniSettingsGroup {
             CollapsiblePreferenceGroupHeader(
                 title = stringResource(R.string.title_observatory_settings),
                 expanded = observatorySettingsExpanded,
@@ -632,7 +638,9 @@ fun SettingsScreen(
                     }
                 )
             }
+            }
 
+            OmniSettingsGroup {
             CollapsiblePreferenceGroupHeader(
                 title = stringResource(R.string.title_advanced),
                 expanded = advancedSettingsExpanded,
@@ -675,7 +683,9 @@ fun SettingsScreen(
                     onValueChanged = { ipApiUrl = it }
                 )
             }
+            }
 
+            OmniSettingsGroup {
             CollapsiblePreferenceGroupHeader(
                 title = stringResource(R.string.title_mode_settings),
                 expanded = modeSettingsExpanded,
@@ -721,6 +731,7 @@ fun SettingsScreen(
                         }
                     }
                 )
+            }
             }
 
             Spacer(modifier = Modifier.height(24.dp))

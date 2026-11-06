@@ -52,11 +52,11 @@ fun Modifier.referencePressTilt(perspective:Float=800f): Modifier {
 }
 
 @Composable
-fun Modifier.referenceRaisedPanel(radius: Dp = 22.dp): Modifier {
+fun Modifier.referenceRaisedPanel(radius: Dp = 22.dp,tilt:Boolean=true): Modifier {
     val colors = MaterialTheme.colorScheme
     val dark=LocalDarkTheme.current
     val shape = RoundedCornerShape(radius)
-    return referencePressTilt(900f).drawBehind {
+    return (if(tilt)referencePressTilt(900f)else this).drawBehind {
         val r = CornerRadius(radius.toPx())
         drawRoundRect(Color.Black.copy(alpha = .6f), Offset(0f, 3.dp.toPx()), size, r)
         drawRoundRect(colors.surfaceContainerLow, cornerRadius = r)

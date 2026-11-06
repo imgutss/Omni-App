@@ -3,6 +3,8 @@ package com.v2ray.ang.ui.compose
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +18,8 @@ import androidx.compose.material3.MaterialTheme
 import com.v2ray.ang.ui.compose.OmniSwitch as Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,6 +27,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
@@ -56,19 +67,19 @@ fun CollapsiblePreferenceGroupHeader(
         modifier = modifier
             .fillMaxWidth()
             .clickable { onExpandedChange(!expanded) }
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 18.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleSmall,
+            style = MaterialTheme.typography.titleSmall.copy(fontWeight=FontWeight.ExtraBold),
             color = MaterialTheme.colorScheme.secondary,
             modifier = Modifier.weight(1f)
         )
         Icon(
             painter = painterResource(R.drawable.ic_expand_more_24dp),
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.secondary,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
                 .size(24.dp)
                 .rotate(if (expanded) 180f else 0f)
@@ -91,15 +102,17 @@ private fun SettingsItemRow(
     val descriptionColor = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant
     else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
 
+    val grouped=LocalOmniSettingsGroup.current
+    val density=androidx.compose.ui.platform.LocalDensity.current.density
+    var hasPrevious by remember { mutableStateOf(false) }
+    val surface=if(grouped)Modifier.onGloballyPositioned { hasPrevious=it.positionInParent().y>57f*density }
+        .drawBehind { if(hasPrevious)drawLine(Color.White.copy(alpha=.06f),Offset.Zero,Offset(size.width,0f),1.dp.toPx()) }
+        else Modifier.padding(horizontal=12.dp,vertical=6.dp).referenceRaisedPanel(20.dp)
     Row(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 3.dp)
-            .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), MaterialTheme.shapes.medium)
+            .fillMaxWidth().then(surface).heightIn(min=64.dp)
             .then(if (onClick != null) Modifier.clickable(enabled = enabled, onClick = onClick) else Modifier)
-            .padding(16.dp),
+            .padding(horizontal=18.dp,vertical=14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (icon != null) {
@@ -114,7 +127,7 @@ private fun SettingsItemRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyLarge.copy(fontSize=15.sp,fontWeight=FontWeight.Bold),
                 color = titleColor
             )
             if (!description.isNullOrEmpty()) {
@@ -272,4 +285,14 @@ fun SettingsSwitchItem(
             )
         }
     )
+}
+
+private val LocalOmniSettingsGroup=staticCompositionLocalOf{false}
+
+/** A single source glass accordion, not a stack of unrelated preference cards. */
+@Composable
+fun OmniSettingsGroup(content:@Composable ()->Unit) {
+    Column(Modifier.fillMaxWidth().padding(start=12.dp,end=12.dp,top=12.dp).referenceRaisedPanel(24.dp,tilt=false)) {
+        CompositionLocalProvider(LocalOmniSettingsGroup provides true) { content() }
+    }
 }
