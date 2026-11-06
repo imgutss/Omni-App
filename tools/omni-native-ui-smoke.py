@@ -60,6 +60,10 @@ try:
     adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
     menu();tap('Settings');screenshot('05-settings')
     assert adb('shell','pidof',PACKAGE).strip()
+    adb('shell','settings','put','system','font_scale','1.3');time.sleep(2)
+    screenshot('06-large-text-settings')
+    assert adb('shell','pidof',PACKAGE).strip()
+    adb('shell','settings','put','system','font_scale','1.0')
     print('PASS: native launch, drawer, theme/effects selection, process-restart persistence, settings navigation')
 finally:
     (OUT/'ui.xml').write_text(ET.tostring(dump(),encoding='unicode'))

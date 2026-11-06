@@ -108,17 +108,15 @@ fun MainBottomBar(
                 .border(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), MaterialTheme.shapes.large)
                 .shadow(if (effects == OmniEffects.FULL) 12.dp else 0.dp, MaterialTheme.shapes.large),
             shape = MaterialTheme.shapes.large,
-            containerColor = if (isRunning) colorFabActive
-            else if (isDarkTheme) colorFabInactiveDark
-            else colorFabInactiveLight
+            containerColor = if (isRunning) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.surfaceContainerHigh
         ) {
             Icon(
-                painter = if (isRunning) painterResource(R.drawable.ic_stop_24dp)
-                else painterResource(R.drawable.ic_play_24dp),
+                painter = painterResource(R.drawable.ic_omni_power),
                 contentDescription = stringResource(
                     if (isRunning) R.string.acc_stop else R.string.acc_start
                 ),
-                tint = Color.White,
+                tint = if (isRunning) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
                     .size(24.dp)
                     .graphicsLayer { rotationZ = rotationAnim.value }

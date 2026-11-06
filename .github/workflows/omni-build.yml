@@ -676,6 +676,7 @@ jobs:
         disable-animations: true
         script: |
           adb install -r smoke-apks/Omni_${{ needs.build.outputs.version }}_x86_64.apk
+          adb shell cmd uimode night yes
           python3 tools/omni-native-ui-smoke.py
     - name: Preserve native screenshots and crash log
       if: always()
