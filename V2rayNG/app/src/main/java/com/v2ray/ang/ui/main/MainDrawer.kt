@@ -100,6 +100,7 @@ fun MainDrawerContent(
     ) {
         Column(
             modifier = Modifier
+                .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(colors.primary.copy(alpha = .18f), appearance.skin.backdrop, appearance.skin.backdrop)))
                 .verticalScroll(drawerScrollState)
                 .verticalScrollbar(drawerScrollState)
                 .padding(bottom = 24.dp)

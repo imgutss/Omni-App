@@ -19,6 +19,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import android.animation.ValueAnimator
+import android.view.HapticFeedbackConstants
+import android.os.Build
 import kotlin.math.cos
 import kotlin.math.exp
 import kotlin.math.hypot
@@ -89,6 +97,11 @@ internal fun omniBoltTree(start: Offset, end: Offset, seed: Int): List<BoltSegme
 internal fun OmniLightningHost(content: @Composable () -> Unit) {
     val effects = LocalOmniAppearance.current.effects
     val density = LocalDensity.current.density
+    val context = LocalContext.current.applicationContext
+    val view = LocalView.current
+    LaunchedEffect(effects) {
+        if (effects == OmniEffects.FULL) withContext(Dispatchers.IO) { OmniThunder.preload(context) }
+    }
     var request by remember { mutableStateOf<OmniStrike?>(null) }
     var elapsed by remember { mutableStateOf(2000f) }
     LaunchedEffect(request?.nonce, effects) {
@@ -96,6 +109,7 @@ internal fun OmniLightningHost(content: @Composable () -> Unit) {
         if (effects == OmniEffects.OFF) { request = null; return@LaunchedEffect }
         val duration = if (event.turningOn) 1650f else 1260f
         var beginning = 0L
+        var impacted = false
         do {
             withFrameNanos { now ->
                 if (beginning == 0L) beginning = now
@@ -114,10 +128,18 @@ internal fun OmniLightningHost(content: @Composable () -> Unit) {
         }.orEmpty()
     }
     CompositionLocalProvider(LocalOmniStrike provides { strike ->
-        if (effects != OmniEffects.OFF) { elapsed = 0f; request = strike }
+        if (effects != OmniEffects.OFF && ValueAnimator.areAnimatorsEnabled()) { elapsed = 0f; request = strike }
     }) {
         Box(Modifier.fillMaxSize()) {
-            content()
+            val impactTime = if (event?.turningOn == true) 150f else 110f
+            val shakeAge = elapsed - impactTime
+            val shake = if (event != null && effects == OmniEffects.FULL && shakeAge in 0f..420f) {
+                val index = (shakeAge / (420f / 9f)).toInt().coerceAtMost(8)
+                val random = Random(event.nonce.toInt() + index)
+                val amplitude = (if (event.turningOn) 7f else 4f) * (1f - shakeAge / 420f) * density
+                Offset((random.nextFloat() * 2f - 1f) * amplitude, (random.nextFloat() * 2f - 1f) * amplitude * .8f)
+            } else Offset.Zero
+            Box(Modifier.fillMaxSize().graphicsLayer { translationX = shake.x; translationY = shake.y }) { content() }
             if (event != null && effects != OmniEffects.OFF) Canvas(Modifier.fillMaxSize()) {
                 val on = event.turningOn
                 val impact = if (on) 150f else 110f

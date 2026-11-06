@@ -15,13 +15,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.Checkbox
+import com.v2ray.ang.ui.compose.OmniButton as Button
+import com.v2ray.ang.ui.compose.OmniCard as Card
+import com.v2ray.ang.ui.compose.OmniCheckbox as Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import com.v2ray.ang.ui.compose.OmniOutlinedButton as OutlinedButton
+import com.v2ray.ang.ui.compose.OmniTextField as OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton

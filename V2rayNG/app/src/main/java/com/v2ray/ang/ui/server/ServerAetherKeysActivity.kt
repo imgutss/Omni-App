@@ -17,9 +17,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
+import com.v2ray.ang.ui.compose.OmniButton as Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
+import com.v2ray.ang.ui.compose.OmniRadioButton as RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton

@@ -1,8 +1,8 @@
 package com.v2ray.ang.ui.compose
 
 import androidx.compose.ui.geometry.Offset
-import org.junit.Assert.*
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
 
 class OmniLightningTest {
     @Test fun referenceChannelHas128MainSegmentsAndExactEndpoints() {

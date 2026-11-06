@@ -142,9 +142,9 @@ val toastTextColor = Color.White // White
 internal val OmniShapes = Shapes(
     extraSmall = RoundedCornerShape(8.dp),
     small = RoundedCornerShape(14.dp),
-    medium = RoundedCornerShape(18.dp),
+    medium = RoundedCornerShape(16.dp),
     large = RoundedCornerShape(24.dp),
-    extraLarge = RoundedCornerShape(28.dp)
+    extraLarge = RoundedCornerShape(30.dp)
 )
 
 private val OmniLatinFont = FontFamily(
@@ -312,11 +312,12 @@ fun AppTheme(
         LocalAppSnackbar provides snackbarController
     ) {
         MaterialTheme(
-            colorScheme = colorScheme,
+            colorScheme = if (darkTheme) colorScheme.copy(background = Color.Transparent) else colorScheme,
             shapes = OmniShapes,
             typography = omniTypography(appearance.skin)
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
+                OmniBackdrop()
                 AppSnackbarBridge(controller = snackbarController)
                 OmniLightningHost { content() }
                 AppSnackbarHost(hostState = snackbarController.hostState)

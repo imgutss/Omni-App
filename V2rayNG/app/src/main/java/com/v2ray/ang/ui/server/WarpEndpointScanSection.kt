@@ -1,7 +1,7 @@
 package com.v2ray.ang.ui.server
 
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedButton
+import com.v2ray.ang.ui.compose.OmniButton as Button
+import com.v2ray.ang.ui.compose.OmniOutlinedButton as OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
