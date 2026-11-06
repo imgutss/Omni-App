@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -44,6 +45,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import com.v2ray.ang.ui.compose.referenceServerSurface
+import com.v2ray.ang.ui.compose.OmniLatencyBars
+import com.v2ray.ang.ui.compose.OmniObservedLatency
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -362,7 +366,10 @@ private fun ServerListItem(
     doubleColumnDisplay: Boolean,
     actions: ServerRowActions
 ) {
-    val fullEffects = LocalOmniAppearance.current.effects == OmniEffects.FULL
+    var observedLatency by remember(row.guid) { androidx.compose.runtime.mutableStateOf<List<Long>>(emptyList()) }
+    LaunchedEffect(row.testDelayMillis,row.testSampleCount,row.testJitterMillis,row.testKind) {
+        if(row.testDelayMillis>0L && observedLatency.lastOrNull()!=row.testDelayMillis) observedLatency=(observedLatency+row.testDelayMillis).takeLast(16)
+    }
     val testResult = when {
         row.testDelayMillis == 0L -> ""
         row.testDelayMillis < 0L && row.testSampleCount > 0 -> stringResource(
@@ -389,20 +396,9 @@ private fun ServerListItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-            .shadow(if (fullEffects) { if (isSelected) 10.dp else 3.dp } else 0.dp, MaterialTheme.shapes.large)
-            .clip(MaterialTheme.shapes.large)
-            .background(Brush.verticalGradient(listOf(
-                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
-                else MaterialTheme.colorScheme.surfaceContainerHigh,
-                MaterialTheme.colorScheme.surfaceContainerLow
-            )))
-            .border(
-                if (isSelected) 1.5.dp else 0.5.dp,
-                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f),
-                MaterialTheme.shapes.large
-            )
+            .padding(horizontal = 12.dp, vertical = 3.dp)
+            .referenceServerSurface(isSelected)
+            .heightIn(min=104.dp)
             .height(IntrinsicSize.Min)
             .semantics {
                 if (selectedStateDescription != null) {
@@ -413,7 +409,7 @@ private fun ServerListItem(
     ) {
         Box(
             Modifier
-                .width(10.dp)
+                .width(8.dp)
                 .fillMaxHeight()
         ) {
             if (isSelected) {
@@ -421,10 +417,10 @@ private fun ServerListItem(
                     Spacer(Modifier.width(6.dp))
                     Box(
                         Modifier
-                            .width(4.dp)
+                            .width(3.dp)
                             .fillMaxHeight()
                             .padding(vertical = 10.dp)
-                            .background(MaterialTheme.colorScheme.primary)
+                            .background(MaterialTheme.colorScheme.primary,androidx.compose.foundation.shape.RoundedCornerShape(99.dp))
                     )
                 }
             }
@@ -436,7 +432,7 @@ private fun ServerListItem(
                 .padding(start = 8.dp, end = 12.dp, top = 8.dp, bottom = 8.dp)
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(row.remarks, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge.copy(lineBreak = LineBreak.Paragraph, fontWeight = FontWeight.Bold), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(row.remarks, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge.copy(fontSize=14.sp,lineBreak = LineBreak.Paragraph, fontWeight = FontWeight.ExtraBold), maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (doubleColumnDisplay) {
                     IconButton(onClick = { actions.more(row.guid, row.profile) }, Modifier.size(36.dp)) {
                         Icon(
@@ -448,23 +444,23 @@ private fun ServerListItem(
                 } else {
                     IconButton(onClick = { actions.share(row.guid, row.profile) }, Modifier.size(36.dp)) {
                         Icon(
-                            painterResource(R.drawable.ic_share_24dp),
+                            painterResource(R.drawable.ic_omni_export_24dp),
                             stringResource(R.string.title_configuration_share),
-                            Modifier.size(24.dp)
+                            Modifier.size(20.dp)
                         )
                     }
                     IconButton(onClick = { actions.edit(row.guid, row.profile) }, Modifier.size(36.dp)) {
                         Icon(
-                            painterResource(R.drawable.ic_edit_24dp),
+                            painterResource(R.drawable.ic_omni_edit_24dp),
                             stringResource(R.string.acc_edit),
-                            Modifier.size(24.dp)
+                            Modifier.size(20.dp)
                         )
                     }
                     IconButton(onClick = { actions.remove(row.guid, row.remarks) }, Modifier.size(36.dp)) {
                         Icon(
-                            painterResource(R.drawable.ic_delete_24dp),
+                            painterResource(R.drawable.ic_omni_delete_24dp),
                             stringResource(R.string.acc_delete),
-                            Modifier.size(24.dp)
+                            Modifier.size(20.dp)
                         )
                     }
                 }
@@ -501,13 +497,12 @@ private fun ServerListItem(
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    testResult,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (row.testDelayMillis < 0L) colorPingRed else colorPing,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(6.dp)) {
+                    if(row.testDelayMillis>0L && !doubleColumnDisplay) OmniLatencyBars(row.testDelayMillis)
+                    Text(testResult,modifier=Modifier.weight(1f,fill=false),style=MaterialTheme.typography.bodySmall,
+                        color=if(row.testDelayMillis<0L)colorPingRed else colorPing,maxLines=1,overflow=TextOverflow.Ellipsis)
+                    if(row.testDelayMillis>0L && !doubleColumnDisplay) OmniObservedLatency(observedLatency)
+                }
             }
         }
     }

@@ -42,8 +42,19 @@ def tap(label):
 def screenshot(name):
     with (OUT/(name+'.png')).open('wb')as f:subprocess.run(['adb','exec-out','screencap','-p'],stdout=f,check=True)
 def launch():
-    adb('shell','monkey','-p',PACKAGE,'-c','android.intent.category.LAUNCHER','1');time.sleep(4)
+    # Launch the app directly; Monkey routes through a launcher that can ANR while
+    # the emulator display configuration changes. Never dismiss an Omni ANR.
+    def start():
+        adb('shell','am','start','-W','-a','android.intent.action.MAIN','-c','android.intent.category.LAUNCHER','-p',PACKAGE)
+        time.sleep(4)
+    start()
+    tree=dump()
+    if any("Pixel Launcher isn't responding" in t for t,d in labels(tree)):
+        (OUT/'launcher-anr.txt').write_text(ET.tostring(tree,encoding='unicode'))
+        tap('Close app');start()
     assert adb('shell','pidof',PACKAGE).strip(),'App did not remain running'
+    assert not any("isn't responding" in t for t,d in labels(dump())),'Application/emulator ANR obscures the app'
+
 def menu():tap('Open navigation menu')
 def back_to_main():
     # Settings has its own nested routes, including UI settings. A single Back
@@ -126,6 +137,32 @@ try:
     assert find('LIVE') is not None,'Log viewing state lost on mode recreation'
     adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1);menu();reveal('Menu');screenshot('21-light-drawer')
     assert adb('shell','pidof',PACKAGE).strip()
+    back_to_main();adb('shell','cmd','uimode','night','yes');time.sleep(2)
+    # Empty editors are real native screens, not browser previews or prefilled demo forms.
+    editor_labels=('Add [VMess]','Add [VLESS]','Add [Trojan]','Add [Shadowsocks]','Add [SOCKS]','Add [HTTP]','Add [Hysteria2]','Add [WireGuard]','Add [Policy group]','Add [Proxy chain]','Add Aether config manually')
+    for i,label in enumerate(editor_labels,22):
+        tap('Add configuration');tap(label);time.sleep(.7)
+        screenshot(f'{i:02d}-native-editor-'+re.sub(r'[^a-z0-9]+','-',label.lower()).strip('-'))
+        assert adb('shell','pidof',PACKAGE).strip(),'Native editor crashed: '+label
+        back_to_main()
+    # Test-only loopback fixture, entered through the real editor and persisted normally.
+    # No tunnel, credentials, successful ping or server metrics are manufactured.
+    tap('Add configuration');tap('Add [SOCKS]');time.sleep(1)
+    for index,value in enumerate(('CI-LOCAL-SOCKS','127.0.0.1','9')):
+        fields=[n for n in dump().iter('node')if n.get('class')=='android.widget.EditText']
+        fields.sort(key=lambda n:tuple(map(int,re.findall(r'-?\d+',n.get('bounds',''))))[1::-1])
+        assert len(fields)>=3,'Common native editable fields missing'
+        bounds=list(map(int,re.findall(r'-?\d+',fields[index].get('bounds',''))))
+        adb('shell','input','tap',str((bounds[0]+bounds[2])//2),str((bounds[1]+bounds[3])//2))
+        adb('shell','input','keycombination','113','29');adb('shell','input','text',value);time.sleep(.5)
+        if re.search(r'(mInputShown|mIsInputViewShown)=true',adb('shell','dumpsys','input_method')):
+            adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(.5)
+    screenshot('33-real-local-editor');tap('Save');back_to_main()
+    assert find('CI-LOCAL-SOCKS') is not None,'Real edited profile did not persist'
+    assert find('Start service') is not None,'Fixture unexpectedly started a tunnel'
+    screenshot('34-real-server-row')
+    tap('Share config');screenshot('35-real-share-dialog');adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
+    tap('Edit');screenshot('36-real-persisted-editor');back_to_main()
     print('PASS: native 3D first frame, appearance persistence, large text, ten real tools, WARP chooser route, actual renderer log, live/pause and retained log actions')
 finally:
     (OUT/'ui.xml').write_text(ET.tostring(dump(),encoding='unicode'))

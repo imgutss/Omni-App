@@ -1,5 +1,17 @@
 package com.v2ray.ang.ui.main
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -50,18 +62,17 @@ import com.v2ray.ang.dto.GroupMapItem
 import com.v2ray.ang.dto.entities.ServersCache
 import kotlinx.coroutines.flow.StateFlow
 
-private val TAB_BAR_PADDING = 3.dp
+private val TAB_BAR_PADDING = 4.dp
 private val TAB_SPACING = 2.dp
-private val TAB_HEIGHT = 38.dp
+private val TAB_HEIGHT = 36.dp
 private val SELECTED_TAB_MARGIN = 12.dp
 
 /**
  * Subscription group tabs: a floating rounded bar whose selected tab is a tinted pill and whose
  * server count is a small badge.
  *
- * While all tabs fit, they share the bar width equally (like Telegram's folder tabs); once they
- * no longer fit, they keep their natural width and the bar scrolls horizontally, keeping the
- * selected tab in view.
+ * Natural label/count widths receive equal extra space, matching the reference flex:1 0 auto.
+ * Wider sets keep their natural width and scroll, with the selected tab brought into view.
  */
 @Composable
 fun GroupTabBar(
@@ -79,21 +90,36 @@ fun GroupTabBar(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = 12.dp, vertical = 0.dp),
         shape = CircleShape,
-        color = if (dark) colors.surfaceContainerHigh else colors.surface,
-        border = BorderStroke(0.5.dp, colors.outlineVariant.copy(alpha = if (dark) 0.6f else 0.35f)),
+        color = if (dark) Color.White.copy(alpha=.04f) else colors.surface,
+        border = BorderStroke(1.dp, if(dark)Color.White.copy(alpha=.1f) else colors.outlineVariant.copy(alpha=.35f)),
         shadowElevation = 3.dp
     ) {
         BoxWithConstraints {
             val barPaddingPx = with(LocalDensity.current) { TAB_BAR_PADDING.roundToPx() }
             val availablePx = constraints.maxWidth - 2 * barPaddingPx
+            var selectedBounds by remember { mutableStateOf(Rect.Zero) }
+            val motion=com.v2ray.ang.ui.compose.LocalOmniAppearance.current.effects!=com.v2ray.ang.ui.compose.OmniEffects.OFF && android.animation.ValueAnimator.areAnimatorsEnabled()
+            val spec=tween<Float>(if(motion)500 else 0,easing=CubicBezierEasing(.2f,.9f,.3f,1.15f))
+            val thumbX by animateFloatAsState(selectedBounds.left,spec,label="tab-thumb-x")
+            val thumbW by animateFloatAsState(selectedBounds.width,spec,label="tab-thumb-width")
+            val accent=com.v2ray.ang.ui.compose.LocalOmniAppearance.current.skin.accent
             Row(
                 Modifier
                     .horizontalScroll(rememberScrollState())
                     .padding(TAB_BAR_PADDING)
             ) {
-                EqualOrNaturalTabsLayout(availablePx = availablePx) {
+                androidx.compose.foundation.layout.Box {
+                Canvas(Modifier.matchParentSize()) {
+                    if(thumbW>0f) {
+                        val at=Offset(thumbX,0f);val extent=Size(thumbW,size.height);val radius=CornerRadius(size.height/2f)
+                        drawRoundRect(lerp(accent,Color.Black,.22f),at+Offset(0f,3.dp.toPx()),extent,radius)
+                        drawRoundRect(Brush.linearGradient(listOf(accent,lerp(accent,Color.Black,.28f))),at,extent,radius)
+                        drawRoundRect(Brush.verticalGradient(listOf(Color.White.copy(alpha=.5f),Color.Black.copy(alpha=.2f))),at,extent,radius,style=Stroke(1.dp.toPx()))
+                    }
+                }
+                NaturalGrowingTabsLayout(availablePx = availablePx) {
                     groups.forEachIndexed { index, group ->
                         key(group.id) {
                             val serverFlow = remember(group.id, mainViewModel) {
@@ -103,10 +129,12 @@ fun GroupTabBar(
                                 group = group,
                                 selected = index == selectedIndex,
                                 serverFlow = serverFlow,
-                                onClick = { onTabClick(index) }
+                                onClick = { onTabClick(index) },
+                                onSelectedBounds = { selectedBounds=it }
                             )
                         }
                     }
+                }
                 }
             }
         }
@@ -114,12 +142,10 @@ fun GroupTabBar(
 }
 
 /**
- * Lays the tabs out in a row. If every tab fits in an equal share of [availablePx] they all get
- * that share; otherwise, if they still fit together, the spare space is spread evenly; otherwise
- * they keep their natural width (the parent scrolls).
+ * Retains natural label/count widths; distributes spare space evenly, otherwise scrolls.
  */
 @Composable
-private fun EqualOrNaturalTabsLayout(
+private fun NaturalGrowingTabsLayout(
     availablePx: Int,
     content: @Composable () -> Unit
 ) {
@@ -131,11 +157,9 @@ private fun EqualOrNaturalTabsLayout(
         val count = measurables.size
         val gaps = spacing * (count - 1)
         val natural = measurables.map { it.maxIntrinsicWidth(tabHeight) }
-        val equalShare = (availablePx - gaps) / count
 
         val widths = when {
             availablePx <= 0 -> natural
-            natural.all { it <= equalShare } -> List(count) { equalShare }
             natural.sum() + gaps <= availablePx -> {
                 val extra = (availablePx - gaps - natural.sum()) / count
                 natural.map { it + extra }
@@ -162,7 +186,8 @@ private fun GroupTabItem(
     group: GroupMapItem,
     selected: Boolean,
     serverFlow: StateFlow<List<ServersCache>>,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onSelectedBounds: (Rect) -> Unit
 ) {
     val servers by serverFlow.collectAsStateWithLifecycle()
     // The default group (empty id) never showed a count.
@@ -170,12 +195,14 @@ private fun GroupTabItem(
     val colors = MaterialTheme.colorScheme
     val bringIntoView = remember { BringIntoViewRequester() }
     var size by remember { mutableStateOf(IntSize.Zero) }
+    var bounds by remember { mutableStateOf(Rect.Zero) }
     val marginPx = with(LocalDensity.current) { SELECTED_TAB_MARGIN.toPx() }
 
     // Bring the tab in with some room around it so the pill never ends up flush against the bar's
     // rounded edge; at the first and last tab the scroll stops at the bar's own inner padding.
-    LaunchedEffect(selected, size) {
+    LaunchedEffect(selected, size, bounds) {
         if (selected && size != IntSize.Zero) {
+            onSelectedBounds(bounds)
             bringIntoView.bringIntoView(
                 Rect(-marginPx, 0f, size.width + marginPx, size.height.toFloat())
             )
@@ -187,8 +214,8 @@ private fun GroupTabItem(
         modifier = Modifier
             .bringIntoViewRequester(bringIntoView)
             .onSizeChanged { size = it }
+            .onGloballyPositioned { coords -> val at=coords.positionInParent();bounds=Rect(at,Size(coords.size.width.toFloat(),coords.size.height.toFloat())) }
             .clip(CircleShape)
-            .background(if (selected) colors.primary else Color.Transparent)
             .selectable(selected = selected, role = Role.Tab, onClick = onClick)
             .padding(horizontal = 12.dp),
         horizontalArrangement = Arrangement.Center,
@@ -196,9 +223,9 @@ private fun GroupTabItem(
     ) {
         Text(
             text = group.remarks,
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.Medium,
-            color = if (selected) colors.onPrimary else colors.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall.copy(fontSize=12.5.sp),
+            fontWeight = FontWeight.ExtraBold,
+            color = if (selected) Color(0xFF181818) else colors.onSurfaceVariant,
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Ellipsis

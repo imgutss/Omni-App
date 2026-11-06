@@ -419,7 +419,7 @@
   ],
   "unfinished": [
     "Full layout and interaction audit for all43 native routes against the accepted HTML",
-    "Server-row perspective/reflection, truthful measured test sparkline and sliding tab thumb",
+    "Compile/emulator and fixture visual validation of server cards, latency observations and sliding tab thumb",
     "Remaining popup/dialog/form transitions and matched-viewport visual comparisons",
     "Expanded Android15 route/log/light-mode smoke on current head",
     "Physical-device VPN/protocol, audio/haptics and rapid-toggle validation; no release yet"
@@ -438,14 +438,18 @@
     "Original seven raised theme orbs plus twelve subtle brand tiles, inset pill segments and drawer-specific layered gradients; actual saved appearance callbacks retained.",
     "Known Connecting state uses the original rotating partial ring, not a completed ring. Bottom status dot/weight/gradient restored.",
     "Dark terminal foreground remains readable in application light mode; failed log reads retain the last real snapshot and report no invented arrival rate.",
-    "Real service action dispatch is immediate and once per click; visual cancellation/rapid taps cannot swallow or defer the native callback."
+    "Real service action dispatch is immediate and once per click; visual cancellation/rapid taps cannot swallow or defer the native callback.",
+    "Native server cards now use source perspective, selected depth, passive pointer reflection/sheens, 104dp minimum and original outline action paths; selection/reorder/share/edit/delete callbacks unchanged.",
+    "Original latency color thresholds use real stored delays; tiny chart shows only observed successful result changes, never the HTML decorative fake waveform.",
+    "One sliding 3D tab thumb tracks measured real tab bounds, including RTL/scroll; natural widths grow as the reference flex layout, genuine group counts retained."
   ],
   "validated": [
     "Nonpublishing CI42256966055 / 8f1bc069: both Kotlin flavors, unit tests, signed APK/native ABI checks, Android15 launch and navigation smoke passed.",
     "Android15 renderer log and native drawer screenshot confirm original mesh/PBR produced an actual frame; host GL is not used as Android proof.",
     "Current diagnostic heroes, scanner chooser and real log slab: Kotlin syntax and resource checks only; awaiting next-head compiler/device validation.",
     "Native engine/manifest guard remains unchanged. New scanner chooser reuses existing declared activity before initializing the WARP ViewModel.",
-    "88843d5f / CI42260713129 build and both-flavor unit tests passed. Expanded emulator smoke stopped on nested Settings back-navigation in the test harness before new tool routes; not an app-crash proof or tool-validation pass."
+    "88843d5f / CI42260713129 build and both-flavor unit tests passed. Expanded emulator smoke stopped on nested Settings back-navigation in the test harness before new tool routes; not an app-crash proof or tool-validation pass.",
+    "2af9f2e6 / CI42264165319: both-flavor Kotlin/unit build passed, including 19-skin terminal contrast test; matched-viewport smoke blocked at startup by a Pixel Launcher ANR, before app navigation. No tool/runtime pass claimed."
   ],
   "notValidated": [
     "Current appearance, connecting status, dark/light terminal and immediate callback changes await new-head Kotlin/unit validation.",
