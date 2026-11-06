@@ -161,14 +161,14 @@ try:
     # No tunnel, credentials, successful ping or server metrics are manufactured.
     tap('Add configuration');tap('Add [SOCKS]');time.sleep(1)
     for index,value in enumerate(('CI-LOCAL-SOCKS','127.0.0.1','9')):
-        fields=[n for n in dump().iter('node')if n.get('class')=='android.widget.EditText']
+        fields=[n for n in dump().iter('node')if n.get('class')=='android.widget.EditText' and n.get('package')==PACKAGE]
         fields.sort(key=lambda n:tuple(map(int,re.findall(r'-?\d+',n.get('bounds',''))))[1::-1])
         assert len(fields)>=3,'Common native editable fields missing'
         bounds=list(map(int,re.findall(r'-?\d+',fields[index].get('bounds',''))))
         adb('shell','input','tap',str((bounds[0]+bounds[2])//2),str((bounds[1]+bounds[3])//2))
         adb('shell','input','keycombination','113','29');adb('shell','input','text',value);time.sleep(.5)
-        if re.search(r'(mInputShown|mIsInputViewShown)=true',adb('shell','dumpsys','input_method')):
-            adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(.5)
+        # The first three fields fit above the IME. Do not send Back based on
+        # mInputShown: a hardware-keyboard AVD may report it with no visible IME.
     screenshot('33-real-local-editor');tap('Save');back_to_main()
     assert find('CI-LOCAL-SOCKS') is not None,'Real edited profile did not persist'
     assert find('Start service') is not None,'Fixture unexpectedly started a tunnel'
