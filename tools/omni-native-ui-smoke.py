@@ -43,6 +43,10 @@ def tap(label):
     adb('shell','input','tap',str((nums[0]+nums[2])//2),str((nums[1]+nums[3])//2));time.sleep(1)
 def screenshot(name):
     with (OUT/(name+'.png')).open('wb')as f:subprocess.run(['adb','exec-out','screencap','-p'],stdout=f,check=True)
+    tree=dump()
+    assert any(n.get('package')==PACKAGE for n in tree.iter('node')),'Native app not visible: '+name
+    (OUT/(name+'.xml')).write_text(ET.tostring(tree,encoding='unicode'))
+    print('Native UI captured:',name,flush=True)
 def launch():
     # Launch the app directly; Monkey routes through a launcher that can ANR while
     # the emulator display configuration changes. Never dismiss an Omni ANR.
@@ -137,7 +141,7 @@ try:
         assert find(label) is not None,'Existing log action lost: '+label
     tap('LIVE');assert find('PAUSED') is not None,'Native log pause did not take effect'
     screenshot('19-paused-real-log-slab')
-    tap('Refresh');tap('PAUSED');assert find('LIVE') is not None
+    tap('Refresh log');tap('PAUSED');assert find('LIVE') is not None
     assert adb('shell','pidof',PACKAGE).strip()
     adb('shell','cmd','uimode','night','no');time.sleep(3);screenshot('20-light-log-slab')
     assert find('LIVE') is not None,'Log viewing state lost on mode recreation'
@@ -171,7 +175,38 @@ try:
     screenshot('34-real-server-row')
     tap('Share config');screenshot('35-real-share-dialog');adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
     tap('Edit');screenshot('36-real-persisted-editor');back_to_main()
-    print('PASS: native 3D first frame, appearance persistence, large text, ten real tools, WARP chooser route, actual renderer log, live/pause and retained log actions')
+    # Exercise the remaining original drawer destinations and their actual form routes.
+    for label,slug in (('Subscriptions','subscriptions'),('Per-app settings','per-app'),('Routing Settings','routing'),('Asset files','assets'),('Check for update','update'),('Backup & Restore','backup'),('About','about')):
+        menu();tap(label);time.sleep(1);screenshot('page-'+slug)
+        if slug=='subscriptions':
+            tap('Add subscription');screenshot('page-subscription-edit');adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
+        elif slug=='routing':
+            tap('Add routing rule');screenshot('page-routing-edit');adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
+        elif slug=='assets':
+            tap('Add asset source');tap('Add URL');screenshot('page-asset-edit');adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
+        elif slug=='about':
+            tap('Translators');screenshot('page-translators');adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
+        back_to_main()
+    # These private editors normally need an imported raw config / Xray-TUN+routeOnly.
+    # On this debug AVD ONLY, root shell opens the genuine existing native activities
+    # without manufacturing user preferences or profile data. Not a non-root navigation test.
+    result=adb('root');assert 'cannot' not in result.lower(),result
+    adb('wait-for-device')
+    for slug,component in (('custom','ui.server.ServerCustomConfigActivity'),('app-picker','ui.apppicker.AppPickerActivity')):
+        adb('shell','am','start','-W','-n',PACKAGE+'/com.v2ray.ang.'+component)
+        time.sleep(2);screenshot('page-'+slug);back_to_main()
+    import json
+    mapping={'screen-servers':'34-real-server-row','screen-settings':'05-settings','screen-logs':'18-real-log-slab','screen-aether-keys':'native-aether-keys'}
+    tool_slugs=('hub','doctor','privacy-center','dns-lab','routing-studio','sync-center','speed-lab','dns-scanner','scanner')
+    tool_labels=('Omni Hub','Omni Doctor','Omni Privacy & Backup','Omni DNS Lab','Omni Routing Studio','Omni Sync Center','Omni Speed & Ping Lab','DNS Scanner','Omni Scanner')
+    for i,(slug,label)in enumerate(zip(tool_slugs,tool_labels),8):mapping['screen-'+slug]=f'{i:02d}-'+re.sub(r'[^a-z0-9]+','-',label.lower()).strip('-')
+    protocol_slugs=('vmess','vless','trojan','shadowsocks','socks','http','hysteria2','wireguard','naive','tuic','shadowquic','masterdns','dnstt','guts','policy-group','proxy-chain','aether')
+    for i,(slug,label)in enumerate(zip(protocol_slugs,editor_labels),22):mapping['screen-'+slug]=f'{i:02d}-native-editor-'+re.sub(r'[^a-z0-9]+','-',label.lower()).strip('-')
+    for slug in ('subscriptions','per-app','routing','assets','update','backup','about','subscription-edit','routing-edit','asset-edit','translators','custom','app-picker'):mapping['screen-'+slug]='page-'+slug
+    assert len(mapping)==43,len(mapping)
+    for screen,image in mapping.items():assert(OUT/(image+'.png')).is_file(),screen
+    (OUT/'source-43-screen-map.json').write_text(json.dumps(mapping,indent=2))
+    print('PASS: 43 genuine native screens captured, appearance persistence/large text/light-dark/log actions, original PBR renderer, real protocol forms and locally persisted SOCKS profile; no VPN started')
 finally:
     (OUT/'ui.xml').write_text(ET.tostring(dump(),encoding='unicode'))
     (OUT/'logcat.txt').write_text(adb('logcat','-d','-s','AndroidRuntime:E','OmniReferenceGL:V'))
