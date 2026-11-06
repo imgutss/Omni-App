@@ -177,7 +177,7 @@ class MainActivity : HelperBaseComponentActivity() {
             MainDestination.About -> Intent(this, AboutActivity::class.java)
             MainDestination.OmniPanel -> Intent(this, OmniHubActivity::class.java)
             MainDestination.OmniDoctor -> Intent(this, OmniDoctorActivity::class.java)
-            MainDestination.OmniScanner -> Intent(this, OmniScannerActivity::class.java)
+            MainDestination.OmniScanner -> Intent(this, OmniScannerActivity::class.java).putExtra(OmniScannerActivity.EXTRA_SHOW_HOME, true)
             MainDestination.OmniDnsScanner -> Intent(this, OmniDnsScannerActivity::class.java)
             MainDestination.OmniPrivacy -> Intent(this, com.v2ray.ang.omni.OmniPrivacyCenterActivity::class.java)
             MainDestination.OmniDnsLab -> Intent(this, com.v2ray.ang.omni.OmniDnsLabActivity::class.java)

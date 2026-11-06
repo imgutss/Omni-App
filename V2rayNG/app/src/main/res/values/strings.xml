@@ -1007,4 +1007,11 @@
     <string name="omni_service_uptime">Foreground service uptime</string>
     <string name="omni_app_traffic_speed">Actual application UID traffic, including proxy and direct traffic; not tunnel-only throughput</string>
     <string name="omni_app_traffic_short">Application traffic</string>
+    <string name="omni_hub_working">Working…</string>
+    <string name="omni_scanner_home_hint">WARP endpoint discovery and DNS tunnel resolver tools.</string>
+    <string name="omni_scanner_open_warp">WARP / Aether scanner</string>
+    <string name="omni_log_live">LIVE</string>
+    <string name="omni_log_paused">PAUSED</string>
+    <string name="omni_log_lines">%1$d lines</string>
+    <string name="omni_hub_panel_count">%1$d panels</string>
 </resources>

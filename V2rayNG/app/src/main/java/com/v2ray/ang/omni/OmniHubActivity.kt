@@ -1,5 +1,6 @@
 package com.v2ray.ang.omni
 
+import com.v2ray.ang.ui.compose.OmniHubOrbit
 import android.content.Intent
 import androidx.activity.viewModels
 import androidx.annotation.StringRes
@@ -107,6 +108,7 @@ fun OmniHubScreen(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            item(key = "reference_orbit") { OmniHubOrbit(panels.size, busy, panels.maxOfOrNull { it.lastSyncAt } ?: 0L) }
             item {
                 Text(stringResource(R.string.omni_hub_subtitle), style = MaterialTheme.typography.bodyLarge)
                 Spacer(Modifier.height(8.dp))

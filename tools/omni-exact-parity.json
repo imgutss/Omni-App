@@ -430,17 +430,24 @@
     "Actual final-layer SVG IC artwork extracted reproducibly: 285 PNGs / 19 skins, native image decoder; original layered geometry, not Material replacements",
     "Native lightning fractal main channel / recursive forks / stepped leader / return stroke / restrikes / impact glow / shock ring / ballistic particles",
     "Native raised power surface / animated conic border / active pulse / original 46dp and 16dp radius tokens",
-    "Power effect connected to existing real ToggleService callback; no fabricated connection state"
+    "Power effect connected to existing real ToggleService callback; no fabricated connection state",
+    "Native eight accepted scenes, PBR drawer logo, backdrop/parallax, labeled read-only UID telemetry, source lightning/coronas/audio/haptics and raised controls.",
+    "Real panel-count Hub orbital map and actual nine-stage Doctor ring, without fabricated reachability or test outcomes.",
+    "Accepted scanner chooser preserves full real WARP/Aether tool, DNS scanner and protocol-template callers without a manifest change.",
+    "Projected 3D log slab with actual application logs only: lifecycle polling/pause, real duplicate-aware arrival rate, raw rows, existing search/copy/share/clear/refresh and long-press retained.",
+    "Log I/O moved off Main; snapshots/clear/filter publication serialized on Main, clear exit status checked, pending refresh cancellation and duplicate preservation.",
+    "Drawer scanner radar mapping corrected from rendered native screenshot; 112dp minimum tiles grow for larger text rather than clipping two-line labels."
   ],
   "validated": [
-    "Kotlin syntax parser: six touched source files",
-    "285 PNG checksums, alpha, dimensions and non-flat gradients",
-    "Native engine/service/handler/DTO/protocol source diff unchanged"
+    "Nonpublishing CI42256966055 / 8f1bc069: both Kotlin flavors, unit tests, signed APK/native ABI checks, Android15 launch and navigation smoke passed.",
+    "Android15 renderer log and native drawer screenshot confirm original mesh/PBR produced an actual frame; host GL is not used as Android proof.",
+    "Current diagnostic heroes, scanner chooser and real log slab: Kotlin syntax and resource checks only; awaiting next-head compiler/device validation.",
+    "Native engine/manifest guard remains unchanged. New scanner chooser reuses existing declared activity before initializing the WARP ViewModel."
   ],
   "notValidated": [
-    "Native Kotlin/Android compilation",
-    "New JUnit lightning tests",
-    "Device visual golden comparisons",
-    "Device audio, haptics, rapid toggling and window insets"
+    "Current uncommitted/new-head Kotlin typecheck and new real-log metrics tests.",
+    "Current expanded Android15 tool/scanner/log interaction smoke and screenshots.",
+    "Golden comparisons across all43 screens and transient states at matched viewport/fonts.",
+    "Physical phone, actual VPN/protocol connectivity, audio/haptics, rapid toggling and window inset behavior."
   ]
 }

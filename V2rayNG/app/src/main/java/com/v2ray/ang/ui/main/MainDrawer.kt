@@ -22,6 +22,7 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -29,6 +30,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import com.v2ray.ang.R
@@ -100,14 +104,18 @@ fun MainDrawerContent(
         modifier = Modifier.fillMaxWidth(),
         drawerContainerColor = appearance.skin.referencePalette.background
     ) {
+        androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().background(appearance.skin.referencePalette.background).drawBehind {
+            val accent=appearance.skin.accent
+            fun glow(center: androidx.compose.ui.geometry.Offset,rx:Float,ry:Float,alpha:Float) {
+                withTransform({scale(1f,ry/rx,center)}) {
+                    drawCircle(androidx.compose.ui.graphics.Brush.radialGradient(0f to accent.copy(alpha=alpha),.62f to androidx.compose.ui.graphics.Color.Transparent,center=center,radius=rx),rx,center)
+                }
+            }
+            glow(androidx.compose.ui.geometry.Offset(size.width,0f),size.width*1.2f,size.height*.46f,.32f)
+            glow(androidx.compose.ui.geometry.Offset(0f,size.height),size.width*1.1f,size.height*.4f,.22f)
+        }) {
         Column(
             modifier = Modifier
-                .background(appearance.skin.referencePalette.background)
-                .drawBehind {
-                    val accent = appearance.skin.accent
-                    drawRect(androidx.compose.ui.graphics.Brush.radialGradient(0f to accent.copy(alpha = .32f), .62f to androidx.compose.ui.graphics.Color.Transparent, center = androidx.compose.ui.geometry.Offset(size.width, 0f), radius = size.width * 1.2f))
-                    drawRect(androidx.compose.ui.graphics.Brush.radialGradient(0f to accent.copy(alpha = .22f), .62f to androidx.compose.ui.graphics.Color.Transparent, center = androidx.compose.ui.geometry.Offset(0f, size.height), radius = size.width * 1.1f))
-                }
                 .verticalScroll(drawerScrollState)
                 .verticalScrollbar(drawerScrollState)
                 .padding(bottom = 24.dp)
@@ -119,10 +127,10 @@ fun MainDrawerContent(
             ) {
                 androidx.compose.material3.IconButton(
                     onClick = { scope.launch { drawerState.close() } },
-                    modifier = Modifier.size(48.dp).referenceRaisedControl(true)
-                ) { Icon(painterResource(R.drawable.ic_arrow_back_24dp), stringResource(R.string.acc_back), tint = colors.onPrimary) }
+                    modifier = Modifier.size(48.dp).clip(androidx.compose.foundation.shape.CircleShape).referenceRaisedControl(true)
+                ) { Icon(painterResource(R.drawable.ic_arrow_back_24dp), stringResource(R.string.acc_back), tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(18.dp)) }
                 Column {
-                    Text(if (androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "fa") "منو" else "Menu", style = MaterialTheme.typography.headlineSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold)
+                    Text(if (androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "fa") "منو" else "Menu", style = MaterialTheme.typography.headlineSmall.copy(fontSize=32.sp), fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold)
                     Text(if (androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "fa") "تجربهٔ خودت را شخصی کن" else "Customize your experience", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
                 }
             }
@@ -130,13 +138,13 @@ fun MainDrawerContent(
                 Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp).referenceRaisedPanel(30.dp).height(156.dp)
             ) {
                 com.v2ray.ang.ui.compose.OmniLogo3d(Modifier.size(176.dp).align(Alignment.CenterEnd))
-                Column(Modifier.align(Alignment.CenterStart).padding(start = 22.dp).fillMaxWidth(.55f)) {
+                Column(Modifier.align(Alignment.CenterStart).padding(start = 22.dp).fillMaxWidth(.5f)) {
                     Text("Omni", style = MaterialTheme.typography.headlineMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, color = colors.primary)
-                    Text(if (androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "fa") "همهٔ گزینه‌ها یک‌جا" else "Manage all options in one place", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                    Text(if (androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "fa") "همهٔ گزینه‌ها یک‌جا" else "Manage all options in one place", style = MaterialTheme.typography.bodySmall.copy(fontSize=13.sp), color = colors.onSurfaceVariant)
                 }
             }
             androidx.compose.foundation.layout.FlowRow(
-                Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 14.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 maxItemsInEachRow = 3
@@ -145,16 +153,16 @@ fun MainDrawerContent(
                     androidx.compose.runtime.key(item.name) {
                         Surface(
                             onClick = { onNavigate(item) },
-                            modifier = Modifier.fillMaxWidth(0.31f).referenceRaisedPanel(26.dp),
+                            modifier = Modifier.weight(1f).referenceRaisedPanel(26.dp),
                             shape = MaterialTheme.shapes.large,
                             color = androidx.compose.ui.graphics.Color.Transparent,
                             border = androidx.compose.foundation.BorderStroke(0.5.dp, colors.outlineVariant),
                             shadowElevation = if (fullEffects) 5.dp else 0.dp
                         ) {
                             Column(
-                                Modifier.padding(horizontal = 6.dp, vertical = 14.dp).height(94.dp),
+                                Modifier.padding(horizontal = 6.dp, vertical = 6.dp).heightIn(min = 100.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 com.v2ray.ang.ui.compose.OmniReferenceIcon(
                                     artwork = when (item) {
@@ -165,7 +173,8 @@ fun MainDrawerContent(
                                         MainDestination.Settings -> "settings"
                                         MainDestination.OmniPanel -> "hub"
                                         MainDestination.OmniDoctor -> "doctor"
-                                        MainDestination.OmniScanner, MainDestination.OmniDnsScanner -> "language"
+                                        MainDestination.OmniScanner -> "scanner"
+                                        MainDestination.OmniDnsScanner -> "language"
                                         MainDestination.OmniPrivacy -> "logs"
                                         MainDestination.OmniDnsLab -> "update"
                                         MainDestination.OmniRoutingStudio -> "backup"
@@ -179,7 +188,7 @@ fun MainDrawerContent(
                                 )
                                 Text(
                                     stringResource(item.labelRes),
-                                    style = MaterialTheme.typography.labelMedium,
+                                    style = MaterialTheme.typography.labelMedium.copy(fontSize=12.5.sp,lineHeight=14.5.sp,fontWeight=androidx.compose.ui.text.font.FontWeight.Bold),
                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                     maxLines = 2,
                                     minLines = 2,
@@ -191,6 +200,7 @@ fun MainDrawerContent(
                 }
             }
             com.v2ray.ang.ui.compose.OmniAppearanceControls(appearance, onSkin, onEffects)
+        }
         }
     }
 }

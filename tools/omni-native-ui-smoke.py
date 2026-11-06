@@ -71,6 +71,7 @@ try:
         if 'rendered successfully' in gl:break
         assert time.monotonic()<deadline,'Native 3D logo never produced a first frame: '+gl
         time.sleep(.75)
+    (OUT/'render-proof.txt').write_text(gl)
     time.sleep(.5);screenshot('02-drawer');tap('Blue');screenshot('03-blue-theme')
     assert selected('Blue'),'Theme chip does not expose its selected state'
     tap('Off');assert selected('Off'),'Effects chip did not change'
@@ -86,7 +87,31 @@ try:
     screenshot('06-large-text-settings')
     assert adb('shell','pidof',PACKAGE).strip()
     adb('shell','settings','put','system','font_scale','1.0')
-    print('PASS: native launch, drawer, theme/effects selection, process-restart persistence, settings navigation')
+    adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
+    menu();tap('Violet');tap('Full');reveal('Menu');screenshot('07-reference-drawer')
+    adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
+    # Real activities only. Merely opening the tools never starts a VPN or a probe.
+    for i,label in enumerate(('Omni Hub','Omni Doctor','Omni Privacy & Backup','Omni DNS Lab','Omni Routing Studio','Omni Sync Center','Omni Speed & Ping Lab','DNS Scanner','Omni Scanner'),8):
+        menu();tap(label);time.sleep(.8)
+        assert adb('shell','pidof',PACKAGE).strip(),'Activity crashed: '+label
+        screenshot(f'{i:02d}-'+re.sub(r'[^a-z0-9]+','-',label.lower()).strip('-'))
+        if label=='Omni Scanner':
+            assert find('WARP / Aether scanner') is not None,'Scanner chooser missing real WARP route'
+            assert find('DNS Scanner') is not None,'Scanner chooser missing real DNS route'
+            tap('WARP / Aether scanner');screenshot('17-real-warp-tool')
+            assert adb('shell','pidof',PACKAGE).strip(),'WARP tool crashed'
+            adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
+        adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
+    menu();tap('Logcat');time.sleep(3);screenshot('18-real-log-slab')
+    assert find('LIVE') is not None,'Native log polling did not start'
+    assert any('Original mesh and PBR shaders rendered successfully' in t for t,d in labels(dump())),'Real renderer log never reached the native viewer'
+    for label in ('Copy log','Share log','Clear log','Refresh'):
+        assert find(label) is not None,'Existing log action lost: '+label
+    tap('LIVE');assert find('PAUSED') is not None,'Native log pause did not take effect'
+    screenshot('19-paused-real-log-slab')
+    tap('Refresh');tap('PAUSED');assert find('LIVE') is not None
+    assert adb('shell','pidof',PACKAGE).strip()
+    print('PASS: native 3D first frame, appearance persistence, large text, ten real tools, WARP chooser route, actual renderer log, live/pause and retained log actions')
 finally:
     (OUT/'ui.xml').write_text(ET.tostring(dump(),encoding='unicode'))
     (OUT/'logcat.txt').write_text(adb('logcat','-d','-s','AndroidRuntime:E','OmniReferenceGL:V'))

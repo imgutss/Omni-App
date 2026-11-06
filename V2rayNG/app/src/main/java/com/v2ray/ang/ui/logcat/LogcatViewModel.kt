@@ -8,6 +8,11 @@ import com.v2ray.ang.ui.base.BaseViewModel
 import com.v2ray.ang.util.LogUtil
 import com.v2ray.ang.util.Utils
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,22 +33,29 @@ class LogcatViewModel(application: Application) : BaseViewModel(application) {
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    fun loadLogcat() {
-        launchLoading {
-            try {
-                val lst = LinkedHashSet<String>()
-                lst.add("logcat")
-                lst.add("-d")
-                lst.add("-v")
-                lst.add("time")
-                lst.add("-s")
-                lst.add("GoLog,${AppConfig.ANG_PACKAGE},AndroidRuntime,System.err")
-                val process = Runtime.getRuntime().exec(lst.toTypedArray())
-                val allText = process.inputStream.bufferedReader().use { it.readLines() }.reversed()
+    private val updates = Mutex()
+    private var pendingUpdates = 0
+    @Volatile private var refreshJob: Job? = null
 
-                logsetsAll.clear()
-                logsetsAll.addAll(allText)
-                applyFilter()
+    private fun updateLogSnapshot(action: suspend () -> Unit): Job = viewModelScope.launch {
+        pendingUpdates++; _isLoading.value = true
+        try { updates.withLock { action() } }
+        finally { pendingUpdates--; _isLoading.value = pendingUpdates > 0 }
+    }
+
+    fun pauseLogRefresh() { refreshJob?.cancel() }
+
+    fun loadLogcat() {
+        if (refreshJob?.isActive == true) return
+        refreshJob = updateLogSnapshot {
+            try {
+                // OS I/O stays off the UI thread. Publication/filtering stay serialized on Main.
+                val allText = withContext(Dispatchers.IO) {
+                    val process = Runtime.getRuntime().exec(arrayOf("logcat", "-d", "-v", "time", "-s", "GoLog", AppConfig.ANG_PACKAGE, "AndroidRuntime", "System.err", "OmniReferenceGL"))
+                    try { process.inputStream.bufferedReader().use { it.readLines() }.reversed() }
+                    finally { process.destroy() }
+                }
+                logsetsAll.clear(); logsetsAll.addAll(allText); applyFilter()
             } catch (e: IOException) {
                 LogUtil.e(AppConfig.TAG, "Failed to get logcat", e)
             }
@@ -57,17 +69,18 @@ class LogcatViewModel(application: Application) : BaseViewModel(application) {
     }
 
     fun clearLogcat() {
-        try {
-            val lst = LinkedHashSet<String>()
-            lst.add("logcat")
-            lst.add("-c")
-            val process = Runtime.getRuntime().exec(lst.toTypedArray())
-            process.waitFor()
-
-            logsetsAll.clear()
-            _filteredLogs.value = emptyList()
-        } catch (e: IOException) {
-            LogUtil.e(AppConfig.TAG, "Failed to clear logcat", e)
+        pauseLogRefresh()
+        updateLogSnapshot {
+            try {
+                val status = withContext(Dispatchers.IO) {
+                    val process = Runtime.getRuntime().exec(arrayOf("logcat", "-c"))
+                    try { process.waitFor() } finally { process.destroy() }
+                }
+                if (status == 0) { logsetsAll.clear(); applyFilter() }
+                else LogUtil.w(AppConfig.TAG, "Logcat refused to clear its buffer")
+            } catch (e: IOException) {
+                LogUtil.e(AppConfig.TAG, "Failed to clear logcat", e)
+            }
         }
     }
 
@@ -80,7 +93,7 @@ class LogcatViewModel(application: Application) : BaseViewModel(application) {
         _filteredLogs.value = if (currentFilter.isEmpty()) {
             logsetsAll.toList()
         } else {
-            logsetsAll.filter { it.contains(currentFilter) }
+            logsetsAll.filter { it.contains(currentFilter, ignoreCase = true) }
         }
     }
 }

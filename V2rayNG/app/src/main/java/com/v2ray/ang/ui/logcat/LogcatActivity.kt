@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -24,12 +25,33 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.font.FontWeight
+import com.v2ray.ang.ui.compose.omniLogClearSheen
+import com.v2ray.ang.ui.compose.OmniButton
+import com.v2ray.ang.ui.compose.LocalOmniAppearance
+import com.v2ray.ang.ui.compose.OmniEffects
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.v2ray.ang.ui.compose.OmniLogSurface
+import com.v2ray.ang.ui.compose.omniNewLogCount
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -131,14 +153,42 @@ fun LogcatScreen(
     onShareLogcat: () -> Unit
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val logs by viewModel.logEntries.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
-    var searchQuery by remember { mutableStateOf("") }
-    var showSearch by remember { mutableStateOf(false) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var showSearch by rememberSaveable { mutableStateOf(false) }
 
     val listState = rememberLazyListState()
+    var live by rememberSaveable { mutableStateOf(true) }
+    var arrivalRate by remember { mutableStateOf<Double?>(null) }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(live, searchQuery, lifecycle) {
+        arrivalRate = null
+        viewModel.filter(searchQuery)
+        if (!live) { viewModel.pauseLogRefresh(); return@LaunchedEffect }
+        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            var previous: Map<String,Int>? = null
+            var at = android.os.SystemClock.elapsedRealtime()
+            try {
+                while (true) {
+                    viewModel.loadLogcat()
+                    viewModel.isLoading.first { !it }
+                    val now = android.os.SystemClock.elapsedRealtime()
+                    val current = viewModel.filteredLogs.value.groupingBy { it }.eachCount()
+                    val old = previous
+                    arrivalRate = if (old != null && now > at) omniNewLogCount(old,current) * 1000.0 / (now-at) else null
+                    previous = current; at = now
+                    delay(2000L)
+                }
+            } finally { viewModel.pauseLogRefresh() }
+        }
+    }
+
+
+    LaunchedEffect(logs.firstOrNull()?.key, live) {
+        if(live && listState.firstVisibleItemIndex < 3) listState.scrollToItem(0)
+    }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
@@ -146,7 +196,7 @@ fun LogcatScreen(
             AppTopBar(
                 title = stringResource(R.string.title_logcat),
                 onBackClick = onBackClick,
-                isLoading = isLoading,
+                isLoading = isLoading && !live,
                 isSearchActive = showSearch,
                 searchQuery = searchQuery,
                 onSearchQueryChange = {
@@ -180,9 +230,7 @@ fun LogcatScreen(
                             contentDescription = stringResource(R.string.acc_share_log)
                         )
                     }
-                    IconButton(onClick = {
-                        scope.launch(Dispatchers.IO) { viewModel.clearLogcat() }
-                    }) {
+                    IconButton(onClick = { viewModel.clearLogcat() }) {
                         Icon(
                             painterResource(R.drawable.ic_delete_24dp),
                             contentDescription = stringResource(R.string.acc_clear_log)
@@ -191,61 +239,44 @@ fun LogcatScreen(
                 }
             )
         },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { viewModel.loadLogcat() },
-                modifier = Modifier.navigationBarsPadding()
-            ) {
-                Icon(
-                    painterResource(R.drawable.ic_restore_24dp),
-                    contentDescription = stringResource(R.string.acc_refresh)
-                )
-            }
-        }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
+        Column(Modifier.fillMaxSize().padding(innerPadding).navigationBarsPadding().padding(horizontal=14.dp,vertical=12.dp),verticalArrangement=Arrangement.spacedBy(14.dp)) {
+        OmniLogSurface(live=live,onLive={ live=it },onRefresh=viewModel::loadLogcat,count=logs.size,rate=arrivalRate,modifier=Modifier.weight(1f)) {
             LazyColumn(
                 state = listState,
+                reverseLayout = true,
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScrollbar(listState),
-                contentPadding = NavigationBarsBottomPadding()
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom=24.dp)
             ) {
                 items(items = logs, key = { it.key }) { log ->
-                    LogcatItem(log = log.text, onLongClick = { Utils.setClipboard(context, log.text) })
-                    ItemDivider()
+                    LogcatItem(log = log.text, animate = live && listState.firstVisibleItemIndex < 3, onLongClick = { Utils.setClipboard(context, log.text) })
                 }
             }
+        }
+        OmniButton(onClick={viewModel.clearLogcat()},modifier=Modifier.fillMaxWidth().height(54.dp).clip(RoundedCornerShape(99.dp)).omniLogClearSheen(),shape=RoundedCornerShape(99.dp)) {
+            Text(stringResource(R.string.acc_clear_log),fontSize=16.sp,fontWeight=FontWeight.ExtraBold)
+        }
         }
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun LogcatItem(log: String, onLongClick: () -> Unit) {
-    val (tag, content) = if (log.isEmpty()) {
-        "" to ""
-    } else {
-        val parts = log.split("):", limit = 2)
-        val tagPart = parts.first().split("(", limit = 2).first().trim()
-        val contentPart = if (parts.size > 1) parts.last().trim() else ""
-        tagPart to contentPart
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .combinedClickable(onClick = {}, onLongClick = onLongClick)
-            .padding(8.dp)
-    ) {
-        Text(text = tag, style = MaterialTheme.typography.bodySmall)
-        if (content.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = content, style = MaterialTheme.typography.bodySmall)
-        }
-    }
+private fun LogcatItem(log: String, animate: Boolean, onLongClick: () -> Unit) {
+    val fx=LocalOmniAppearance.current.effects
+    val effects=fx!=OmniEffects.OFF && android.animation.ValueAnimator.areAnimatorsEnabled()
+    var entered by remember { mutableStateOf(!animate || !effects) }
+    LaunchedEffect(Unit) { entered=true }
+    val amount by animateFloatAsState(if(entered)1f else 0f,animationSpec=tween(if(fx==OmniEffects.FULL)550 else 150),label="real-log-arrival")
+    val level=remember(log) { LOG_LEVEL.find(log)?.groupValues?.get(1) }
+    val color=when(level) { "W"->Color(0xFFFFA42B);"E","F"->MaterialTheme.colorScheme.error;"I"->MaterialTheme.colorScheme.primary;"D","V"->Color(0xFFB3B3B3);else->MaterialTheme.colorScheme.onSurface }
+    Text(log,modifier=Modifier.fillMaxWidth().graphicsLayer {
+        alpha=if(effects)amount else 1f
+        if(effects && fx==OmniEffects.FULL) { rotationX=-65f*(1f-amount);scaleX=.78f+.22f*amount;scaleY=scaleX;cameraDistance=640f*density }
+    }.combinedClickable(onClick={},onLongClick=onLongClick).padding(horizontal=18.dp,vertical=1.dp),color=color,
+        style=MaterialTheme.typography.bodySmall.copy(fontFamily=FontFamily.Monospace,fontSize=13.sp,lineHeight=20.8.sp,fontWeight=FontWeight.Medium))
 }
+
+private val LOG_LEVEL = Regex("\\s([VDIWEF])[/\\s]")

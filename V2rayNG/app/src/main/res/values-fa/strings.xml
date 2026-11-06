@@ -926,4 +926,11 @@
     <string name="omni_service_uptime">مدت فعالیت سرویس</string>
     <string name="omni_app_traffic_speed">ترافیک واقعی برنامه شامل پراکسی و مستقیم؛ نه فقط ترافیک تونل</string>
     <string name="omni_app_traffic_short">ترافیک برنامه</string>
+    <string name="omni_hub_working">در حال انجام…</string>
+    <string name="omni_scanner_home_hint">کشف خودکار نقطه‌های اتصال WARP و ابزارهای حل‌کنندهٔ تونل DNS.</string>
+    <string name="omni_scanner_open_warp">اسکنر WARP / Aether</string>
+    <string name="omni_log_live">زنده</string>
+    <string name="omni_log_paused">متوقف</string>
+    <string name="omni_log_lines">%1$d خط</string>
+    <string name="omni_hub_panel_count">%1$d پنل</string>
 </resources>

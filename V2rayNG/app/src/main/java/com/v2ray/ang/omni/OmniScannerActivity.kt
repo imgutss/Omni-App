@@ -55,6 +55,14 @@ class OmniScannerActivity : BaseComponentActivity() {
 
     @Composable
     override fun ScreenContent() {
+        if (intent.getBooleanExtra(EXTRA_SHOW_HOME, false)) {
+            OmniScannerLanding(
+                onBack = { finish() },
+                onWarp = { startActivity(android.content.Intent(this, OmniScannerActivity::class.java)) },
+                onDns = { startActivity(android.content.Intent(this, com.v2ray.ang.omni.dns.OmniDnsScannerActivity::class.java)) }
+            )
+            return
+        }
         val state by model.state.collectAsStateWithLifecycle()
         val requestedTemplate = remember { intent.getStringExtra(EXTRA_TEMPLATE_GUID) }
         var templatePreselected by remember { mutableStateOf(false) }
@@ -94,6 +102,7 @@ class OmniScannerActivity : BaseComponentActivity() {
     }
 
     companion object {
+        const val EXTRA_SHOW_HOME = "omni.scanner.show_home"
         const val EXTRA_TEMPLATE_GUID = "omni.scanner.template_guid"
     }
 }

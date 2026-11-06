@@ -1,5 +1,6 @@
 package com.v2ray.ang.omni
 
+import com.v2ray.ang.ui.compose.OmniDoctorHero
 import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -218,6 +219,7 @@ fun OmniDoctorScreen(initialPanelId: String?, onBack: () -> Unit) {
             contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            item(key = "reference_diagnostic_ring") { OmniDoctorHero(stages, running) }
             item {
                 Text(stringResource(R.string.omni_doctor_subtitle), style = MaterialTheme.typography.bodyLarge)
                 Spacer(Modifier.height(8.dp))
