@@ -1,9 +1,16 @@
 package com.v2ray.ang.ui.compose
 
+import androidx.compose.ui.graphics.Color
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class OmniRealLogMetricsTest {
+    @Test fun allTerminalAccentsRemainReadableInBothApplicationModes() {
+        OmniSkin.entries.forEach { skin ->
+            assertTrue(omniContrast(omniTerminalAccent(skin.accent),Color(0xFF1F1F1F)) >= 4.5,skin.id)
+        }
+    }
     @Test fun unchangedSnapshotIsNotAnArrival() {
         val snapshot=mapOf("real timestamped line" to 1,"duplicate" to 2)
         assertEquals(0,omniNewLogCount(snapshot,snapshot))

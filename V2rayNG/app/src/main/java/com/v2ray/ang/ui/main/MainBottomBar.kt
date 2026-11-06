@@ -2,6 +2,7 @@ package com.v2ray.ang.ui.main
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,6 +39,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
@@ -59,9 +63,11 @@ fun MainBottomBar(
     displayText: String,
     isRunning: Boolean,
     isDarkTheme: Boolean,
+    isConnecting: Boolean = false,
     onAction: (MainAction) -> Unit
 ) {
     val effects = LocalOmniAppearance.current.effects
+    val connected=isRunning && !isConnecting
     val strike = LocalOmniStrike.current
     var powerCenter by remember { mutableStateOf(Offset.Zero) }
 
@@ -69,22 +75,29 @@ fun MainBottomBar(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(androidx.compose.ui.graphics.Color.Transparent)
+                .background(Brush.verticalGradient(listOf(Color.Transparent,MaterialTheme.colorScheme.surface.copy(alpha=.94f))))
                 .clickable(onClick = { onAction(MainAction.TestCurrentServer) })
                 .windowInsetsPadding(WindowInsets.navigationBars)
         ) {
-            AppDivider()
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(72.dp)
                     .padding(start = 22.dp, end = 100.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                val accent=LocalOmniAppearance.current.skin.accent
+                Canvas(Modifier.size(10.dp)) {
+                    val color=if(connected)accent else Color(0xFF7C7C7C)
+                    drawCircle(if(connected)accent.copy(alpha=.17f)else Color.White.copy(alpha=.063f),size.width/2f+4.dp.toPx())
+                    if(connected && effects!=OmniEffects.OFF)drawCircle(Brush.radialGradient(listOf(accent.copy(alpha=.5f),Color.Transparent),center,16.dp.toPx()),16.dp.toPx())
+                    drawCircle(color)
+                }
                 Text(
                     text = displayText,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontSize=14.sp,fontWeight=FontWeight.ExtraBold),
+                    color=if(connected)MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.semantics {
                         contentDescription = displayText
                     }

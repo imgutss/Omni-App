@@ -132,22 +132,20 @@ internal fun OmniLightningHost(content: @Composable () -> Unit) {
     }
     var request by remember { mutableStateOf<OmniStrike?>(null) }
     var elapsed by remember { mutableStateOf(2000f) }
-    var pending by remember { mutableStateOf<(() -> Unit)?>(null) }
     LaunchedEffect(request?.nonce, effects) {
         val event = request ?: return@LaunchedEffect
         if (effects == OmniEffects.OFF || !ValueAnimator.areAnimatorsEnabled()) {
-            val action = pending; pending = null; action?.invoke(); request = null; return@LaunchedEffect
+            if(request?.nonce==event.nonce)request=null
+            return@LaunchedEffect
         }
         val duration = if (event.turningOn) 1650f else 1260f
-        // A real coroutine timer, not frame-counting: the genuine action cannot become stale if backgrounded.
+        // Only sound/haptics wait for impact. The real service callback has already run.
         val impact = launch {
             delay(if (event.turningOn) 150L else 110L)
-            val action = pending; pending = null
             if (effects == OmniEffects.FULL) OmniThunder.play(context, event.turningOn)
             view.performHapticFeedback(if (Build.VERSION.SDK_INT >= 30) {
                 if (event.turningOn) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.REJECT
             } else HapticFeedbackConstants.VIRTUAL_KEY)
-            action?.invoke()
         }
         var beginning = 0L
         try {
@@ -157,10 +155,8 @@ internal fun OmniLightningHost(content: @Composable () -> Unit) {
                     elapsed = (now - beginning) / 1_000_000f
                 }
             } while (elapsed < duration && ValueAnimator.areAnimatorsEnabled())
-            // Complete once even if OS animation settings change during the 110/150ms lead-in.
-            val action = pending; pending = null; action?.invoke()
         } finally { impact.cancel() }
-        request = null
+        if(request?.nonce==event.nonce)request=null
     }
     val event = request
     val channel = remember(event, density) {
@@ -173,8 +169,10 @@ internal fun OmniLightningHost(content: @Composable () -> Unit) {
     }
     val coronas = remember(event, density) { event?.let { omniCorona(it.origin / density, it.turningOn, it.nonce.toInt() + 1) }.orEmpty() }
     CompositionLocalProvider(LocalOmniStrike provides { strike, action ->
-        if (effects == OmniEffects.OFF || !ValueAnimator.areAnimatorsEnabled()) action()
-        else if (pending == null) { pending = action; elapsed = 0f; request = strike }
+        // Presentation must never defer, debounce or drop a genuine user action.
+        // Rapid taps, navigation and effect cancellation keep the original native callback semantics.
+        action()
+        if(effects!=OmniEffects.OFF && ValueAnimator.areAnimatorsEnabled()) { elapsed=0f;request=strike }
     }) {
         Box(Modifier.fillMaxSize()) {
             val impactTime = if (event?.turningOn == true) 150f else 110f

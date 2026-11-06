@@ -24,12 +24,13 @@ import androidx.compose.ui.unit.sp
 import com.v2ray.ang.R
 import com.v2ray.ang.ui.compose.LocalOmniAppearance
 import com.v2ray.ang.ui.compose.OmniEffects
+import com.v2ray.ang.ui.compose.omniReferenceClock
 import com.v2ray.ang.ui.compose.rememberOmniTelemetry
 import java.util.Locale
 
 /** Final .st-card geometry, with real OS service uptime and UID traffic, never HTML random metrics. */
 @Composable
-internal fun MainConnectionCard(displayText: String, isRunning: Boolean) {
+internal fun MainConnectionCard(displayText: String, isRunning: Boolean, isConnecting: Boolean = false) {
     val accent = LocalOmniAppearance.current.skin.accent
     val telemetry = rememberOmniTelemetry(isRunning)
     val uptimeDescription = stringResource(R.string.omni_service_uptime)
@@ -37,21 +38,25 @@ internal fun MainConnectionCard(displayText: String, isRunning: Boolean) {
     val clock = telemetry.uptimeSeconds?.let { String.format(Locale.ROOT, "%02d:%02d", it / 60L, it % 60L) } ?: "—"
     val speed = telemetry.bytesPerSecond?.let { if (it >= 1048576.0) String.format(Locale.ROOT,"%.1f MB/s",it/1048576.0) else String.format(Locale.ROOT,"%.0f KB/s",it/1024.0) } ?: "—"
     val effects = LocalOmniAppearance.current.effects
-    val pulse = if (isRunning && effects != OmniEffects.OFF) {
-        val transition = rememberInfiniteTransition(label = "reference-status-ring")
-        val opacity by transition.animateFloat(1f, .45f, infiniteRepeatable(tween(1600), RepeatMode.Reverse), label = "ring-opacity")
-        opacity
-    } else 1f
+    val animate=effects!=OmniEffects.OFF && android.animation.ValueAnimator.areAnimatorsEnabled()
+    val time by omniReferenceClock(isRunning)
     Surface(Modifier.fillMaxWidth().padding(start = 26.dp, end = 26.dp, top = 8.dp, bottom = 10.dp),
         shape = RoundedCornerShape(22.dp), color = Color.White.copy(alpha = .04f), border = BorderStroke(1.dp, Color.White.copy(alpha = .063f))) {
         Box(Modifier.height(82.dp)) {
             Row(Modifier.fillMaxSize().padding(start = 14.dp,end = 14.dp,top = 12.dp,bottom = 22.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 Canvas(Modifier.size(46.dp)) {
-                    drawCircle(Color.White.copy(alpha = .078f), 18f / 44f * size.width, style = Stroke(3.dp.toPx()))
-                    if (isRunning) drawCircle(accent.copy(alpha = pulse), 18f / 44f * size.width, style = Stroke(3.dp.toPx()))
-                    if (isRunning && effects != OmniEffects.OFF) drawCircle(Brush.radialGradient(listOf(accent.copy(alpha = .6f),Color.Transparent), center, 21.dp.toPx()), 21.dp.toPx())
-                    drawCircle(if (isRunning) accent else Color.White.copy(alpha = .15f), 7.dp.toPx())
+                    val radius=18f/44f*size.width
+                    drawCircle(Color.White.copy(alpha=.078f),radius,style=Stroke(3.dp.toPx()))
+                    if(isRunning && isConnecting) {
+                        val start=if(!animate)-90f else -90f+(time*400f)%360f
+                        drawArc(accent,start,108.32f,false,center-Offset(radius,radius),androidx.compose.ui.geometry.Size(radius*2f,radius*2f),style=Stroke(3.dp.toPx(),cap=androidx.compose.ui.graphics.StrokeCap.Round))
+                    } else if(isRunning) {
+                        val pulse=if(!animate)1f else .725f+.275f*kotlin.math.cos(time*2f*kotlin.math.PI.toFloat()/3.2f)
+                        drawCircle(accent.copy(alpha=pulse),radius,style=Stroke(3.dp.toPx()))
+                        if(effects!=OmniEffects.OFF)drawCircle(Brush.radialGradient(listOf(accent.copy(alpha=.6f),Color.Transparent),center,21.dp.toPx()),21.dp.toPx())
+                    }
+                    drawCircle(if(isRunning && !isConnecting)accent else Color.White.copy(alpha=.15f),7.dp.toPx())
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(displayText, style = MaterialTheme.typography.titleSmall.copy(fontSize = 15.sp,fontWeight = FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis)

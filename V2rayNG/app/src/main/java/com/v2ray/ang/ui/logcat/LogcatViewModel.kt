@@ -28,6 +28,8 @@ class LogcatViewModel(application: Application) : BaseViewModel(application) {
 
     private val _filteredLogs = MutableStateFlow<List<String>>(emptyList())
     val filteredLogs: StateFlow<List<String>> = _filteredLogs.asStateFlow()
+    private val _readSucceeded = MutableStateFlow(false)
+    val readSucceeded: StateFlow<Boolean> = _readSucceeded.asStateFlow()
     val logEntries: StateFlow<List<LogcatEntry>> = filteredLogs
         .map(::createLogcatEntries)
         .flowOn(Dispatchers.Default)
@@ -48,14 +50,21 @@ class LogcatViewModel(application: Application) : BaseViewModel(application) {
     fun loadLogcat() {
         if (refreshJob?.isActive == true) return
         refreshJob = updateLogSnapshot {
+            _readSucceeded.value = false
             try {
                 // OS I/O stays off the UI thread. Publication/filtering stay serialized on Main.
                 val allText = withContext(Dispatchers.IO) {
                     val process = Runtime.getRuntime().exec(arrayOf("logcat", "-d", "-v", "time", "-s", "GoLog", AppConfig.ANG_PACKAGE, "AndroidRuntime", "System.err", "OmniReferenceGL"))
-                    try { process.inputStream.bufferedReader().use { it.readLines() }.reversed() }
+                    try {
+                        val lines=process.inputStream.bufferedReader().use { it.readLines() }.reversed()
+                        val status=process.waitFor()
+                        if(status!=0)throw IOException("Logcat read failed with exit status $status")
+                        lines
+                    }
                     finally { process.destroy() }
                 }
                 logsetsAll.clear(); logsetsAll.addAll(allText); applyFilter()
+                _readSucceeded.value = true
             } catch (e: IOException) {
                 LogUtil.e(AppConfig.TAG, "Failed to get logcat", e)
             }

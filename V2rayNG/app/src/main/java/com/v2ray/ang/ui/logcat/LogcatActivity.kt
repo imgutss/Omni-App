@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.v2ray.ang.ui.compose.omniTerminalAccent
 import com.v2ray.ang.ui.compose.OmniLogSurface
 import com.v2ray.ang.ui.compose.omniNewLogCount
 import kotlinx.coroutines.delay
@@ -175,6 +176,10 @@ fun LogcatScreen(
                     viewModel.loadLogcat()
                     viewModel.isLoading.first { !it }
                     val now = android.os.SystemClock.elapsedRealtime()
+                    if (!viewModel.readSucceeded.value) {
+                        arrivalRate=null;previous=null;at=now
+                        delay(2000L);continue
+                    }
                     val current = viewModel.filteredLogs.value.groupingBy { it }.eachCount()
                     val old = previous
                     arrivalRate = if (old != null && now > at) omniNewLogCount(old,current) * 1000.0 / (now-at) else null
@@ -271,7 +276,7 @@ private fun LogcatItem(log: String, animate: Boolean, onLongClick: () -> Unit) {
     LaunchedEffect(Unit) { entered=true }
     val amount by animateFloatAsState(if(entered)1f else 0f,animationSpec=tween(if(fx==OmniEffects.FULL)550 else 150),label="real-log-arrival")
     val level=remember(log) { LOG_LEVEL.find(log)?.groupValues?.get(1) }
-    val color=when(level) { "W"->Color(0xFFFFA42B);"E","F"->MaterialTheme.colorScheme.error;"I"->MaterialTheme.colorScheme.primary;"D","V"->Color(0xFFB3B3B3);else->MaterialTheme.colorScheme.onSurface }
+    val color=when(level) { "W"->Color(0xFFFFA42B);"E","F"->Color(0xFFFF6B81);"I"->omniTerminalAccent(LocalOmniAppearance.current.skin.accent);"D","V"->Color(0xFFB3B3B3);else->Color.White }
     Text(log,modifier=Modifier.fillMaxWidth().graphicsLayer {
         alpha=if(effects)amount else 1f
         if(effects && fx==OmniEffects.FULL) { rotationX=-65f*(1f-amount);scaleX=.78f+.22f*amount;scaleY=scaleX;cameraDistance=640f*density }

@@ -211,6 +211,7 @@ fun MainScreen(
                     displayText = displayText,
                     isRunning = isRunning,
                     isDarkTheme = isDarkTheme,
+                    isConnecting = uiState.status is MainStatus.Connecting,
                     onAction = onAction
                 )
             },
@@ -224,7 +225,7 @@ fun MainScreen(
                         .fillMaxSize()
                         .padding(innerPadding)
                 ) {
-                    MainConnectionCard(displayText = displayText, isRunning = isRunning)
+                    MainConnectionCard(displayText = displayText, isRunning = isRunning, isConnecting = uiState.status is MainStatus.Connecting)
                     if (groups.size > 1) {
                         GroupTabBar(
                             groups = groups,

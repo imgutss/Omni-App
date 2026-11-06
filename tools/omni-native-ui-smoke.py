@@ -45,6 +45,13 @@ def launch():
     adb('shell','monkey','-p',PACKAGE,'-c','android.intent.category.LAUNCHER','1');time.sleep(4)
     assert adb('shell','pidof',PACKAGE).strip(),'App did not remain running'
 def menu():tap('Open navigation menu')
+def back_to_main():
+    # Settings has its own nested routes, including UI settings. A single Back
+    # need not leave the activity, especially after configuration recreation.
+    for _ in range(6):
+        if find('Open navigation menu') is not None:return
+        adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
+    raise AssertionError('Back navigation did not return to the server screen: '+repr(labels(dump())))
 def selected(label):
     # Compose exposes the chip label as a TextView child; checked state belongs to
     # its nearest checkable parent. Assert that real accessibility owner, not text.
@@ -59,6 +66,10 @@ def selected(label):
     return False
 
 try:
+    # Match the reference's 412x892 app viewport, plus 24dp status/navigation insets.
+    adb('shell','wm','size','1236x2820');adb('shell','wm','density','480')
+    adb('shell','settings','put','system','font_scale','1.0')
+    (OUT/'viewport.txt').write_text(adb('shell','wm','size')+adb('shell','wm','density'))
     # The fresh emulator has no user-granted notification permission. Grant only
     # that permission so the OS prompt cannot obscure the app's UI controls.
     adb('shell','pm','grant',PACKAGE,'android.permission.POST_NOTIFICATIONS')
@@ -88,7 +99,7 @@ try:
     assert adb('shell','pidof',PACKAGE).strip()
     adb('shell','settings','put','system','font_scale','1.0')
     adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
-    menu();tap('Violet');tap('Full');reveal('Menu');screenshot('07-reference-drawer')
+    back_to_main();menu();tap('Violet');tap('Full');reveal('Menu');screenshot('07-reference-drawer')
     adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
     # Real activities only. Merely opening the tools never starts a VPN or a probe.
     for i,label in enumerate(('Omni Hub','Omni Doctor','Omni Privacy & Backup','Omni DNS Lab','Omni Routing Studio','Omni Sync Center','Omni Speed & Ping Lab','DNS Scanner','Omni Scanner'),8):
@@ -110,6 +121,10 @@ try:
     tap('LIVE');assert find('PAUSED') is not None,'Native log pause did not take effect'
     screenshot('19-paused-real-log-slab')
     tap('Refresh');tap('PAUSED');assert find('LIVE') is not None
+    assert adb('shell','pidof',PACKAGE).strip()
+    adb('shell','cmd','uimode','night','no');time.sleep(3);screenshot('20-light-log-slab')
+    assert find('LIVE') is not None,'Log viewing state lost on mode recreation'
+    adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1);menu();reveal('Menu');screenshot('21-light-drawer')
     assert adb('shell','pidof',PACKAGE).strip()
     print('PASS: native 3D first frame, appearance persistence, large text, ten real tools, WARP chooser route, actual renderer log, live/pause and retained log actions')
 finally:

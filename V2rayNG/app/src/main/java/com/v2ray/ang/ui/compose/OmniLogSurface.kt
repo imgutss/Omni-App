@@ -41,6 +41,7 @@ import java.util.Locale
 @Composable
 fun OmniLogSurface(live: Boolean, onLive: (Boolean) -> Unit, onRefresh: () -> Unit, count: Int, rate: Double?, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     val accent=LocalOmniAppearance.current.skin.accent
+    val ink=omniTerminalAccent(accent)
     val time by omniReferenceClock()
     val fx=LocalOmniAppearance.current.effects
     var x by remember { mutableFloatStateOf(0f) };var y by remember { mutableFloatStateOf(0f) }
@@ -75,7 +76,7 @@ fun OmniLogSurface(live: Boolean, onLive: (Boolean) -> Unit, onRefresh: () -> Un
         .border(1.dp,Color.White.copy(alpha=.15f),RoundedCornerShape(32.dp))) {
         Row(Modifier.fillMaxWidth().padding(start=16.dp,end=16.dp,top=14.dp,bottom=10.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(7.dp)) {
             repeat(3) { Canvas(Modifier.size(10.dp)) { drawCircle(accent) } }
-            Text("GoLog / Android",Modifier.weight(1f).padding(start=6.dp),fontFamily=FontFamily.Monospace,fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1)
+            Text("GoLog / Android",Modifier.weight(1f).padding(start=6.dp),fontFamily=FontFamily.Monospace,fontSize=11.sp,color=Color(0xFFB3B3B3),maxLines=1)
             CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
                 TextButton(onClick={onLive(!live)},modifier=Modifier.height(26.dp).border(1.dp,if(live)accent.copy(alpha=.4f)else Color(0x66FFA42B),RoundedCornerShape(99.dp)).background(if(live)accent.copy(alpha=.12f)else Color(0x1FFFA42B),RoundedCornerShape(99.dp)),contentPadding=PaddingValues(horizontal=10.dp,vertical=0.dp)) {
                     Canvas(Modifier.padding(end=6.dp).size(7.dp)) {
@@ -83,7 +84,7 @@ fun OmniLogSurface(live: Boolean, onLive: (Boolean) -> Unit, onRefresh: () -> Un
                         if(live && fx!=OmniEffects.OFF) { val phase=(time%1.5f)/1.5f;drawCircle(ink.copy(alpha=.6f*(1f-phase)),size.width/2f+phase*9.dp.toPx(),style=androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx())) }
                         drawCircle(ink)
                     }
-                    Text(stringResource(if(live)R.string.omni_log_live else R.string.omni_log_paused),color=if(live)accent else Color(0xFFFFA42B),fontSize=10.sp,fontWeight=FontWeight.ExtraBold)
+                    Text(stringResource(if(live)R.string.omni_log_live else R.string.omni_log_paused),color=if(live)ink else Color(0xFFFFA42B),fontSize=10.sp,fontWeight=FontWeight.ExtraBold)
                 }
             }
         }
@@ -101,13 +102,13 @@ fun OmniLogSurface(live: Boolean, onLive: (Boolean) -> Unit, onRefresh: () -> Un
             }
         }
         Row(Modifier.fillMaxWidth().padding(start=18.dp,end=18.dp,top=8.dp,bottom=14.dp),horizontalArrangement=Arrangement.SpaceBetween) {
-            Text(stringResource(R.string.omni_log_lines,count),fontSize=10.5.sp,fontFamily=FontFamily.Monospace,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.omni_log_lines,count),fontSize=10.5.sp,fontFamily=FontFamily.Monospace,color=Color(0xFFB3B3B3))
             CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
                 IconButton(onClick=onRefresh,modifier=Modifier.size(16.dp)) {
-                    Icon(painterResource(R.drawable.ic_restore_24dp),contentDescription=stringResource(R.string.acc_refresh),modifier=Modifier.size(14.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(painterResource(R.drawable.ic_restore_24dp),contentDescription=stringResource(R.string.acc_refresh),modifier=Modifier.size(14.dp),tint=Color(0xFFB3B3B3))
                 }
             }
-            Text(rate?.let { String.format(Locale.ROOT,"%.1f/s",it) }?:"—/s",fontSize=10.5.sp,fontFamily=FontFamily.Monospace,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(rate?.let { String.format(Locale.ROOT,"%.1f/s",it) }?:"—/s",fontSize=10.5.sp,fontFamily=FontFamily.Monospace,color=Color(0xFFB3B3B3))
         }
     }
 }
@@ -128,4 +129,11 @@ fun Modifier.omniLogClearSheen(): Modifier {
             drawRect(Brush.linearGradient(listOf(Color.Transparent,Color.White.copy(alpha=.33f),Color.Transparent),Offset(x-size.width*.15f,0f),Offset(x+size.width*.15f,size.height)))
         }
     }
+}
+
+/** The terminal stays dark in both application modes; never render a light-scheme black label on it. */
+internal fun omniTerminalAccent(accent:Color):Color {
+    var ink=accent
+    repeat(20) { if(omniContrast(ink,Color(0xFF1F1F1F))<4.5)ink=androidx.compose.ui.graphics.lerp(ink,Color.White,.1f) }
+    return ink
 }

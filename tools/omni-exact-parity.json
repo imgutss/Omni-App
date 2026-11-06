@@ -418,13 +418,11 @@
     }
   ],
   "unfinished": [
-    "Full layout parity for all 43 reference routes",
-    "3D animated logo/orbit mesh",
-    "Backdrop artwork/shaders/parallax",
-    "All popup/dialog/form raised controls and transitions",
-    "Lightning secondary corona arcs, audio synthesis, haptics and shake",
-    "Golden image comparisons for every route and transient state",
-    "Native compilation, unit tests, emulator interaction and new signed release"
+    "Full layout and interaction audit for all43 native routes against the accepted HTML",
+    "Server-row perspective/reflection, truthful measured test sparkline and sliding tab thumb",
+    "Remaining popup/dialog/form transitions and matched-viewport visual comparisons",
+    "Expanded Android15 route/log/light-mode smoke on current head",
+    "Physical-device VPN/protocol, audio/haptics and rapid-toggle validation; no release yet"
   ],
   "implementedInWorkingTree": [
     "Actual final-layer SVG IC artwork extracted reproducibly: 285 PNGs / 19 skins, native image decoder; original layered geometry, not Material replacements",
@@ -436,16 +434,21 @@
     "Accepted scanner chooser preserves full real WARP/Aether tool, DNS scanner and protocol-template callers without a manifest change.",
     "Projected 3D log slab with actual application logs only: lifecycle polling/pause, real duplicate-aware arrival rate, raw rows, existing search/copy/share/clear/refresh and long-press retained.",
     "Log I/O moved off Main; snapshots/clear/filter publication serialized on Main, clear exit status checked, pending refresh cancellation and duplicate preservation.",
-    "Drawer scanner radar mapping corrected from rendered native screenshot; 112dp minimum tiles grow for larger text rather than clipping two-line labels."
+    "Drawer scanner radar mapping corrected from rendered native screenshot; 112dp minimum tiles grow for larger text rather than clipping two-line labels.",
+    "Original seven raised theme orbs plus twelve subtle brand tiles, inset pill segments and drawer-specific layered gradients; actual saved appearance callbacks retained.",
+    "Known Connecting state uses the original rotating partial ring, not a completed ring. Bottom status dot/weight/gradient restored.",
+    "Dark terminal foreground remains readable in application light mode; failed log reads retain the last real snapshot and report no invented arrival rate.",
+    "Real service action dispatch is immediate and once per click; visual cancellation/rapid taps cannot swallow or defer the native callback."
   ],
   "validated": [
     "Nonpublishing CI42256966055 / 8f1bc069: both Kotlin flavors, unit tests, signed APK/native ABI checks, Android15 launch and navigation smoke passed.",
     "Android15 renderer log and native drawer screenshot confirm original mesh/PBR produced an actual frame; host GL is not used as Android proof.",
     "Current diagnostic heroes, scanner chooser and real log slab: Kotlin syntax and resource checks only; awaiting next-head compiler/device validation.",
-    "Native engine/manifest guard remains unchanged. New scanner chooser reuses existing declared activity before initializing the WARP ViewModel."
+    "Native engine/manifest guard remains unchanged. New scanner chooser reuses existing declared activity before initializing the WARP ViewModel.",
+    "88843d5f / CI42260713129 build and both-flavor unit tests passed. Expanded emulator smoke stopped on nested Settings back-navigation in the test harness before new tool routes; not an app-crash proof or tool-validation pass."
   ],
   "notValidated": [
-    "Current uncommitted/new-head Kotlin typecheck and new real-log metrics tests.",
+    "Current appearance, connecting status, dark/light terminal and immediate callback changes await new-head Kotlin/unit validation.",
     "Current expanded Android15 tool/scanner/log interaction smoke and screenshots.",
     "Golden comparisons across all43 screens and transient states at matched viewport/fonts.",
     "Physical phone, actual VPN/protocol connectivity, audio/haptics, rapid toggling and window inset behavior."

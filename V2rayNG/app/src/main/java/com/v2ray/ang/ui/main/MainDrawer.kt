@@ -38,6 +38,9 @@ import kotlinx.coroutines.launch
 import com.v2ray.ang.R
 import com.v2ray.ang.ui.compose.AppDivider
 import com.v2ray.ang.ui.compose.referencePalette
+import com.v2ray.ang.ui.compose.LocalDarkTheme
+import com.v2ray.ang.ui.compose.referenceOrb
+import com.v2ray.ang.ui.compose.referencePressTilt
 import com.v2ray.ang.ui.compose.referenceRaisedPanel
 import com.v2ray.ang.ui.compose.referenceRaisedControl
 import com.v2ray.ang.ui.compose.verticalScrollbar
@@ -98,13 +101,14 @@ fun MainDrawerContent(
     val drawerScrollState = rememberScrollState()
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val colors = MaterialTheme.colorScheme
+    val drawerBase=if(LocalDarkTheme.current)appearance.skin.referencePalette.background else colors.background
     val fullEffects = appearance.effects == com.v2ray.ang.ui.compose.OmniEffects.FULL
     ModalDrawerSheet(
         drawerState = drawerState,
         modifier = Modifier.fillMaxWidth(),
-        drawerContainerColor = appearance.skin.referencePalette.background
+        drawerContainerColor = drawerBase
     ) {
-        androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().background(appearance.skin.referencePalette.background).drawBehind {
+        androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().background(drawerBase).drawBehind {
             val accent=appearance.skin.accent
             fun glow(center: androidx.compose.ui.geometry.Offset,rx:Float,ry:Float,alpha:Float) {
                 withTransform({scale(1f,ry/rx,center)}) {
@@ -127,19 +131,19 @@ fun MainDrawerContent(
             ) {
                 androidx.compose.material3.IconButton(
                     onClick = { scope.launch { drawerState.close() } },
-                    modifier = Modifier.size(48.dp).clip(androidx.compose.foundation.shape.CircleShape).referenceRaisedControl(true)
+                    modifier = Modifier.size(48.dp).referenceOrb(appearance.skin.accent)
                 ) { Icon(painterResource(R.drawable.ic_arrow_back_24dp), stringResource(R.string.acc_back), tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(18.dp)) }
                 Column {
-                    Text(if (androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "fa") "منو" else "Menu", style = MaterialTheme.typography.headlineSmall.copy(fontSize=32.sp), fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold)
-                    Text(if (androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "fa") "تجربهٔ خودت را شخصی کن" else "Customize your experience", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                    Text(if (androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "fa") "منو" else "Menu", style = MaterialTheme.typography.headlineSmall.copy(fontSize=28.sp,lineHeight=30.8.sp), fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold)
+                    Text(if (androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "fa") "تجربهٔ خودت را شخصی کن" else "Customize your experience", style = MaterialTheme.typography.bodySmall.copy(fontSize=13.sp,lineHeight=17.sp), color = colors.onSurfaceVariant)
                 }
             }
             androidx.compose.foundation.layout.Box(
-                Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp).referenceRaisedPanel(30.dp).height(156.dp)
+                Modifier.fillMaxWidth().padding(start=14.dp,end=14.dp,top=10.dp,bottom=12.dp).referenceDrawerPanel(true).height(156.dp)
             ) {
                 com.v2ray.ang.ui.compose.OmniLogo3d(Modifier.size(176.dp).align(Alignment.CenterEnd))
                 Column(Modifier.align(Alignment.CenterStart).padding(start = 22.dp).fillMaxWidth(.5f)) {
-                    Text("Omni", style = MaterialTheme.typography.headlineMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, color = colors.primary)
+                    Text("Omni", style = MaterialTheme.typography.headlineMedium.copy(fontSize=26.sp), fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, color = colors.primary)
                     Text(if (androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "fa") "همهٔ گزینه‌ها یک‌جا" else "Manage all options in one place", style = MaterialTheme.typography.bodySmall.copy(fontSize=13.sp), color = colors.onSurfaceVariant)
                 }
             }
@@ -153,10 +157,10 @@ fun MainDrawerContent(
                     androidx.compose.runtime.key(item.name) {
                         Surface(
                             onClick = { onNavigate(item) },
-                            modifier = Modifier.weight(1f).referenceRaisedPanel(26.dp),
-                            shape = MaterialTheme.shapes.large,
+                            modifier = Modifier.weight(1f).referenceDrawerPanel(false),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(26.dp),
                             color = androidx.compose.ui.graphics.Color.Transparent,
-                            border = androidx.compose.foundation.BorderStroke(0.5.dp, colors.outlineVariant),
+                            border = null,
                             shadowElevation = if (fullEffects) 5.dp else 0.dp
                         ) {
                             Column(
@@ -203,4 +207,28 @@ fun MainDrawerContent(
         }
         }
     }
+}
+
+/** Exact drawer-specific layering, distinct from the generic raised form panels. */
+@Composable
+private fun Modifier.referenceDrawerPanel(header:Boolean):Modifier {
+    val appearance=com.v2ray.ang.ui.compose.LocalOmniAppearance.current
+    val palette=appearance.skin.referencePalette
+    val base=if(LocalDarkTheme.current)palette.background else MaterialTheme.colorScheme.background
+    val ink=MaterialTheme.colorScheme.onSurface
+    val accent=appearance.skin.accent
+    val radius=if(header)30.dp else 26.dp
+    return referencePressTilt().drawBehind {
+        val r=androidx.compose.ui.geometry.CornerRadius(radius.toPx())
+        drawRoundRect(androidx.compose.ui.graphics.Color.Black.copy(alpha=.62f),androidx.compose.ui.geometry.Offset(0f,if(header)4.dp.toPx()else 3.dp.toPx()),size,r)
+        drawRoundRect(base.copy(alpha=if(header).6f else .55f),cornerRadius=r)
+        val angle=(if(header)125f else 168f)*kotlin.math.PI.toFloat()/180f
+        val direction=androidx.compose.ui.geometry.Offset(kotlin.math.sin(angle),-kotlin.math.cos(angle))
+        val length=size.width*kotlin.math.abs(direction.x)+size.height*kotlin.math.abs(direction.y)
+        val start=center-direction*(length/2f);val end=center+direction*(length/2f)
+        val last=if(header)accent.copy(alpha=.06f)else ink.copy(alpha=.03f)
+        drawRoundRect(androidx.compose.ui.graphics.Brush.linearGradient(0f to accent.copy(alpha=if(header).3f else .15f),(if(header).62f else .7f) to last,1f to last,start=start,end=end),cornerRadius=r)
+        drawRoundRect(if(header)accent.copy(alpha=.42f)else ink.copy(alpha=.11f),cornerRadius=r,style=androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx()))
+        drawRoundRect(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(ink.copy(alpha=.16f),androidx.compose.ui.graphics.Color.Transparent)),cornerRadius=r,style=androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx()))
+    }.clip(androidx.compose.foundation.shape.RoundedCornerShape(radius))
 }
