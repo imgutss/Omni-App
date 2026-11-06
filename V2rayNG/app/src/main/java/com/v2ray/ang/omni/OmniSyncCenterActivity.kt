@@ -22,7 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import com.v2ray.ang.ui.compose.OmniOutlinedButton as OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import com.v2ray.ang.ui.compose.OmniTextButton as TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment

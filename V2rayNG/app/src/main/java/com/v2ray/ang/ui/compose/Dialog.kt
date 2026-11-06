@@ -16,14 +16,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.selection.TextSelectionColors
-import androidx.compose.material3.AlertDialog
+import com.v2ray.ang.ui.compose.OmniAlertDialog as AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import com.v2ray.ang.ui.compose.OmniTextField as OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import com.v2ray.ang.ui.compose.OmniRadioButton as RadioButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import com.v2ray.ang.ui.compose.OmniTextButton as TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember

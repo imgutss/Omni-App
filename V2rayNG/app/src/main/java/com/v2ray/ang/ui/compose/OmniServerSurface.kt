@@ -52,7 +52,7 @@ internal fun Modifier.referenceServerSurface(selected:Boolean):Modifier {
             val r=CornerRadius(22.dp.toPx())
             drawRoundRect(Color.Black.copy(alpha=.6f),Offset(0f,3.dp.toPx()),size,r)
             drawRoundRect(Color(0xFF1F1F1F).copy(alpha=if(selected).65f else .6f),cornerRadius=r)
-            drawRoundRect(Brush.linearGradient(0f to (if(selected)accent.copy(alpha=.18f)else Color.White.copy(alpha=.102f)),.7f to (if(selected)accent.copy(alpha=.087f)else Color.White.copy(alpha=.024f)),1f to (if(selected)accent.copy(alpha=.087f)else Color.White.copy(alpha=.024f))),cornerRadius=r)
+            drawRoundRect(cssLinearGradient(size,150f,0f to (if(selected)accent.copy(alpha=.18f)else Color.White.copy(alpha=.102f)),(if(selected).7f else .62f) to (if(selected)androidx.compose.ui.graphics.lerp(accent,Color.Black,.13f).copy(alpha=.1f)else Color.White.copy(alpha=.024f)),1f to (if(selected)androidx.compose.ui.graphics.lerp(accent,Color.Black,.13f).copy(alpha=.1f)else Color.White.copy(alpha=.024f))),cornerRadius=r)
             drawRoundRect(if(selected)accent.copy(alpha=.53f)else Color.White.copy(alpha=.12f),cornerRadius=r,style=Stroke(if(selected)1.5.dp.toPx()else 1.dp.toPx()))
         }.clip(RoundedCornerShape(22.dp)).drawWithContent {
             drawContent()

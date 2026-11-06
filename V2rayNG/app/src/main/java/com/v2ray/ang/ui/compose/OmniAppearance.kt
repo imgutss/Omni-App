@@ -50,12 +50,12 @@ val LocalOmniAppearance = staticCompositionLocalOf { OmniAppearance() }
 /** Keep semantic error/success colors independent from the decorative brand accent. */
 internal fun omniColorScheme(base: ColorScheme, skin: OmniSkin, dark: Boolean): ColorScheme {
     val palette = skin.referencePalette
-    val background = if (dark) palette.background else base.background
+    val background = if (dark) palette.background else Color.White
     // HTML brand swatches sometimes fail contrast. Lift/darken the accent only as far as AA needs.
     var accent = skin.accent
     val target = if (dark) Color.White else Color.Black
     repeat(20) {
-        if (omniContrast(accent, background) < 4.5 || omniContrast(accent, if (dark) palette.low else base.surfaceContainerLow) < 4.5) {
+        if (omniContrast(accent, background) < 4.5 || omniContrast(accent, if (dark) palette.low else Color(0xFFEEEEEE)) < 4.5) {
             accent = Color(
                 accent.red * 0.9f + target.red * 0.1f,
                 accent.green * 0.9f + target.green * 0.1f,
@@ -67,14 +67,16 @@ internal fun omniColorScheme(base: ColorScheme, skin: OmniSkin, dark: Boolean): 
     return base.copy(
         primary = accent, onPrimary = onAccent, secondary = accent, onSecondary = onAccent,
         primaryContainer = if (dark) palette.surface else base.primaryContainer,
-        background = background, surface = if (dark) palette.surface else base.surface,
-        onSurface = if (dark) palette.text else base.onSurface,
-        onSurfaceVariant = if (dark) palette.muted else base.onSurfaceVariant,
+        background = background, surface = if (dark) palette.surface else Color.White,
+        onSurface = if (dark) palette.text else Color(0xFF121212),
+        onSurfaceVariant = if (dark) palette.muted else Color(0xFF4D4D4D),
         surfaceContainerLowest = background,
-        surfaceContainerLow = if (dark) palette.low else base.surfaceContainerLow,
-        surfaceContainer = if (dark) palette.low else base.surfaceContainer,
-        surfaceContainerHigh = if (dark) palette.high else base.surfaceContainerHigh,
-        surfaceContainerHighest = if (dark) palette.highest else base.surfaceContainerHighest,
+        surfaceContainerLow = if (dark) palette.low else Color(0xFFEEEEEE),
+        surfaceContainer = if (dark) palette.low else Color(0xFFEEEEEE),
+        surfaceContainerHigh = if (dark) palette.high else Color(0xFFEEEEEE),
+        surfaceContainerHighest = if (dark) palette.highest else Color(0xFFEEEEEE),
+        outline = if(dark)base.outline else Color(0xFF7C7C7C),
+        outlineVariant = if(dark)base.outlineVariant else Color(0xFFCBCBCB),
         surfaceTint = accent
     )
 }

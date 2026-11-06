@@ -194,12 +194,12 @@ private fun omniTypography(skin: OmniSkin): Typography {
         headlineMedium = defaults.headlineMedium.copy(fontFamily = heading, fontWeight = FontWeight.Bold),
         headlineSmall = defaults.headlineSmall.copy(fontFamily = heading, fontWeight = FontWeight.Bold),
         titleLarge = defaults.titleLarge.copy(fontFamily = heading, fontWeight = FontWeight.Bold),
-        titleMedium = defaults.titleMedium.copy(fontFamily = heading, fontWeight = FontWeight.Bold),
+        titleMedium = defaults.titleMedium.copy(fontFamily = heading, fontWeight = FontWeight.ExtraBold),
         titleSmall = defaults.titleSmall.copy(fontFamily = heading, fontWeight = FontWeight.Bold),
         bodyLarge = defaults.bodyLarge.copy(fontFamily = family),
         bodyMedium = defaults.bodyMedium.copy(fontFamily = family),
         bodySmall = defaults.bodySmall.copy(fontFamily = family),
-        labelLarge = defaults.labelLarge.copy(fontFamily = family, fontWeight = FontWeight.Bold),
+        labelLarge = defaults.labelLarge.copy(fontFamily = family, fontWeight = FontWeight.ExtraBold),
         labelMedium = defaults.labelMedium.copy(fontFamily = family),
         labelSmall = defaults.labelSmall.copy(fontFamily = family)
     )

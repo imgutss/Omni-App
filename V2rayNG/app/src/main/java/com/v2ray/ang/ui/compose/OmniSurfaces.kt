@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 
 /** Presentation only. Pointer observers do not consume clicks, scrolling, editing or drag events. */
 @Composable
-fun Modifier.referencePressTilt(): Modifier {
+fun Modifier.referencePressTilt(perspective:Float=800f): Modifier {
     if (LocalOmniAppearance.current.effects == OmniEffects.OFF) return this
     var pressed by remember { mutableStateOf(false) }
     var x by remember { mutableStateOf(0f) }
@@ -35,7 +35,7 @@ fun Modifier.referencePressTilt(): Modifier {
     val rx by animateFloatAsState(if (pressed) -y * 8f else 0f, label = "reference-tilt-x")
     val ry by animateFloatAsState(if (pressed) x * 8f else 0f, label = "reference-tilt-y")
     val depth by animateFloatAsState(if (pressed) 3f else 0f, label = "reference-press-depth")
-    return graphicsLayer { rotationX = rx; rotationY = ry; translationY = depth * density; cameraDistance = 800f * density }
+    return graphicsLayer { rotationX = rx; rotationY = ry; translationY = depth * density; cameraDistance = perspective * density }
         .pointerInput(Unit) {
             try {
                 awaitEachGesture {
@@ -53,14 +53,15 @@ fun Modifier.referencePressTilt(): Modifier {
 @Composable
 fun Modifier.referenceRaisedPanel(radius: Dp = 22.dp): Modifier {
     val colors = MaterialTheme.colorScheme
-    val accent = LocalOmniAppearance.current.skin.accent
+    val dark=LocalDarkTheme.current
     val shape = RoundedCornerShape(radius)
-    return referencePressTilt().drawBehind {
+    return referencePressTilt(900f).drawBehind {
         val r = CornerRadius(radius.toPx())
         drawRoundRect(Color.Black.copy(alpha = .6f), Offset(0f, 3.dp.toPx()), size, r)
-        drawRoundRect(colors.surfaceContainerLow.copy(alpha = .8f), cornerRadius = r)
-        drawRoundRect(Brush.linearGradient(listOf(accent.copy(alpha = .12f), colors.onSurface.copy(alpha = .03f))), cornerRadius = r)
-        drawRoundRect(Brush.verticalGradient(listOf(colors.onSurface.copy(alpha = .16f), colors.outlineVariant.copy(alpha = .4f))), cornerRadius = r, style = Stroke(1.dp.toPx()))
+        drawRoundRect(colors.surfaceContainerLow, cornerRadius = r)
+        drawRoundRect(cssLinearGradient(size,150f,0f to Color.White.copy(alpha=if(dark).078f else .85f),(if(dark).62f else 1f) to Color.White.copy(alpha=if(dark).02f else .55f),1f to Color.White.copy(alpha=if(dark).02f else .55f)),cornerRadius=r)
+        drawRoundRect(colors.onSurface.copy(alpha=.12f),cornerRadius=r,style=Stroke(1.dp.toPx()))
+        drawRoundRect(Brush.verticalGradient(listOf(Color.White.copy(alpha=.12f),Color.Transparent)),cornerRadius=r,style=Stroke(1.dp.toPx()))
     }.clip(shape)
 }
 

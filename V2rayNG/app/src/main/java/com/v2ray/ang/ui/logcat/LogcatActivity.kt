@@ -25,6 +25,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,6 +41,7 @@ import com.v2ray.ang.ui.compose.OmniEffects
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -163,6 +166,22 @@ fun LogcatScreen(
     val listState = rememberLazyListState()
     var live by rememberSaveable { mutableStateOf(true) }
     var arrivalRate by remember { mutableStateOf<Double?>(null) }
+    val motion=LocalOmniAppearance.current.effects!=OmniEffects.OFF && android.animation.ValueAnimator.areAnimatorsEnabled()
+    var wipeNonce by remember { mutableIntStateOf(0) }
+    var wiping by remember { mutableStateOf(false) }
+    var wipeEntries by remember { mutableStateOf(logs) }
+    val wipe=remember { Animatable(0f) }
+    val clearLog:()->Unit={
+        // Real clear starts immediately; an optional outgoing snapshot is only presentation.
+        viewModel.clearLogcat()
+        arrivalRate=null
+        if(motion){wipeEntries=logs;wiping=true;wipeNonce++}
+    }
+    LaunchedEffect(wipeNonce,motion) {
+        wipe.snapTo(0f)
+        if(wipeNonce>0 && motion)wipe.animateTo(1f,tween(320,easing=CubicBezierEasing(.42f,0f,1f,1f)))
+        wiping=false;wipe.snapTo(0f)
+    }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(live, searchQuery, lifecycle) {
         arrivalRate = null
@@ -235,7 +254,7 @@ fun LogcatScreen(
                             contentDescription = stringResource(R.string.acc_share_log)
                         )
                     }
-                    IconButton(onClick = { viewModel.clearLogcat() }) {
+                    IconButton(onClick = clearLog) {
                         Icon(
                             painterResource(R.drawable.ic_delete_24dp),
                             contentDescription = stringResource(R.string.acc_clear_log)
@@ -246,7 +265,7 @@ fun LogcatScreen(
         },
     ) { innerPadding ->
         Column(Modifier.fillMaxSize().padding(innerPadding).navigationBarsPadding().padding(horizontal=14.dp,vertical=12.dp),verticalArrangement=Arrangement.spacedBy(14.dp)) {
-        OmniLogSurface(live=live,onLive={ live=it },onRefresh=viewModel::loadLogcat,count=logs.size,rate=arrivalRate,modifier=Modifier.weight(1f)) {
+        OmniLogSurface(live=live,onLive={ live=it },onRefresh=viewModel::loadLogcat,count=logs.size,rate=arrivalRate,wipeProgress=wipe.value,modifier=Modifier.weight(1f)) {
             LazyColumn(
                 state = listState,
                 reverseLayout = true,
@@ -255,12 +274,12 @@ fun LogcatScreen(
                     .verticalScrollbar(listState),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom=24.dp)
             ) {
-                items(items = logs, key = { it.key }) { log ->
+                items(items = if(wiping)wipeEntries else logs, key = { it.key }) { log ->
                     LogcatItem(log = log.text, animate = live && listState.firstVisibleItemIndex < 3, onLongClick = { Utils.setClipboard(context, log.text) })
                 }
             }
         }
-        OmniButton(onClick={viewModel.clearLogcat()},modifier=Modifier.fillMaxWidth().height(54.dp).clip(RoundedCornerShape(99.dp)).omniLogClearSheen(),shape=RoundedCornerShape(99.dp)) {
+        OmniButton(onClick=clearLog,modifier=Modifier.fillMaxWidth().height(54.dp).clip(RoundedCornerShape(99.dp)).omniLogClearSheen(),shape=RoundedCornerShape(99.dp)) {
             Text(stringResource(R.string.acc_clear_log),fontSize=16.sp,fontWeight=FontWeight.ExtraBold)
         }
         }

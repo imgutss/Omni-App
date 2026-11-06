@@ -6,7 +6,9 @@ from pathlib import Path
 PACKAGE='net.omnigate.app'
 OUT=Path('ui-results');OUT.mkdir(exist_ok=True)
 def adb(*args):
-    return subprocess.check_output(['adb',*args],text=True,stderr=subprocess.STDOUT)
+    try:return subprocess.check_output(['adb',*args],text=True,stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as error:
+        print('ADB failure output:',error.output,flush=True);raise
 def dump():
     adb('shell','uiautomator','dump','/sdcard/omni-ui.xml')
     data=adb('shell','cat','/sdcard/omni-ui.xml')
@@ -45,7 +47,7 @@ def launch():
     # Launch the app directly; Monkey routes through a launcher that can ANR while
     # the emulator display configuration changes. Never dismiss an Omni ANR.
     def start():
-        adb('shell','am','start','-W','-a','android.intent.action.MAIN','-c','android.intent.category.LAUNCHER','-p',PACKAGE)
+        adb('shell','am','start','-W','-n',PACKAGE+'/com.v2ray.ang.ui.main.MainActivity')
         time.sleep(4)
     start()
     tree=dump()
@@ -77,8 +79,9 @@ def selected(label):
     return False
 
 try:
-    # Match the reference's 412x892 app viewport, plus 24dp status/navigation insets.
-    adb('shell','wm','size','1236x2820');adb('shell','wm','density','480')
+    # Match 412x892 app dp plus 24dp OS insets, at 2x raster resolution to avoid
+    # overwhelming the software-rendered emulator launcher with a 3.5MP display.
+    adb('shell','wm','size','824x1880');adb('shell','wm','density','320')
     adb('shell','settings','put','system','font_scale','1.0')
     (OUT/'viewport.txt').write_text(adb('shell','wm','size')+adb('shell','wm','density'))
     # The fresh emulator has no user-granted notification permission. Grant only

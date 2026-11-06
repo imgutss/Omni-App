@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
+import com.v2ray.ang.ui.compose.OmniAlertDialog as AlertDialog
 import com.v2ray.ang.ui.compose.OmniButton as Button
 import com.v2ray.ang.ui.compose.OmniCard as Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -20,7 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import com.v2ray.ang.ui.compose.OmniOutlinedButton as OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import com.v2ray.ang.ui.compose.OmniTextButton as TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

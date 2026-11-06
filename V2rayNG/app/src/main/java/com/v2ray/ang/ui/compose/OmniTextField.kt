@@ -11,6 +11,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -65,13 +70,22 @@ fun OmniTextField(
                 onTextLayout = { onTextLayout?.invoke(it) },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp)
                     .onFocusChanged { focused = it.isFocused }
+                    .drawBehind {
+                        if(focused && enabled) {
+                            val r=CornerRadius(16.dp.toPx())
+                            listOf(12f to .025f,8f to .04f,3f to .13f).forEach { (spread,alpha) ->
+                                val d=spread.dp.toPx()
+                                drawRoundRect(border.copy(alpha=alpha),Offset(-d,-d),Size(size.width+d*2f,size.height+d*2f),r,style=Stroke(if(spread==3f)3.dp.toPx()else 5.dp.toPx()))
+                            }
+                        }
+                    }
                     .background(fieldBackground, shape).border(1.dp, border, shape)
                     .semantics { if (isError) error(invalid) },
                 decorationBox = { inner ->
                     Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).heightIn(min = 44.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         leadingIcon?.invoke()
                         Column(Modifier.weight(1f).heightIn(min = 44.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            if (label != null) CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.ExtraBold), LocalContentColor provides labelColor) { label() }
+                            if (label != null) CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.ExtraBold), LocalContentColor provides labelColor) { label() }
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 prefix?.invoke()
                                 Box(Modifier.weight(1f)) {

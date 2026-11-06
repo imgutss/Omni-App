@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
+import com.v2ray.ang.ui.compose.OmniAlertDialog as AlertDialog
 import com.v2ray.ang.ui.compose.OmniButton as Button
 import com.v2ray.ang.ui.compose.OmniCheckbox as Checkbox
 import com.v2ray.ang.ui.compose.OmniCard as Card
@@ -24,7 +24,7 @@ import com.v2ray.ang.ui.compose.OmniOutlinedButton as OutlinedButton
 import com.v2ray.ang.ui.compose.OmniTextField as OutlinedTextField
 import androidx.compose.material3.Scaffold
 import com.v2ray.ang.ui.compose.OmniSwitch as Switch
-import androidx.compose.material3.TextButton
+import com.v2ray.ang.ui.compose.OmniTextButton as TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue

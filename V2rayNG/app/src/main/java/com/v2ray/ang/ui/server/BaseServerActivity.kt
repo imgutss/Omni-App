@@ -579,7 +579,7 @@ abstract class BaseServerActivity : BaseComponentActivity() {
                     .imePadding()
                     .verticalScroll(scrollState)
                     .verticalScrollbar(scrollState)
-                    .padding(bottom = 36.dp),
+                    .padding(top = 8.dp, bottom = 36.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 content()

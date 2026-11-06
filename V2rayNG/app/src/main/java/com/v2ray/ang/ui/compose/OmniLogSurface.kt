@@ -9,6 +9,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import com.v2ray.ang.ui.compose.OmniTextButton as TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,7 +40,7 @@ import java.util.Locale
 /** Projected terminal slab. Every line, count and measured rate comes from the real log viewer. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OmniLogSurface(live: Boolean, onLive: (Boolean) -> Unit, onRefresh: () -> Unit, count: Int, rate: Double?, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun OmniLogSurface(live: Boolean, onLive: (Boolean) -> Unit, onRefresh: () -> Unit, count: Int, rate: Double?, wipeProgress:Float=0f, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     val accent=LocalOmniAppearance.current.skin.accent
     val ink=omniTerminalAccent(accent)
     val time by omniReferenceClock()
@@ -92,9 +93,16 @@ fun OmniLogSurface(live: Boolean, onLive: (Boolean) -> Unit, onRefresh: () -> Un
             drawContent()
             drawRect(Brush.verticalGradient(0f to Color.Transparent,.42f to Color.Black,1f to Color.Black),blendMode=BlendMode.DstIn)
         }) {
-            Box(Modifier.fillMaxSize().graphicsLayer { rotationX=if(fx==OmniEffects.OFF)0f else 16f;cameraDistance=640f*density;transformOrigin=TransformOrigin(.5f,1f) }) { content() }
-            Canvas(Modifier.align(Alignment.BottomStart).padding(start=18.dp,bottom=6.dp).size(width=8.dp,height=15.dp)) {
-                if(fx==OmniEffects.OFF || (time*2f).toInt()%2==0) drawRect(accent)
+            val wipe=omniLogWipePose(wipeProgress)
+            Box(Modifier.fillMaxSize().graphicsLayer {
+                rotationX=if(fx==OmniEffects.OFF)0f else 16f;cameraDistance=wipe.camera*density
+                transformOrigin=TransformOrigin(.5f,1f);alpha=wipe.alpha
+                scaleX=wipe.scale;scaleY=wipe.scale;translationY=wipe.translateY*density
+            }) {
+                content()
+                Canvas(Modifier.align(Alignment.BottomStart).padding(start=18.dp,bottom=6.dp).size(width=8.dp,height=15.dp)) {
+                    if(fx==OmniEffects.OFF || (time*2f).toInt()%2==0)drawRect(accent)
+                }
             }
             Canvas(Modifier.fillMaxSize()) {
                 var at=0f;val step=3.dp.toPx()
@@ -136,4 +144,16 @@ internal fun omniTerminalAccent(accent:Color):Color {
     var ink=accent
     repeat(20) { if(omniContrast(ink,Color(0xFF1F1F1F))<4.5)ink=androidx.compose.ui.graphics.lerp(ink,Color.White,.1f) }
     return ink
+}
+
+internal data class OmniLogWipePose(val alpha:Float,val scale:Float,val translateY:Float,val camera:Float)
+/** Parent perspective is 640px, origin at the list bottom; project the source
+ * rotateX(16deg) translateZ(-320px) translateY(-30px), without fake 3D depth. */
+internal fun omniLogWipePose(progress:Float):OmniLogWipePose {
+    val p=if(progress.isFinite())progress.coerceIn(0f,1f)else 0f
+    val angle=16f*kotlin.math.PI.toFloat()/180f
+    val z=(320f*kotlin.math.cos(angle)+30f*kotlin.math.sin(angle))*p
+    val y=(320f*kotlin.math.sin(angle)-30f*kotlin.math.cos(angle))*p
+    val scale=640f/(640f+z)
+    return OmniLogWipePose(1f-p,scale,y*scale,640f+z)
 }
