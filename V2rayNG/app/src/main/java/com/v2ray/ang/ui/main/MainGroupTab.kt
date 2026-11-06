@@ -52,7 +52,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 private val TAB_BAR_PADDING = 3.dp
 private val TAB_SPACING = 2.dp
-private val TAB_HEIGHT = 30.dp
+private val TAB_HEIGHT = 38.dp
 private val SELECTED_TAB_MARGIN = 12.dp
 
 /**
@@ -188,7 +188,7 @@ private fun GroupTabItem(
             .bringIntoViewRequester(bringIntoView)
             .onSizeChanged { size = it }
             .clip(CircleShape)
-            .background(if (selected) colors.primary.copy(alpha = 0.12f) else Color.Transparent)
+            .background(if (selected) colors.primary else Color.Transparent)
             .selectable(selected = selected, role = Role.Tab, onClick = onClick)
             .padding(horizontal = 12.dp),
         horizontalArrangement = Arrangement.Center,
@@ -198,7 +198,7 @@ private fun GroupTabItem(
             text = group.remarks,
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.Medium,
-            color = if (selected) colors.primary else colors.onSurfaceVariant,
+            color = if (selected) colors.onPrimary else colors.onSurfaceVariant,
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Ellipsis
@@ -209,7 +209,7 @@ private fun GroupTabItem(
                 modifier = Modifier
                     .defaultMinSize(minWidth = 16.dp, minHeight = 16.dp)
                     .clip(CircleShape)
-                    .background(if (selected) colors.primary else colors.onSurfaceVariant.copy(alpha = 0.55f))
+                    .background(if (selected) colors.onPrimary.copy(alpha = 0.12f) else colors.onSurfaceVariant.copy(alpha = 0.55f))
                     .padding(horizontal = 4.dp),
                 contentAlignment = Alignment.Center
             ) {

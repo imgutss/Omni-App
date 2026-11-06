@@ -975,4 +975,31 @@
     <string name="warp_scan_stop_vpn">Stop the active VPN before scanning.</string>
     <string name="quic_core_timeout">Tunnel traffic test timed out. Check the endpoint, UDP availability and credentials; socket protection details are in the app log.</string>
     <string name="naive_protocol_notice">Official NaiveProxy over HTTPS / HTTP2. A real NaiveProxy server and valid TLS certificate are required. QUIC mode and certificate bypass are not supported.</string>
+
+    <!-- Native Omni appearance -->
+    <string name="omni_appearance_title">Appearance</string>
+    <string name="omni_effects_title">Effects</string>
+    <string name="omni_effects_off">Off</string>
+    <string name="omni_effects_light">Light</string>
+    <string name="omni_effects_full">Full</string>
+    <string name="omni_appearance_notice">Dynamic color overrides the selected theme colors when enabled.</string>
+    <string name="omni_skin_violet">Violet</string>
+    <string name="omni_skin_blue">Blue</string>
+    <string name="omni_skin_teal">Teal</string>
+    <string name="omni_skin_pink">Pink</string>
+    <string name="omni_skin_orange">Orange</string>
+    <string name="omni_skin_green">Green</string>
+    <string name="omni_skin_yellow">Yellow</string>
+    <string name="omni_skin_omni" translatable="false">Omni</string>
+    <string name="omni_skin_spotify" translatable="false">Spotify</string>
+    <string name="omni_skin_apple" translatable="false">Apple</string>
+    <string name="omni_skin_claude" translatable="false">Claude</string>
+    <string name="omni_skin_ferrari" translatable="false">Ferrari</string>
+    <string name="omni_skin_lamborghini" translatable="false">Lamborghini</string>
+    <string name="omni_skin_renault" translatable="false">Renault</string>
+    <string name="omni_skin_pinterest" translatable="false">Pinterest</string>
+    <string name="omni_skin_webflow" translatable="false">Webflow</string>
+    <string name="omni_skin_lovable" translatable="false">Lovable</string>
+    <string name="omni_skin_nintendo" translatable="false">Nintendo 2001</string>
+    <string name="omni_skin_dell" translatable="false">Dell 1996</string>
 </resources>

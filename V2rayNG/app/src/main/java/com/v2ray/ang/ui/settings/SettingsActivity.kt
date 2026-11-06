@@ -43,6 +43,7 @@ import com.v2ray.ang.handler.SettingsManager
 import com.v2ray.ang.handler.SettingsChangeManager
 import com.v2ray.ang.root.RootManager
 import com.v2ray.ang.ui.base.BaseComponentActivity
+import com.v2ray.ang.ui.compose.OmniAppearanceControls
 import com.v2ray.ang.ui.compose.AppTopBar
 import com.v2ray.ang.ui.compose.CollapsiblePreferenceGroupHeader
 import com.v2ray.ang.ui.compose.NavigationBarsSpacer
@@ -88,6 +89,7 @@ class SettingsActivity : BaseComponentActivity() {
     override fun ScreenContent() {
         SettingsScreen(
             viewModel = viewModel,
+            appearanceViewModel = appearanceViewModel,
             onBackClick = { finish() },
             onModeHelpClicked = { Utils.openUri(this, AppConfig.APP_WIKI_MODE) },
             onSystemVpnSettingsClicked = ::openSystemVpnSettings
@@ -99,10 +101,12 @@ class SettingsActivity : BaseComponentActivity() {
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
+    appearanceViewModel: AppearanceViewModel,
     onBackClick: () -> Unit,
     onModeHelpClicked: () -> Unit,
     onSystemVpnSettingsClicked: () -> Unit
 ) {
+    val appearance by appearanceViewModel.appearance.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val systemVpnSettingsAvailable by viewModel.systemVpnSettingsAvailable.collectAsStateWithLifecycle()
@@ -243,6 +247,11 @@ fun SettingsScreen(
                 onExpandedChange = { uiSettingsExpanded = it }
             )
             if (uiSettingsExpanded) {
+                OmniAppearanceControls(
+                    appearance = appearance,
+                    onSkin = appearanceViewModel::selectSkin,
+                    onEffects = appearanceViewModel::selectEffects
+                )
                 SettingsSwitchItem(
                     title = stringResource(R.string.title_pref_speed_enabled),
                     summary = stringResource(R.string.summary_pref_speed_enabled),

@@ -810,4 +810,19 @@
     <string name="masterdns_core_stopped">The MasterDNS core stopped.</string>
     <string name="masterdns_port_taken">MasterDNS cannot use local port %1$d because it is already in use.</string>
     <string name="masterdns_unsupported_combination">MasterDNS currently works only as a standalone primary profile, not inside a chain or policy group.</string>
+
+    <!-- Native Omni appearance -->
+    <string name="omni_appearance_title">Görünüş</string>
+    <string name="omni_effects_title">Effektlər</string>
+    <string name="omni_effects_off">Söndürülüb</string>
+    <string name="omni_effects_light">Yüngül</string>
+    <string name="omni_effects_full">Tam</string>
+    <string name="omni_appearance_notice">Dinamik rənglər aktiv olduqda seçilmiş mövzunun rənglərini əvəz edir.</string>
+    <string name="omni_skin_violet">Bənövşəyi</string>
+    <string name="omni_skin_blue">Mavi</string>
+    <string name="omni_skin_teal">Firuzəyi</string>
+    <string name="omni_skin_pink">Çəhrayı</string>
+    <string name="omni_skin_orange">Narıncı</string>
+    <string name="omni_skin_green">Yaşıl</string>
+    <string name="omni_skin_yellow">Sarı</string>
 </resources>

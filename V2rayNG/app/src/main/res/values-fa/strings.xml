@@ -906,4 +906,19 @@
     <string name="guts_network_national">گوگل از این شبکه در دسترس نیست، پس تونل GUTS نمی‌تواند حتی یک بایت ببرد. گوشی روی شبکه‌ی عادی می‌ماند و هر دقیقه دوباره بررسی می‌شود.</string>
     <string name="guts_network_none">همین حالا هیچ شبکه‌ای روی گوشی نیست؛ چیزی نیست که تونل GUTS رویش سوار شود.</string>
     <string name="guts_network_coming_back">گوگل دوباره جواب می‌دهد: تونل GUTS باز می‌شود.</string>
+
+    <!-- Native Omni appearance -->
+    <string name="omni_appearance_title">ظاهر</string>
+    <string name="omni_effects_title">جلوه‌ها</string>
+    <string name="omni_effects_off">خاموش</string>
+    <string name="omni_effects_light">سبک</string>
+    <string name="omni_effects_full">کامل</string>
+    <string name="omni_appearance_notice">اگر رنگ پویا روشن باشد، رنگ‌های سیستم جای رنگ تم انتخابی را می‌گیرند.</string>
+    <string name="omni_skin_violet">بنفش</string>
+    <string name="omni_skin_blue">آبی</string>
+    <string name="omni_skin_teal">فیروزه‌ای</string>
+    <string name="omni_skin_pink">صورتی</string>
+    <string name="omni_skin_orange">نارنجی</string>
+    <string name="omni_skin_green">سبز</string>
+    <string name="omni_skin_yellow">زرد</string>
 </resources>

@@ -122,6 +122,7 @@ class MainActivity : HelperBaseComponentActivity() {
         BackHandler { moveTaskToBack(false) }
         MainScreen(
             mainViewModel = mainViewModel,
+            appearanceViewModel = appearanceViewModel,
             onAction = { action ->
                 when (action) {
                     MainAction.ToggleService -> handleFabAction()

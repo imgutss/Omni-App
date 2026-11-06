@@ -3,6 +3,8 @@ package com.v2ray.ang.ui.main
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,9 +25,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import com.v2ray.ang.R
 import com.v2ray.ang.ui.compose.AppDivider
 import com.v2ray.ang.ui.compose.verticalScrollbar
@@ -66,54 +70,88 @@ private val drawerItems = primaryDrawerItems + listOf(
 )
 
 @Composable
-fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) -> Unit) {
+fun MainDrawerContent(
+    drawerState: DrawerState,
+    appearance: com.v2ray.ang.ui.compose.OmniAppearance,
+    onSkin: (com.v2ray.ang.ui.compose.OmniSkin) -> Unit,
+    onEffects: (com.v2ray.ang.ui.compose.OmniEffects) -> Unit,
+    onNavigate: (MainDestination) -> Unit
+) {
     val drawerScrollState = rememberScrollState()
-
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val colors = MaterialTheme.colorScheme
+    val fullEffects = appearance.effects == com.v2ray.ang.ui.compose.OmniEffects.FULL
     ModalDrawerSheet(
         drawerState = drawerState,
-        modifier = Modifier.fillMaxWidth(0.75f),
-        drawerContainerColor = MaterialTheme.colorScheme.surface
+        modifier = Modifier.fillMaxWidth(),
+        drawerContainerColor = colors.background
     ) {
         Column(
             modifier = Modifier
                 .verticalScroll(drawerScrollState)
                 .verticalScrollbar(drawerScrollState)
+                .padding(bottom = 24.dp)
         ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
+            androidx.compose.foundation.layout.Row(
+                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    // Omni: keep the supplied neon artwork in full color; tinting it would flatten the brand mark.
-                    Image(
-                        painter = painterResource(R.drawable.ic_omni_logo),
-                        contentDescription = null,
-                        modifier = Modifier.size(120.dp)
-                    )
-                    Text(
-                        text = stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                androidx.compose.material3.IconButton(onClick = { scope.launch { drawerState.close() } }) {
+                    Icon(painterResource(R.drawable.ic_arrow_back_24dp), stringResource(R.string.acc_back))
+                }
+                Image(painterResource(R.drawable.ic_omni_logo), null, Modifier.size(48.dp))
+                Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge)
+            }
+            androidx.compose.foundation.layout.FlowRow(
+                Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                maxItemsInEachRow = 3
+            ) {
+                drawerItems.forEach { item ->
+                    androidx.compose.runtime.key(item.name) {
+                        Surface(
+                            onClick = { onNavigate(item) },
+                            modifier = Modifier.fillMaxWidth(0.31f),
+                            shape = MaterialTheme.shapes.large,
+                            color = colors.surfaceContainerLow,
+                            border = androidx.compose.foundation.BorderStroke(0.5.dp, colors.outlineVariant),
+                            shadowElevation = if (fullEffects) 5.dp else 0.dp
+                        ) {
+                            Column(
+                                Modifier.padding(horizontal = 6.dp, vertical = 16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                androidx.compose.foundation.layout.Box(
+                                    Modifier.size(48.dp)
+                                        .background(
+                                            androidx.compose.ui.graphics.Brush.verticalGradient(listOf(colors.primary.copy(alpha = 0.3f), colors.surfaceContainerHigh)),
+                                            MaterialTheme.shapes.medium
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painterResource(item.iconRes),
+                                        contentDescription = null,
+                                        tint = colors.primary,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
+                                Text(
+                                    stringResource(item.labelRes),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    maxLines = 2,
+                                    minLines = 2,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
                 }
             }
-            drawerItems.forEachIndexed { index, item ->
-                if (index == primaryDrawerItems.size) AppDivider()
-                NavigationDrawerItem(
-                    label = { Text(stringResource(item.labelRes)) },
-                    selected = false,
-                    onClick = { onNavigate(item) },
-                    icon = { Icon(painterResource(item.iconRes), contentDescription = null) },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                )
-            }
+            com.v2ray.ang.ui.compose.OmniAppearanceControls(appearance, onSkin, onEffects)
         }
     }
 }

@@ -85,14 +85,14 @@ fun AppTopBar(
                         placeholder = searchPlaceholder
                     )
                 } else {
-                    Text(text = title)
+                    Text(text = title, style = MaterialTheme.typography.titleMedium)
                 }
             },
             navigationIcon = {
                 if (navigationIcon != null) {
                     navigationIcon()
                 } else {
-                    IconButton(onClick = if (isSearchActive) onSearchClose else onBackClick) {
+                    IconButton(onClick = if (isSearchActive) onSearchClose else onBackClick, modifier = Modifier.omniIconChrome()) {
                         Icon(
                             painter = painterResource(R.drawable.ic_arrow_back_24dp),
                             contentDescription = stringResource(R.string.acc_back)
@@ -103,7 +103,7 @@ fun AppTopBar(
             actions = actions,
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.surface,
-                titleContentColor = MaterialTheme.colorScheme.onSurface,
+                titleContentColor = MaterialTheme.colorScheme.primary,
                 navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
                 actionIconContentColor = MaterialTheme.colorScheme.onSurface
             )

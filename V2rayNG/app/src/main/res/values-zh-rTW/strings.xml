@@ -808,4 +808,19 @@
     <string name="masterdns_core_stopped">The MasterDNS core stopped.</string>
     <string name="masterdns_port_taken">MasterDNS cannot use local port %1$d because it is already in use.</string>
     <string name="masterdns_unsupported_combination">MasterDNS currently works only as a standalone primary profile, not inside a chain or policy group.</string>
+
+    <!-- Native Omni appearance -->
+    <string name="omni_appearance_title">外觀</string>
+    <string name="omni_effects_title">效果</string>
+    <string name="omni_effects_off">關閉</string>
+    <string name="omni_effects_light">輕量</string>
+    <string name="omni_effects_full">完整</string>
+    <string name="omni_appearance_notice">啟用動態色彩後，系統色彩將覆蓋所選主題色彩。</string>
+    <string name="omni_skin_violet">紫色</string>
+    <string name="omni_skin_blue">藍色</string>
+    <string name="omni_skin_teal">青色</string>
+    <string name="omni_skin_pink">粉色</string>
+    <string name="omni_skin_orange">橙色</string>
+    <string name="omni_skin_green">綠色</string>
+    <string name="omni_skin_yellow">黃色</string>
 </resources>

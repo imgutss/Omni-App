@@ -33,6 +33,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.v2ray.ang.AppConfig.REALITY
 import com.v2ray.ang.AppConfig.TLS
+import com.v2ray.ang.ui.compose.omniIconChrome
 import com.v2ray.ang.R
 import com.v2ray.ang.core.EchOutbound
 import com.v2ray.ang.core.TlsSettingsCheck
@@ -553,14 +554,14 @@ abstract class BaseServerActivity : BaseComponentActivity() {
                     onBackClick = { finish() },
                     actions = {
                         if (editGuid.isNotEmpty() && running == false) {
-                            IconButton(onClick = { showDeleteDialog = true }) {
+                            IconButton(onClick = { showDeleteDialog = true }, modifier = Modifier.omniIconChrome()) {
                                 Icon(
                                     painterResource(R.drawable.ic_delete_24dp),
                                     stringResource(R.string.acc_delete)
                                 )
                             }
                         }
-                        IconButton(onClick = onSaveClick) {
+                        IconButton(onClick = onSaveClick, modifier = Modifier.omniIconChrome()) {
                             Icon(
                                 painterResource(R.drawable.ic_fab_check),
                                 stringResource(R.string.acc_save)
