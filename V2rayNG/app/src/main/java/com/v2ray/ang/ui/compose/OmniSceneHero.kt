@@ -66,8 +66,9 @@ fun OmniSceneHero(scene: OmniScene, modifier: Modifier = Modifier) {
             }
             drawRoundRect(Color.White.copy(alpha = .07f), cornerRadius = r, style = Stroke(1.dp.toPx()))
         }) {
-        val w = size.width / density; val h = size.height / density
-        withTransform({ scale(density, density, Offset.Zero) }) { ReferenceScene(this, w, h, time).draw(scene) }
+        val pixelScale = density
+        val w = size.width / pixelScale; val h = size.height / pixelScale
+        withTransform({ scale(pixelScale, pixelScale, Offset.Zero) }) { ReferenceScene(this, w, h, time).draw(scene) }
     }
 }
 
