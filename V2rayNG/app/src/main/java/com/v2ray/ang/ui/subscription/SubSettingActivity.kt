@@ -1,5 +1,7 @@
 package com.v2ray.ang.ui.subscription
 
+import com.v2ray.ang.ui.compose.OmniSceneHero
+import com.v2ray.ang.ui.compose.OmniScene
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.viewModels
@@ -186,6 +188,7 @@ fun SubSettingScreen(
                 .verticalScrollbar(lazyListState),
             contentPadding = NavigationBarsBottomPadding()
         ) {
+            item(key = "omni_reference_hero") { OmniSceneHero(OmniScene.SUBSCRIPTIONS) }
             itemsIndexed(
                 items = subscriptions,
                 key = { _, item -> item.guid }

@@ -1,5 +1,7 @@
 package com.v2ray.ang.ui.settings
 
+import com.v2ray.ang.ui.compose.OmniSceneHero
+import com.v2ray.ang.ui.compose.OmniScene
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Build
@@ -241,6 +243,7 @@ fun SettingsScreen(
                 .verticalScrollbar(scrollState)
                 .verticalScroll(scrollState)
         ) {
+            OmniSceneHero(OmniScene.SETTINGS)
             CollapsiblePreferenceGroupHeader(
                 title = stringResource(R.string.title_ui_settings),
                 expanded = uiSettingsExpanded,

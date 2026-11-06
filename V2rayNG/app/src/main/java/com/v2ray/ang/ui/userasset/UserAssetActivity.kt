@@ -1,5 +1,7 @@
 package com.v2ray.ang.ui.userasset
 
+import com.v2ray.ang.ui.compose.OmniSceneHero
+import com.v2ray.ang.ui.compose.OmniScene
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -312,6 +314,7 @@ internal fun UserAssetScreen(
                 .verticalScrollbar(listState),
             contentPadding = NavigationBarsBottomPadding()
         ) {
+            item(key = "omni_reference_hero") { OmniSceneHero(OmniScene.ASSETS) }
             item(key = "geo_source") {
                 SettingsListItem(
                     title = stringResource(R.string.asset_geo_files_sources),

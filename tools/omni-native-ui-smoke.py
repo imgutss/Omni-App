@@ -63,7 +63,15 @@ try:
     # that permission so the OS prompt cannot obscure the app's UI controls.
     adb('shell','pm','grant',PACKAGE,'android.permission.POST_NOTIFICATIONS')
     adb('logcat','-c');launch();screenshot('01-home')
-    menu();screenshot('02-drawer');tap('Blue');screenshot('03-blue-theme')
+    menu();reveal('Menu')
+    deadline=time.monotonic()+45
+    while True:
+        gl=adb('logcat','-d','-s','OmniReferenceGL:I')
+        assert 'renderer failed' not in gl,gl
+        if 'rendered successfully' in gl:break
+        assert time.monotonic()<deadline,'Native 3D logo never produced a first frame: '+gl
+        time.sleep(.75)
+    time.sleep(.5);screenshot('02-drawer');tap('Blue');screenshot('03-blue-theme')
     assert selected('Blue'),'Theme chip does not expose its selected state'
     tap('Off');assert selected('Off'),'Effects chip did not change'
     # Abrupt restart checks persisted appearance, not only the in-memory composition.
@@ -81,4 +89,4 @@ try:
     print('PASS: native launch, drawer, theme/effects selection, process-restart persistence, settings navigation')
 finally:
     (OUT/'ui.xml').write_text(ET.tostring(dump(),encoding='unicode'))
-    (OUT/'logcat.txt').write_text(adb('logcat','-d','-s','AndroidRuntime:E'))
+    (OUT/'logcat.txt').write_text(adb('logcat','-d','-s','AndroidRuntime:E','OmniReferenceGL:V'))

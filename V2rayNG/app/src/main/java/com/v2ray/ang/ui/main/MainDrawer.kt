@@ -22,6 +22,7 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import com.v2ray.ang.R
 import com.v2ray.ang.ui.compose.AppDivider
+import com.v2ray.ang.ui.compose.referencePalette
 import com.v2ray.ang.ui.compose.referenceRaisedPanel
 import com.v2ray.ang.ui.compose.referenceRaisedControl
 import com.v2ray.ang.ui.compose.verticalScrollbar
@@ -96,11 +98,16 @@ fun MainDrawerContent(
     ModalDrawerSheet(
         drawerState = drawerState,
         modifier = Modifier.fillMaxWidth(),
-        drawerContainerColor = colors.background
+        drawerContainerColor = appearance.skin.referencePalette.background
     ) {
         Column(
             modifier = Modifier
-                .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(colors.primary.copy(alpha = .18f), appearance.skin.backdrop, appearance.skin.backdrop)))
+                .background(appearance.skin.referencePalette.background)
+                .drawBehind {
+                    val accent = appearance.skin.accent
+                    drawRect(androidx.compose.ui.graphics.Brush.radialGradient(0f to accent.copy(alpha = .32f), .62f to androidx.compose.ui.graphics.Color.Transparent, center = androidx.compose.ui.geometry.Offset(size.width, 0f), radius = size.width * 1.2f))
+                    drawRect(androidx.compose.ui.graphics.Brush.radialGradient(0f to accent.copy(alpha = .22f), .62f to androidx.compose.ui.graphics.Color.Transparent, center = androidx.compose.ui.geometry.Offset(0f, size.height), radius = size.width * 1.1f))
+                }
                 .verticalScroll(drawerScrollState)
                 .verticalScrollbar(drawerScrollState)
                 .padding(bottom = 24.dp)
@@ -145,7 +152,7 @@ fun MainDrawerContent(
                             shadowElevation = if (fullEffects) 5.dp else 0.dp
                         ) {
                             Column(
-                                Modifier.padding(horizontal = 6.dp, vertical = 14.dp).height(104.dp),
+                                Modifier.padding(horizontal = 6.dp, vertical = 14.dp).height(94.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
@@ -158,13 +165,13 @@ fun MainDrawerContent(
                                         MainDestination.Settings -> "settings"
                                         MainDestination.OmniPanel -> "hub"
                                         MainDestination.OmniDoctor -> "doctor"
-                                        MainDestination.OmniScanner, MainDestination.OmniDnsScanner -> "scanner"
-                                        MainDestination.OmniPrivacy -> "backup"
-                                        MainDestination.OmniDnsLab -> "language"
-                                        MainDestination.OmniRoutingStudio -> "routing"
-                                        MainDestination.OmniSync -> "update"
-                                        MainDestination.OmniSpeed -> "scanner"
-                                        MainDestination.Logcat -> "logs"
+                                        MainDestination.OmniScanner, MainDestination.OmniDnsScanner -> "language"
+                                        MainDestination.OmniPrivacy -> "logs"
+                                        MainDestination.OmniDnsLab -> "update"
+                                        MainDestination.OmniRoutingStudio -> "backup"
+                                        MainDestination.OmniSync -> "about"
+                                        MainDestination.OmniSpeed -> "effects"
+                                        MainDestination.Logcat -> "theme"
                                         MainDestination.CheckUpdate -> "update"
                                         MainDestination.BackupRestore -> "backup"
                                         MainDestination.About -> "about"

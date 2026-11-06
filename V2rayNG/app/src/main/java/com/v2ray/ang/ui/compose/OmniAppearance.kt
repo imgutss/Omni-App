@@ -55,7 +55,7 @@ internal fun omniColorScheme(base: ColorScheme, skin: OmniSkin, dark: Boolean): 
     var accent = skin.accent
     val target = if (dark) Color.White else Color.Black
     repeat(20) {
-        if (omniContrast(accent, background) < 5.5 || omniContrast(accent, if (dark) palette.low else base.surfaceContainerLow) < 4.5) {
+        if (omniContrast(accent, background) < 4.5 || omniContrast(accent, if (dark) palette.low else base.surfaceContainerLow) < 4.5) {
             accent = Color(
                 accent.red * 0.9f + target.red * 0.1f,
                 accent.green * 0.9f + target.green * 0.1f,

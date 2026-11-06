@@ -156,11 +156,12 @@ internal class ReferenceLogoView(context: Context) : TextureView(context), Textu
                 }
                 GLES20.glDrawArrays(mode, start, amount)
             }
-            val beginning = System.nanoTime(); var lastStatic = false; var ready = false
+            val beginning = System.nanoTime(); var lastStatic = false; var ready = false; var lastWidth = 0; var lastHeight = 0
             while (alive) {
                 if (!foreground || !visibleInViewport) { Thread.sleep(100); continue }
                 val reduced = !ValueAnimator.areAnimatorsEnabled()
-                if (reduced && lastStatic) { Thread.sleep(100); continue }; lastStatic = reduced
+                if (reduced && lastStatic && lastWidth == widthPixels && lastHeight == heightPixels) { Thread.sleep(100); continue }; lastStatic = reduced
+                lastWidth = widthPixels; lastHeight = heightPixels
                 val t = (System.nanoTime() - beginning) / 1_000_000_000f
                 val aspect = widthPixels.toFloat() / heightPixels.coerceAtLeast(1)
                 val cameraZ = 9.5f * max(1f, 1.25f / aspect)

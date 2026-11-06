@@ -1,5 +1,7 @@
 package com.v2ray.ang.ui.routing
 
+import com.v2ray.ang.ui.compose.OmniSceneHero
+import com.v2ray.ang.ui.compose.OmniScene
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.viewModels
@@ -273,6 +275,7 @@ fun RoutingSettingScreen(
                 .verticalScrollbar(lazyListState),
             contentPadding = NavigationBarsBottomPadding()
         ) {
+            item(key = "omni_reference_hero") { OmniSceneHero(OmniScene.ROUTING) }
             item(key = "domain_strategy") {
                 SettingsListItem(
                     title = stringResource(R.string.routing_settings_domain_strategy),

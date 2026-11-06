@@ -1,5 +1,7 @@
 package com.v2ray.ang.ui.perappproxy
 
+import com.v2ray.ang.ui.compose.OmniSceneHero
+import com.v2ray.ang.ui.compose.OmniScene
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.annotation.StringRes
@@ -265,6 +267,7 @@ fun PerAppProxyScreen(
                     .verticalScrollbar(listState),
                 contentPadding = NavigationBarsBottomPadding()
             ) {
+            item(key = "omni_reference_hero") { OmniSceneHero(OmniScene.PER_APP) }
                 items(items = apps, key = { it.packageName }) { app ->
                     val checked = blacklist.contains(app.packageName)
                     AppListItem(

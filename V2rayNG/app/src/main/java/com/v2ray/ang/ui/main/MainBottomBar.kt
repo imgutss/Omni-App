@@ -69,7 +69,7 @@ fun MainBottomBar(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface)
+                .background(androidx.compose.ui.graphics.Color.Transparent)
                 .clickable(onClick = { onAction(MainAction.TestCurrentServer) })
                 .windowInsetsPadding(WindowInsets.navigationBars)
         ) {
@@ -93,8 +93,7 @@ fun MainBottomBar(
         }
         FloatingActionButton(
             onClick = {
-                if (effects != OmniEffects.OFF) strike(OmniStrike(powerCenter, !isRunning))
-                onAction(MainAction.ToggleService)
+                strike(OmniStrike(powerCenter, !isRunning)) { onAction(MainAction.ToggleService) }
             },
             modifier = Modifier
                 .align(Alignment.TopEnd)

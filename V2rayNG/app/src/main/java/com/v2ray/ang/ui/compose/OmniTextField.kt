@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.error
@@ -30,7 +31,7 @@ import androidx.compose.ui.unit.sp
 fun OmniTextField(
     value: String, onValueChange: (String) -> Unit, modifier: Modifier = Modifier,
     enabled: Boolean = true, readOnly: Boolean = false,
-    textStyle: TextStyle = LocalTextStyle.current,
+    textStyle: TextStyle = MaterialTheme.typography.bodyMedium,
     label: (@Composable () -> Unit)? = null, placeholder: (@Composable () -> Unit)? = null,
     leadingIcon: (@Composable () -> Unit)? = null, trailingIcon: (@Composable () -> Unit)? = null,
     prefix: (@Composable () -> Unit)? = null, suffix: (@Composable () -> Unit)? = null,
@@ -47,6 +48,7 @@ fun OmniTextField(
     var focused by remember { mutableStateOf(false) }
     val border = when { !enabled -> colors.disabledIndicatorColor; isError -> colors.errorIndicatorColor; focused -> colors.focusedIndicatorColor; else -> colors.unfocusedIndicatorColor }
     val container = when { !enabled -> colors.disabledContainerColor; isError -> colors.errorContainerColor; focused -> colors.focusedContainerColor; else -> colors.unfocusedContainerColor }
+    val fieldBackground = if (container == MaterialTheme.colorScheme.surfaceContainerLow || (container.alpha == 0f && border.alpha > 0f)) Color.White.copy(alpha = .04f) else container
     val foreground = when { !enabled -> colors.disabledTextColor; isError -> colors.errorTextColor; focused -> colors.focusedTextColor; else -> colors.unfocusedTextColor }
     val labelColor = when { !enabled -> colors.disabledLabelColor; isError -> colors.errorLabelColor; focused -> colors.focusedLabelColor; else -> MaterialTheme.colorScheme.secondary }
     val source = interactionSource ?: remember { MutableInteractionSource() }
@@ -63,7 +65,7 @@ fun OmniTextField(
                 onTextLayout = { onTextLayout?.invoke(it) },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp)
                     .onFocusChanged { focused = it.isFocused }
-                    .background(container, shape).border(1.dp, border, shape)
+                    .background(fieldBackground, shape).border(1.dp, border, shape)
                     .semantics { if (isError) error(invalid) },
                 decorationBox = { inner ->
                     Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).heightIn(min = 44.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

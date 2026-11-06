@@ -38,6 +38,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import com.v2ray.ang.ui.compose.LocalOmniBackdropScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -183,9 +185,15 @@ private fun ServerListPage(
     onMoveServer: (fromGuid: String, toGuid: String) -> Unit,
     contentPadding: PaddingValues
 ) {
+    val wallScroll = LocalOmniBackdropScroll.current
+    val wallDensity = LocalDensity.current.density
     if (doubleColumnDisplay) {
         val gridState = remember(groupId) {
             lazyGridStates.getOrPut(groupId) { LazyGridState() }
+        }
+        LaunchedEffect(gridState, wallScroll) {
+            snapshotFlow { gridState.firstVisibleItemIndex / 2 * 110f + gridState.firstVisibleItemScrollOffset / wallDensity }
+                .collect { wallScroll?.floatValue = (-it * .2f).coerceAtLeast(-120f) }
         }
         val reorderableGridState = if (canReorder) {
             rememberReorderableLazyGridState(gridState) { from, to ->
@@ -231,6 +239,10 @@ private fun ServerListPage(
     } else {
         val listState = remember(groupId) {
             lazyListStates.getOrPut(groupId) { LazyListState() }
+        }
+        LaunchedEffect(listState, wallScroll) {
+            snapshotFlow { listState.firstVisibleItemIndex * 110f + listState.firstVisibleItemScrollOffset / wallDensity }
+                .collect { wallScroll?.floatValue = (-it * .2f).coerceAtLeast(-120f) }
         }
         val reorderableState = if (canReorder) {
             rememberReorderableLazyListState(listState) { from, to ->

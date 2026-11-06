@@ -1,5 +1,7 @@
 package com.v2ray.ang.ui
 
+import com.v2ray.ang.ui.compose.OmniSceneHero
+import com.v2ray.ang.ui.compose.OmniScene
 import android.content.Intent
 import android.os.Bundle
 import android.webkit.WebView
@@ -82,6 +84,7 @@ fun AboutScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
+            OmniSceneHero(OmniScene.ABOUT)
             SettingsMenuItem(
                 icon = painterResource(R.drawable.ic_source_code_24dp),
                 title = stringResource(R.string.title_source_code),

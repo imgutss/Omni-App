@@ -1002,4 +1002,9 @@
     <string name="omni_skin_lovable" translatable="false">Lovable</string>
     <string name="omni_skin_nintendo" translatable="false">Nintendo 2001</string>
     <string name="omni_skin_dell" translatable="false">Dell 1996</string>
+
+    <string name="omni_connect_hint">Tap the power button</string>
+    <string name="omni_service_uptime">Foreground service uptime</string>
+    <string name="omni_app_traffic_speed">Actual application UID traffic, including proxy and direct traffic; not tunnel-only throughput</string>
+    <string name="omni_app_traffic_short">Application traffic</string>
 </resources>

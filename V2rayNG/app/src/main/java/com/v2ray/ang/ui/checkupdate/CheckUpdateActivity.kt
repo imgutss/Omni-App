@@ -1,5 +1,7 @@
 package com.v2ray.ang.ui.checkupdate
 
+import com.v2ray.ang.ui.compose.OmniSceneHero
+import com.v2ray.ang.ui.compose.OmniScene
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Column
@@ -81,6 +83,7 @@ fun CheckUpdateScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
+            OmniSceneHero(OmniScene.UPDATE)
             SettingsSwitchItem(
                 icon = painterResource(R.drawable.ic_source_code_24dp),
                 title = stringResource(R.string.update_check_pre_release),

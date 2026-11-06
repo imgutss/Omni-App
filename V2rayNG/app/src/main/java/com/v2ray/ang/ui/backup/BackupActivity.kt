@@ -1,5 +1,7 @@
 package com.v2ray.ang.ui.backup
 
+import com.v2ray.ang.ui.compose.OmniSceneHero
+import com.v2ray.ang.ui.compose.OmniScene
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -218,6 +220,7 @@ fun BackupScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
+            OmniSceneHero(OmniScene.BACKUP)
             SettingsMenuItem(
                 icon = painterResource(R.drawable.ic_backup_24dp),
                 title = stringResource(R.string.title_configuration_backup),

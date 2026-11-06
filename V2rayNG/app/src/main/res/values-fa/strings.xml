@@ -921,4 +921,9 @@
     <string name="omni_skin_orange">نارنجی</string>
     <string name="omni_skin_green">سبز</string>
     <string name="omni_skin_yellow">زرد</string>
+
+    <string name="omni_connect_hint">دکمهٔ اتصال را بزن</string>
+    <string name="omni_service_uptime">مدت فعالیت سرویس</string>
+    <string name="omni_app_traffic_speed">ترافیک واقعی برنامه شامل پراکسی و مستقیم؛ نه فقط ترافیک تونل</string>
+    <string name="omni_app_traffic_short">ترافیک برنامه</string>
 </resources>
