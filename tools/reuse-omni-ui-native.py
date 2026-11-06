@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Reuse audited native bits ONLY for a UI-only release; fail closed on engine/source changes."""
 from pathlib import Path
-import hashlib,json,subprocess,tempfile,urllib.request,zipfile
+import hashlib,json,re,subprocess,tempfile,urllib.request,zipfile
 
 root=Path(__file__).resolve().parents[1]
 pin=json.loads((root/'tools/omni-ui-native-base.json').read_text())
@@ -12,6 +12,15 @@ protected=['AndroidLibXrayLite','aether','hev-socks5-tunnel','third_party','guts
  'V2rayNG/app/src/main/java/com/v2ray/ang/fmt','V2rayNG/app/src/main/java/com/v2ray/ang/root',
  'V2rayNG/app/src/main/java/com/v2ray/ang/contracts','V2rayNG/app/src/main/java/com/v2ray/ang/AppConfig.kt']
 subprocess.run(['git','diff','--exit-code',pin['commit'],'HEAD','--',*protected],cwd=root,check=True)
+# A dependency declared directly in the app Gradle file can own JNI too. Only the
+# release version fields may differ; all dependency/build configuration stays pinned.
+gradle='V2rayNG/app/build.gradle.kts'
+def normalize_gradle(text):
+    return re.sub(r'(?m)^\s*version(?:Code|Name)\s*=.*$', '', text)
+old=subprocess.check_output(['git','show',pin['commit']+':'+gradle],cwd=root,text=True)
+assert normalize_gradle(old)==normalize_gradle((root/gradle).read_text()),'Non-version app Gradle change: rebuild all native inputs'
+subprocess.run(['git','diff','--exit-code',pin['commit'],'HEAD','--','V2rayNG/build.gradle.kts',
+ 'V2rayNG/settings.gradle.kts','V2rayNG/gradle.properties','V2rayNG/gradle/wrapper'],cwd=root,check=True)
 assert len(pin['sha256'])==4,'All four baseline ABI artifacts must be pinned'
 owned={'libaether.so','libcottendns.so','libdnstt.so','libguts.so','libhev-socks5-tunnel.so',
  'libhevsockstun.so','liblyrebird.so','libmasterdns.so','libnaive.so','libnoizdns.so',

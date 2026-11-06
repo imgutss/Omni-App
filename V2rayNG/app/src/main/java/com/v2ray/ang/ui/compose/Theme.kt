@@ -221,7 +221,13 @@ object ThemeManager {
     }
 
     suspend fun setSkin(skin: OmniSkin) = appearanceMutex.withLock {
-        withContext(Dispatchers.IO) { MmkvManager.encodeSettings(SKIN_KEY, skin.id) }
+        // An explicit skin choice must be visible even when the previous version used
+        // Android dynamic colors. The existing dynamic-color switch remains available.
+        withContext(Dispatchers.IO) {
+            MmkvManager.encodeSettings(SKIN_KEY, skin.id)
+            MmkvManager.encodeSettings(AppConfig.PREF_DYNAMIC_COLOR, false)
+        }
+        _dynamicColorEnabled.value = false
         _appearance.value = _appearance.value.copy(skin = skin)
     }
 
