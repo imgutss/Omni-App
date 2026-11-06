@@ -318,7 +318,7 @@ fun AppTheme(
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 AppSnackbarBridge(controller = snackbarController)
-                content()
+                OmniLightningHost { content() }
                 AppSnackbarHost(hostState = snackbarController.hostState)
             }
         }

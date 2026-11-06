@@ -179,6 +179,11 @@ class MainActivity : HelperBaseComponentActivity() {
             MainDestination.OmniDoctor -> Intent(this, OmniDoctorActivity::class.java)
             MainDestination.OmniScanner -> Intent(this, OmniScannerActivity::class.java)
             MainDestination.OmniDnsScanner -> Intent(this, OmniDnsScannerActivity::class.java)
+            MainDestination.OmniPrivacy -> Intent(this, com.v2ray.ang.omni.OmniPrivacyCenterActivity::class.java)
+            MainDestination.OmniDnsLab -> Intent(this, com.v2ray.ang.omni.OmniDnsLabActivity::class.java)
+            MainDestination.OmniRoutingStudio -> Intent(this, com.v2ray.ang.omni.OmniRoutingStudioActivity::class.java)
+            MainDestination.OmniSync -> Intent(this, com.v2ray.ang.omni.OmniSyncCenterActivity::class.java)
+            MainDestination.OmniSpeed -> Intent(this, com.v2ray.ang.omni.OmniSpeedLabActivity::class.java)
         }
         settingsActivityLauncher.launch(intent)
     }

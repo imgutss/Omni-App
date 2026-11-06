@@ -25,6 +25,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInRoot
+import com.v2ray.ang.ui.compose.LocalOmniStrike
+import com.v2ray.ang.ui.compose.OmniStrike
+import com.v2ray.ang.ui.compose.omniRaisedPower
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,14 +62,8 @@ fun MainBottomBar(
     onAction: (MainAction) -> Unit
 ) {
     val effects = LocalOmniAppearance.current.effects
-    val scope = rememberCoroutineScope()
-    val rotationAnim = remember { Animatable(0f) }
-
-    LaunchedEffect(isRunning) {
-        if (!isRunning) {
-            rotationAnim.snapTo(0f)
-        }
-    }
+    val strike = LocalOmniStrike.current
+    var powerCenter by remember { mutableStateOf(Offset.Zero) }
 
     Box(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -74,8 +77,8 @@ fun MainBottomBar(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp)
-                    .padding(horizontal = 16.dp),
+                    .height(72.dp)
+                    .padding(start = 22.dp, end = 100.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -90,26 +93,21 @@ fun MainBottomBar(
         }
         FloatingActionButton(
             onClick = {
-                if (!isRunning && effects != OmniEffects.OFF) {
-                    scope.launch {
-                        rotationAnim.animateTo(
-                            targetValue = 720f,
-                            animationSpec = tween(durationMillis = 3000)
-                        )
-                    }
-                }
+                if (effects != OmniEffects.OFF) strike(OmniStrike(powerCenter, !isRunning))
                 onAction(MainAction.ToggleService)
             },
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(end = 24.dp)
-                .offset(y = (-28).dp)
+                .padding(end = 22.dp)
+                .offset(y = (-14).dp)
                 .navigationBarsPadding()
-                .border(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), MaterialTheme.shapes.large)
-                .shadow(if (effects == OmniEffects.FULL) 12.dp else 0.dp, MaterialTheme.shapes.large),
-            shape = MaterialTheme.shapes.large,
-            containerColor = if (isRunning) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.surfaceContainerHigh
+                .size(46.dp)
+                .omniRaisedPower(isRunning)
+                .onGloballyPositioned { powerCenter = it.boundsInRoot().center },
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+            containerColor = Color.Transparent,
+            elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp)
+
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_omni_power),
@@ -118,8 +116,7 @@ fun MainBottomBar(
                 ),
                 tint = if (isRunning) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
-                    .size(24.dp)
-                    .graphicsLayer { rotationZ = rotationAnim.value }
+                    .size(22.dp)
             )
         }
     }

@@ -1,0 +1,446 @@
+{
+  "reference": "Omni-0.13.1.html",
+  "sha256": "f0b6d3e86292b2b89ed171eece766e46706b5ab2b7203b9f65c314323afe650a",
+  "releaseReady": false,
+  "screens": [
+    {
+      "id": "screen-servers",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-subscriptions",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-subscription-edit",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-vless",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-vmess",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-trojan",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-shadowsocks",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-socks",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-http",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-hysteria2",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-wireguard",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-custom",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-policy-group",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-proxy-chain",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-aether",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-aether-keys",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-settings",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-per-app",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-app-picker",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-routing",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-routing-edit",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-assets",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-asset-edit",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-logs",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-backup",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-update",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-about",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-translators",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-hub",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-scanner",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-speed-lab",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-sync-center",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-routing-studio",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-dns-lab",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-privacy-center",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-doctor",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-naive",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-tuic",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-shadowquic",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-masterdns",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-dnstt",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-guts",
+      "status": "requires native parity audit"
+    },
+    {
+      "id": "screen-dns-scanner",
+      "status": "requires native parity audit"
+    }
+  ],
+  "drawerDestinations": [
+    {
+      "id": "subscriptions",
+      "label": "Subscriptions"
+    },
+    {
+      "id": "per-app",
+      "label": "Per-app settings"
+    },
+    {
+      "id": "routing",
+      "label": "Routing Settings"
+    },
+    {
+      "id": "assets",
+      "label": "Asset files"
+    },
+    {
+      "id": "settings",
+      "label": "Settings"
+    },
+    {
+      "id": "hub",
+      "label": "Omni Hub"
+    },
+    {
+      "id": "doctor",
+      "label": "Omni Doctor"
+    },
+    {
+      "id": "scanner",
+      "label": "Omni Scanner"
+    },
+    {
+      "id": "privacy-center",
+      "label": "Omni Privacy Center"
+    },
+    {
+      "id": "dns-lab",
+      "label": "Omni DNS Lab"
+    },
+    {
+      "id": "routing-studio",
+      "label": "Omni Routing Studio"
+    },
+    {
+      "id": "sync-center",
+      "label": "Omni Sync Center"
+    },
+    {
+      "id": "speed-lab",
+      "label": "Omni Speed Lab"
+    },
+    {
+      "id": "dns-scanner",
+      "label": "Omni DNS Scanner"
+    },
+    {
+      "id": "logs",
+      "label": "Logcat"
+    },
+    {
+      "id": "update",
+      "label": "Check for update"
+    },
+    {
+      "id": "backup",
+      "label": "Backup & Restore"
+    },
+    {
+      "id": "about",
+      "label": "About"
+    }
+  ],
+  "visualLayers": [
+    {
+      "id": "unnamed",
+      "type": "style",
+      "bytes": 24674
+    },
+    {
+      "id": "omni-skin",
+      "type": "style",
+      "bytes": 14898
+    },
+    {
+      "id": "omni-0131-style",
+      "type": "style",
+      "bytes": 560
+    },
+    {
+      "id": "unnamed",
+      "type": "script",
+      "bytes": 11191
+    },
+    {
+      "id": "unnamed",
+      "type": "script",
+      "bytes": 603445
+    },
+    {
+      "id": "unnamed",
+      "type": "script",
+      "bytes": 5228
+    },
+    {
+      "id": "omni-logs3d",
+      "type": "style",
+      "bytes": 4395
+    },
+    {
+      "id": "omni-logs3d-js",
+      "type": "script",
+      "bytes": 4944
+    },
+    {
+      "id": "omni-xs",
+      "type": "style",
+      "bytes": 10310
+    },
+    {
+      "id": "omni-icon3d-js",
+      "type": "script",
+      "bytes": 5823
+    },
+    {
+      "id": "omni-hd",
+      "type": "style",
+      "bytes": 11554
+    },
+    {
+      "id": "omni-hd-js",
+      "type": "script",
+      "bytes": 10128
+    },
+    {
+      "id": "omni-main",
+      "type": "style",
+      "bytes": 43342
+    },
+    {
+      "id": "omni-main-js",
+      "type": "script",
+      "bytes": 3026
+    },
+    {
+      "id": "omni-sx",
+      "type": "style",
+      "bytes": 3164
+    },
+    {
+      "id": "omni-sx-js",
+      "type": "script",
+      "bytes": 8233
+    },
+    {
+      "id": "omni-mashup",
+      "type": "style",
+      "bytes": 11947
+    },
+    {
+      "id": "omni-pager",
+      "type": "style",
+      "bytes": 894
+    },
+    {
+      "id": "omni-mashup-js",
+      "type": "script",
+      "bytes": 1905
+    },
+    {
+      "id": "omni-pager-js",
+      "type": "script",
+      "bytes": 2057
+    },
+    {
+      "id": "omni-menu",
+      "type": "style",
+      "bytes": 2732
+    },
+    {
+      "id": "omni-menu-js",
+      "type": "script",
+      "bytes": 1555
+    },
+    {
+      "id": "omni-drawer",
+      "type": "style",
+      "bytes": 2159
+    },
+    {
+      "id": "omni-zap",
+      "type": "style",
+      "bytes": 907
+    },
+    {
+      "id": "omni-zap-js",
+      "type": "script",
+      "bytes": 8441
+    },
+    {
+      "id": "omni-minimal",
+      "type": "style",
+      "bytes": 2011
+    },
+    {
+      "id": "omni-polish",
+      "type": "style",
+      "bytes": 4083
+    },
+    {
+      "id": "omni-polish-js",
+      "type": "script",
+      "bytes": 87510
+    },
+    {
+      "id": "omni-menu2",
+      "type": "style",
+      "bytes": 10607
+    },
+    {
+      "id": "unnamed",
+      "type": "script",
+      "bytes": 5137
+    },
+    {
+      "id": "omni-current-presets",
+      "type": "script",
+      "bytes": 3562
+    },
+    {
+      "id": "omni-dns-range-groups",
+      "type": "script",
+      "bytes": 4036
+    },
+    {
+      "id": "omni-0131-behavior",
+      "type": "script",
+      "bytes": 11126
+    }
+  ],
+  "unfinished": [
+    "Full layout parity for all 43 reference routes",
+    "3D animated logo/orbit mesh",
+    "Backdrop artwork/shaders/parallax",
+    "All popup/dialog/form raised controls and transitions",
+    "Lightning secondary corona arcs, audio synthesis, haptics and shake",
+    "Golden image comparisons for every route and transient state",
+    "Native compilation, unit tests, emulator interaction and new signed release"
+  ],
+  "implementedInWorkingTree": [
+    "Actual final-layer SVG IC artwork extracted reproducibly: 285 PNGs / 19 skins, native image decoder; original layered geometry, not Material replacements",
+    "Native lightning fractal main channel / recursive forks / stepped leader / return stroke / restrikes / impact glow / shock ring / ballistic particles",
+    "Native raised power surface / animated conic border / active pulse / original 46dp and 16dp radius tokens",
+    "Power effect connected to existing real ToggleService callback; no fabricated connection state"
+  ],
+  "validated": [
+    "Kotlin syntax parser: six touched source files",
+    "285 PNG checksums, alpha, dimensions and non-flat gradients",
+    "Native engine/service/handler/DTO/protocol source diff unchanged"
+  ],
+  "notValidated": [
+    "Native Kotlin/Android compilation",
+    "New JUnit lightning tests",
+    "Device visual golden comparisons",
+    "Device audio, haptics, rapid toggling and window insets"
+  ]
+}

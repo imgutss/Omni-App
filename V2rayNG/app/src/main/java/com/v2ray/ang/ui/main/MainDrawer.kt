@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import com.v2ray.ang.R
 import com.v2ray.ang.ui.compose.AppDivider
+import com.v2ray.ang.ui.compose.referenceRaisedPanel
+import com.v2ray.ang.ui.compose.referenceRaisedControl
 import com.v2ray.ang.ui.compose.verticalScrollbar
 
 enum class MainDestination(@DrawableRes val iconRes: Int, @StringRes val labelRes: Int) {
@@ -44,6 +46,11 @@ enum class MainDestination(@DrawableRes val iconRes: Int, @StringRes val labelRe
     OmniDoctor(R.drawable.ic_check_update_24dp, R.string.title_omni_doctor),
     OmniScanner(R.drawable.ic_scan_24dp, R.string.omni_scanner_title),
     OmniDnsScanner(R.drawable.ic_scan_24dp, R.string.omni_dns_scanner_title),
+    OmniPrivacy(R.drawable.ic_settings_24dp, R.string.omni_privacy_title),
+    OmniDnsLab(R.drawable.ic_scan_24dp, R.string.omni_dns_title),
+    OmniRoutingStudio(R.drawable.ic_routing_24dp, R.string.omni_routing_title),
+    OmniSync(R.drawable.ic_check_update_24dp, R.string.omni_sync_title),
+    OmniSpeed(R.drawable.ic_scan_24dp, R.string.omni_speed_title),
     Logcat(R.drawable.ic_logcat_24dp, R.string.title_logcat),
     CheckUpdate(R.drawable.ic_check_update_24dp, R.string.update_check_for_update),
     BackupRestore(R.drawable.ic_restore_24dp, R.string.title_configuration_backup_restore),
@@ -62,6 +69,11 @@ private val drawerItems = primaryDrawerItems + listOf(
     MainDestination.OmniPanel,
     MainDestination.OmniDoctor,
     MainDestination.OmniScanner,
+    MainDestination.OmniPrivacy,
+    MainDestination.OmniDnsLab,
+    MainDestination.OmniRoutingStudio,
+    MainDestination.OmniSync,
+    MainDestination.OmniSpeed,
     MainDestination.OmniDnsScanner,
     MainDestination.Logcat,
     MainDestination.CheckUpdate,
@@ -93,51 +105,70 @@ fun MainDrawerContent(
                 .padding(bottom = 24.dp)
         ) {
             androidx.compose.foundation.layout.Row(
-                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                androidx.compose.material3.IconButton(onClick = { scope.launch { drawerState.close() } }) {
-                    Icon(painterResource(R.drawable.ic_arrow_back_24dp), stringResource(R.string.acc_back))
+                androidx.compose.material3.IconButton(
+                    onClick = { scope.launch { drawerState.close() } },
+                    modifier = Modifier.size(48.dp).referenceRaisedControl(true)
+                ) { Icon(painterResource(R.drawable.ic_arrow_back_24dp), stringResource(R.string.acc_back), tint = colors.onPrimary) }
+                Column {
+                    Text(if (androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "fa") "منو" else "Menu", style = MaterialTheme.typography.headlineSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold)
+                    Text(if (androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "fa") "تجربهٔ خودت را شخصی کن" else "Customize your experience", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
                 }
-                Image(painterResource(R.drawable.ic_omni_logo), null, Modifier.size(48.dp))
-                Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge)
+            }
+            androidx.compose.foundation.layout.Box(
+                Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp).referenceRaisedPanel(30.dp).height(156.dp)
+            ) {
+                com.v2ray.ang.ui.compose.OmniLogo3d(Modifier.size(176.dp).align(Alignment.CenterEnd))
+                Column(Modifier.align(Alignment.CenterStart).padding(start = 22.dp).fillMaxWidth(.55f)) {
+                    Text("Omni", style = MaterialTheme.typography.headlineMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, color = colors.primary)
+                    Text(if (androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "fa") "همهٔ گزینه‌ها یک‌جا" else "Manage all options in one place", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                }
             }
             androidx.compose.foundation.layout.FlowRow(
                 Modifier.fillMaxWidth().padding(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
                 maxItemsInEachRow = 3
             ) {
                 drawerItems.forEach { item ->
                     androidx.compose.runtime.key(item.name) {
                         Surface(
                             onClick = { onNavigate(item) },
-                            modifier = Modifier.fillMaxWidth(0.31f),
+                            modifier = Modifier.fillMaxWidth(0.31f).referenceRaisedPanel(26.dp),
                             shape = MaterialTheme.shapes.large,
-                            color = colors.surfaceContainerLow,
+                            color = androidx.compose.ui.graphics.Color.Transparent,
                             border = androidx.compose.foundation.BorderStroke(0.5.dp, colors.outlineVariant),
                             shadowElevation = if (fullEffects) 5.dp else 0.dp
                         ) {
                             Column(
-                                Modifier.padding(horizontal = 6.dp, vertical = 16.dp),
+                                Modifier.padding(horizontal = 6.dp, vertical = 14.dp).height(104.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
-                                androidx.compose.foundation.layout.Box(
-                                    Modifier.size(48.dp)
-                                        .background(
-                                            androidx.compose.ui.graphics.Brush.verticalGradient(listOf(colors.primary.copy(alpha = 0.3f), colors.surfaceContainerHigh)),
-                                            MaterialTheme.shapes.medium
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        painterResource(item.iconRes),
-                                        contentDescription = null,
-                                        tint = colors.primary,
-                                        modifier = Modifier.size(28.dp)
-                                    )
-                                }
+                                com.v2ray.ang.ui.compose.OmniReferenceIcon(
+                                    artwork = when (item) {
+                                        MainDestination.Subscriptions -> "subscriptions"
+                                        MainDestination.PerAppProxy -> "per-app"
+                                        MainDestination.Routing -> "routing"
+                                        MainDestination.UserAssets -> "assets"
+                                        MainDestination.Settings -> "settings"
+                                        MainDestination.OmniPanel -> "hub"
+                                        MainDestination.OmniDoctor -> "doctor"
+                                        MainDestination.OmniScanner, MainDestination.OmniDnsScanner -> "scanner"
+                                        MainDestination.OmniPrivacy -> "backup"
+                                        MainDestination.OmniDnsLab -> "language"
+                                        MainDestination.OmniRoutingStudio -> "routing"
+                                        MainDestination.OmniSync -> "update"
+                                        MainDestination.OmniSpeed -> "scanner"
+                                        MainDestination.Logcat -> "logs"
+                                        MainDestination.CheckUpdate -> "update"
+                                        MainDestination.BackupRestore -> "backup"
+                                        MainDestination.About -> "about"
+                                    }
+                                )
                                 Text(
                                     stringResource(item.labelRes),
                                     style = MaterialTheme.typography.labelMedium,

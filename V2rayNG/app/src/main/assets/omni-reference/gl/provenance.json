@@ -1,0 +1,6 @@
+{
+  "source": "Omni-0.13.1.html / original embedded Three.js and omni-icon3d-js",
+  "threeRevision": "128",
+  "geometry": "Exact original ExtrudeGeometry, TorusGeometry and SphereGeometry parameters and UV mapping",
+  "shader": "Original expanded Three MeshStandardMaterial/Basic GLSL, not an approximate replacement"
+}
