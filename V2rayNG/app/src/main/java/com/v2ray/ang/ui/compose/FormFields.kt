@@ -66,8 +66,6 @@ fun FormTextField(
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                 unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f),
                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f),
                 cursorColor = MaterialTheme.colorScheme.secondary,
                 selectionColors = TextSelectionColors(
                     handleColor = MaterialTheme.colorScheme.secondary,
@@ -128,8 +126,6 @@ fun FormDropdownField(
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                 unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f),
                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f),
                 cursorColor = MaterialTheme.colorScheme.secondary,
                 selectionColors = TextSelectionColors(
                     handleColor = MaterialTheme.colorScheme.secondary,

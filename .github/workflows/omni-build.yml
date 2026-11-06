@@ -21,6 +21,8 @@ permissions:
 
 jobs:
   build:
+    outputs:
+      version: ${{ steps.build-version.outputs.version }}
     runs-on: ubuntu-latest
     env:
       # One version for the whole build. The assemble step and the slim-copy step each used to
@@ -45,12 +47,14 @@ jobs:
     # One version for the whole build, derived from the dispatch input or the pushed tag (leading v
     # stripped), so a tag build no longer falls back to a stale hard-coded version (audit F2).
     - name: Resolve build version
+      id: build-version
       run: |
         VERSION="${{ inputs.release_tag }}"
         if [[ -z "$VERSION" && "${{ github.ref_type }}" == "tag" ]]; then VERSION="${{ github.ref_name }}"; fi
         if [[ -z "$VERSION" ]]; then VERSION="${OMNI_VERSION}"; fi
         VERSION="${VERSION#v}"
         echo "OMNI_VERSION=$VERSION" >> "$GITHUB_ENV"
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
         echo "Building Omni $VERSION"
 
     - name: Setup Android SDK
@@ -645,10 +649,46 @@ jobs:
         if-no-files-found: error
         retention-days: 30
 
+  ui-smoke:
+    name: Native UI smoke (Android 15)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/download-artifact@v4
+      with:
+        name: omni-apks
+        path: smoke-apks
+    - name: Enable KVM
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
+    - name: Exercise the actual signed native app
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 35
+        target: google_apis
+        arch: x86_64
+        profile: pixel_2
+        emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+        disable-animations: true
+        script: |
+          adb install -r smoke-apks/Omni_${{ needs.build.outputs.version }}_x86_64.apk
+          python3 tools/omni-native-ui-smoke.py
+    - name: Preserve native screenshots and crash log
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: omni-native-ui-results
+        path: ui-results/
+        if-no-files-found: warn
+
   release:
     name: Publish GitHub release
     if: (github.event_name == 'workflow_dispatch' && inputs.release_tag != '') || github.ref_type == 'tag'
-    needs: build
+    needs: [build, ui-smoke]
     runs-on: ubuntu-latest
     permissions:
       contents: write
