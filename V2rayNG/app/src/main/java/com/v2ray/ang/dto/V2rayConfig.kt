@@ -76,10 +76,8 @@ data class V2rayConfig(
         var mux: MuxBean? = MuxBean(false),
         var targetStrategy: String? = null
     ) {
-        @Transient var connectionIpRedirect: String? = null
         data class OutSettingsBean(
             /*Common */
-            var redirect: String? = null,
             var address: Any? = null,
             var port: Int? = null,
             var level: Int? = null,

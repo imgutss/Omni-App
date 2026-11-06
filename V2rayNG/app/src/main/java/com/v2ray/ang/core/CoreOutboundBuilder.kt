@@ -51,7 +51,6 @@ object CoreOutboundBuilder {
         applyTargetStrategy(outbound, profileItem)
         val ret = updateOutboundWithGlobalSettings(outbound)
         if (!ret) return null
-        DialAddressOverride.attach(outbound, profileItem)
         return outbound
     }
 

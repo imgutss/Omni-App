@@ -271,8 +271,6 @@ data class ProfileItem(
     /** ShadowQUIC tuning JSON; absent keys fall back to the gaming baseline the sidecar applies. */
     var shadowquicParameters: String? = null,
 
-    /** Optional VLESS/Trojan dial IP. Origin server remains the source of implicit TLS/Host identity. */
-    var dialAddress: String? = null,
 ) {
 
     companion object {

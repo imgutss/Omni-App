@@ -167,12 +167,10 @@ class ServerUiState(
     dnsttSshAuthType: String = "password",
     dnsttSshPrivateKey: String = "",
     dnsttSshKeyPassphrase: String = "",
-    dialAddress: String = "",
 ) {
     var configType by mutableStateOf(configType)
     var remarks by mutableStateOf(remarks)
     var address by mutableStateOf(address)
-    var dialAddress by mutableStateOf(dialAddress)
     var port by mutableStateOf(port)
     var password by mutableStateOf(password)
     var method by mutableStateOf(method)
@@ -393,7 +391,6 @@ class ServerUiState(
                 else -> null
             },
             flow = if (isVless) flow else null,
-            dialAddress = if (configType == EConfigType.VLESS || configType == EConfigType.TROJAN) dialAddress.trim().nullIfBlank() else null,
             username = if (isSocksOrHttp || isTuic || isShadowQuic) username else null,
             secretKey = if (isWireguard) secretKey else null,
             publicKey = when {
@@ -547,7 +544,6 @@ class ServerUiState(
                 configType = initialConfig.configType,
                 remarks = initialConfig.remarks,
                 address = initialConfig.server ?: "",
-                dialAddress = initialConfig.dialAddress ?: "",
                 port = initialConfig.serverPort
                     ?: if (initialConfig.configType == EConfigType.AETHER) "" else DEFAULT_PORT.toString(),
                 password = initialConfig.password ?: "",

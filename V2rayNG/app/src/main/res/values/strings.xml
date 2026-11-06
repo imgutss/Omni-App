@@ -975,11 +975,4 @@
     <string name="warp_scan_stop_vpn">Stop the active VPN before scanning.</string>
     <string name="quic_core_timeout">Tunnel traffic test timed out. Check the endpoint, UDP availability and credentials; socket protection details are in the app log.</string>
     <string name="naive_protocol_notice">Official NaiveProxy over HTTPS / HTTP2. A real NaiveProxy server and valid TLS certificate are required. QUIC mode and certificate bypass are not supported.</string>
-    <string name="address_scan_button">Scan connection IPs (keep port and TLS settings)</string>
-    <string name="address_scan_candidates">Optional candidate IPs (comma or newline separated)</string>
-    <string name="address_scan_override">Connection IP override (origin, SNI and Host unchanged)</string>
-    <string name="address_scan_notice">Tests IPs from the origin DNS and your list using the complete profile, not ping. Only the connection IP changes. Keep the VPN stopped while scanning. Clear the override to restore origin DNS.</string>
-    <string name="address_scan_progress">Tested %1$d / %2$d IPs</string>
-    <string name="address_scan_found">Selected %1$s (%2$d ms). Port and all protocol settings unchanged.</string>
-    <string name="address_scan_changed">The profile changed during scanning; result not applied. Scan again.</string>
 </resources>
