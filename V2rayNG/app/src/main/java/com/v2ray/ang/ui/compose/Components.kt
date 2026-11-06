@@ -26,7 +26,7 @@ import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.v2ray.ang.ui.compose.OmniIconButton as IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import com.v2ray.ang.ui.compose.OmniTextField as OutlinedTextField
@@ -35,6 +35,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -90,6 +91,7 @@ fun AppTopBar(
                 }
             },
             navigationIcon = {
+                CompositionLocalProvider(LocalOmniHeaderChrome provides true) {
                 if (navigationIcon != null) {
                     navigationIcon()
                 } else {
@@ -100,8 +102,9 @@ fun AppTopBar(
                         )
                     }
                 }
+                }
             },
-            actions = actions,
+            actions = { CompositionLocalProvider(LocalOmniHeaderChrome provides true) { actions() } },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = Color.Transparent,
                 titleContentColor = MaterialTheme.colorScheme.primary,

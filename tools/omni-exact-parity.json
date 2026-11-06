@@ -445,7 +445,10 @@
     "Source-wide card/dialog glass stops and CSS angle projection, source header typography, label line height/focus glow and editor top inset; corrected neutral light surfaces.",
     "Material-backed dialog adapter forwards all content/action/focus/IME/dismissal properties while drawing source 30dp glass and 400ms perspective entry.",
     "Material-backed filled/outlined/text/tonal button adapters preserve callbacks, disabled state, interaction source, colors and original nullable button API; source bevel/46dp minima/pressed pose and original skin on-accent inks.",
-    "Actual log clear is immediate, with independent 320ms outgoing-snapshot wipe and projected cursor inside the body. It cannot delay/cancel native clear; footer count remains actual."
+    "Actual log clear is immediate, with independent 320ms outgoing-snapshot wipe and projected cursor inside the body. It cannot delay/cancel native clear; footer count remains actual.",
+    "Latest actual images identified toolbar chrome allocating 54dp instead of reference 48dp target/44dp visible. Explicit sizes and header-scoped native IconButton adapter now preserve all actions while avoiding duplicate chrome and leaving compact row/terminal actions untouched.",
+    "Latest actual log image showed hard-band halo. Separate native 14dp unbounded blur/conic layer (API31+) now follows source 7-second rotation/depth; API29/30 gets smooth distance falloff, not unsupported blur or synthetic data.",
+    "Corrected harness action lookup to the actual Refresh log resource; retained capability was present in actual UI XML."
   ],
   "validated": [
     "Nonpublishing CI42256966055 / 8f1bc069: both Kotlin flavors, unit tests, signed APK/native ABI checks, Android15 launch and navigation smoke passed.",
@@ -454,7 +457,8 @@
     "Native engine/manifest guard remains unchanged. New scanner chooser reuses existing declared activity before initializing the WARP ViewModel.",
     "88843d5f / CI42260713129 build and both-flavor unit tests passed. Expanded emulator smoke stopped on nested Settings back-navigation in the test harness before new tool routes; not an app-crash proof or tool-validation pass.",
     "2af9f2e6 / CI42264165319: both-flavor Kotlin/unit build passed, including 19-skin terminal contrast test; matched-viewport smoke blocked at startup by a Pixel Launcher ANR, before app navigation. No tool/runtime pass claimed.",
-    "ecfc63bb / CI42266497207: both-flavor build/unit tests and signing/ABI checks passed, including server/tab compilation and latency threshold tests. Emulator test failed in the harness am-start command before app interaction; output was not exposed by old helper. No device/UI pass claimed."
+    "ecfc63bb / CI42266497207: both-flavor build/unit tests and signing/ABI checks passed, including server/tab compilation and latency threshold tests. Emulator test failed in the harness am-start command before app interaction; output was not exposed by old helper. No device/UI pass claimed.",
+    "852acddc / CI42270361404: both-flavor build/unit/signing/ABI checks passed. Actual Android15 app launch, original PBR first frame, appearance persistence/large text, all nine tool routes, genuine WARP tool and actual renderer log text succeeded up to smoke line134. Smoke failed because test expected Refresh instead of the real retained content-description Refresh log. Artifact13532530501: eighteen real Android images, real logcat/render proof and XML downloaded to /home/user/omni-exact-native-smoke-852acddc. No full smoke pass claimed."
   ],
   "notValidated": [
     "Current appearance, connecting status, dark/light terminal and immediate callback changes await new-head Kotlin/unit validation.",

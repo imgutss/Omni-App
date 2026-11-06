@@ -133,7 +133,7 @@ try:
     menu();tap('Logcat');time.sleep(3);screenshot('18-real-log-slab')
     assert find('LIVE') is not None,'Native log polling did not start'
     assert any('Original mesh and PBR shaders rendered successfully' in t for t,d in labels(dump())),'Real renderer log never reached the native viewer'
-    for label in ('Copy log','Share log','Clear log','Refresh'):
+    for label in ('Copy log','Share log','Clear log','Refresh log'):
         assert find(label) is not None,'Existing log action lost: '+label
     tap('LIVE');assert find('PAUSED') is not None,'Native log pause did not take effect'
     screenshot('19-paused-real-log-slab')

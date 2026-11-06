@@ -9,10 +9,13 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import com.v2ray.ang.ui.compose.OmniIconButton as IconButton
 import com.v2ray.ang.ui.compose.OmniTextButton as TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
@@ -23,6 +26,10 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.Shader
+import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -48,7 +55,7 @@ fun OmniLogSurface(live: Boolean, onLive: (Boolean) -> Unit, onRefresh: () -> Un
     var x by remember { mutableFloatStateOf(0f) };var y by remember { mutableFloatStateOf(0f) }
     val rx by animateFloatAsState(if(fx==OmniEffects.OFF)0f else 5f-y*14f,label="log-slab-x")
     val ry by animateFloatAsState(if(fx==OmniEffects.OFF)0f else x*16f,label="log-slab-y")
-    Column(modifier.fillMaxSize()
+    Box(modifier.fillMaxSize()
         .graphicsLayer { rotationX=rx;rotationY=ry;cameraDistance=1100f*density;translationY=if(fx==OmniEffects.OFF)0f else (-2.5f*(1f-kotlin.math.cos(time*2f*kotlin.math.PI.toFloat()/7f)))*density }
         .pointerInput(fx) {
             if(fx!=OmniEffects.OFF) try {
@@ -61,12 +68,28 @@ fun OmniLogSurface(live: Boolean, onLive: (Boolean) -> Unit, onRefresh: () -> Un
                 }
             } finally { x=0f;y=0f }
         }
-        .drawBehind {
-            if(fx!=OmniEffects.OFF) {
-                val r=CornerRadius(35.dp.toPx())
-                repeat(3) { i -> val spread=(3-i)*4.dp.toPx();drawRoundRect(accent.copy(alpha=.04f+i*.025f),Offset(-spread,-spread),Size(size.width+spread*2f,size.height+spread*2f),r) }
+) {
+        if(fx!=OmniEffects.OFF) {
+            val conic=omniTerminalConic(accent,time*360f/7f)
+            if(android.os.Build.VERSION.SDK_INT>=31) {
+                Box(Modifier.matchParentSize().graphicsLayer { alpha=.55f;scaleX=1100f/1146f;scaleY=scaleX }
+                    .blur(14.dp,BlurredEdgeTreatment.Unbounded).drawBehind {
+                        val d=3.dp.toPx()
+                        drawRoundRect(conic,Offset(-d,-d),Size(size.width+d*2f,size.height+d*2f),CornerRadius(35.dp.toPx()))
+                    })
+            }else {
+                // API29/30: smooth signed-distance falloff rather than three hard bands.
+                Canvas(Modifier.matchParentSize()) {
+                    repeat(28) { i ->
+                        val spread=i*1.25f
+                        val opacity=(.55/(1.0+kotlin.math.exp(1.702*(spread+5.0)/14.0))).toFloat()
+                        val d=spread.dp.toPx()
+                        drawRoundRect(conic,Offset(-d,-d),Size(size.width+d*2f,size.height+d*2f),CornerRadius((32f+spread).dp.toPx()),alpha=opacity,style=androidx.compose.ui.graphics.drawscope.Stroke(1.25.dp.toPx()))
+                    }
+                }
             }
         }
+        Column(Modifier.fillMaxSize()
         .clip(RoundedCornerShape(32.dp))
         .background(Color(0xFF121212)).drawBehind {
             val radius=size.width*1.2f;val at=Offset(size.width/2f,0f)
@@ -119,6 +142,7 @@ fun OmniLogSurface(live: Boolean, onLive: (Boolean) -> Unit, onRefresh: () -> Un
             Text(rate?.let { String.format(Locale.ROOT,"%.1f/s",it) }?:"—/s",fontSize=10.5.sp,fontFamily=FontFamily.Monospace,color=Color(0xFFB3B3B3))
         }
     }
+    }
 }
 
 /** Counts duplicate real arrivals too; historic bootstrap/filter changes are excluded by the caller. */
@@ -156,4 +180,13 @@ internal fun omniLogWipePose(progress:Float):OmniLogWipePose {
     val y=(320f*kotlin.math.sin(angle)-30f*kotlin.math.cos(angle))*p
     val scale=640f/(640f+z)
     return OmniLogWipePose(1f-p,scale,y*scale,640f+z)
+}
+
+private fun omniTerminalConic(accent:Color,degrees:Float):Brush=object:ShaderBrush() {
+    override fun createShader(size:Size):Shader {
+        val dark=lerp(accent,Color.Black,.13f)
+        return android.graphics.SweepGradient(size.width/2f,size.height/2f,intArrayOf(accent.toArgb(),dark.toArgb(),dark.toArgb(),accent.toArgb()),null).apply {
+            setLocalMatrix(android.graphics.Matrix().apply{setRotate(degrees-90f,size.width/2f,size.height/2f)})
+        }
+    }
 }

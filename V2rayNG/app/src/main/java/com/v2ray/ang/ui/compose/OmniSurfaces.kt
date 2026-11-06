@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -72,11 +73,14 @@ fun Modifier.referenceRaisedControl(selected: Boolean, accent: Color = LocalOmni
     return referencePressTilt().drawBehind {
         val radius = CornerRadius(16.dp.toPx())
         drawRoundRect(Color.Black.copy(alpha = .55f), Offset(0f, 3.dp.toPx()), size, radius)
-        drawRoundRect(if (selected) Brush.linearGradient(listOf(accent, lerp(accent, Color.Black, .28f))) else Brush.linearGradient(listOf(colors.onSurface.copy(alpha = .08f), colors.onSurface.copy(alpha = .025f))), cornerRadius = radius)
+        drawRoundRect(if (selected) Brush.linearGradient(listOf(accent, lerp(accent, Color.Black, .28f))) else cssLinearGradient(size,145f,0f to Color.White.copy(alpha=.11f),1f to Color.White.copy(alpha=.02f)), cornerRadius = radius)
         drawRoundRect(if (selected) accent else colors.onSurface.copy(alpha = .12f), cornerRadius = radius, style = Stroke(1.dp.toPx()))
         drawRoundRect(Brush.verticalGradient(listOf(Color.White.copy(alpha = .22f), Color.Transparent, Color.Black.copy(alpha = .25f))), cornerRadius = radius, style = Stroke(1.dp.toPx()))
     }.clip(shape)
 }
 
 @Composable
-fun Modifier.omniIconChrome(): Modifier = padding(3.dp).referenceRaisedControl(false)
+fun Modifier.omniIconChrome(): Modifier = size(48.dp).padding(2.dp).referenceRaisedControl(false).then(OmniIconChromeMarker)
+
+private object OmniIconChromeMarker:Modifier.Element
+internal fun Modifier.hasOmniIconChrome():Boolean=any{it===OmniIconChromeMarker}
