@@ -8,6 +8,10 @@ on:
         required: false
         type: boolean
         default: false
+      reuse_ui_run:
+        description: 'Harness-only rerun: successful signed parent build ID; rejects ALL app/native changes and disables publication'
+        required: false
+        type: string
       release_tag:
         description: 'Version to build and publish, without the leading v (for example 0.3.0)'
         required: false
@@ -26,6 +30,7 @@ permissions:
 
 jobs:
   build:
+    if: ${{ !inputs.reuse_ui_run }}
     outputs:
       version: ${{ steps.build-version.outputs.version }}
     runs-on: ubuntu-latest
@@ -695,15 +700,37 @@ jobs:
 
   ui-smoke:
     name: Native UI smoke (Android 15)
+    if: ${{ always() && (needs.build.result == 'success' || (needs.build.result == 'skipped' && inputs.reuse_ui_run != '')) }}
+    permissions:
+      contents: read
+      actions: read
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
     - uses: actions/checkout@v7
+    - name: Verify exact app source before harness-only artifact reuse
+      if: ${{ inputs.reuse_ui_run != '' }}
+      env:
+        GH_TOKEN: ${{ github.token }}
+        UI_PARENT_RUN: ${{ inputs.reuse_ui_run }}
+        RELEASE_TAG: ${{ inputs.release_tag }}
+      run: python3 tools/verify-omni-ui-smoke-reuse.py
     - uses: actions/download-artifact@v4
       with:
         name: omni-apks
         path: smoke-apks
+        github-token: ${{ github.token }}
+        run-id: ${{ inputs.reuse_ui_run || github.run_id }}
+    - name: Select the one signed x86_64 APK
+      run: |
+        python3 - <<'PYAPK'
+        from pathlib import Path
+        import os
+        apks=list(Path('smoke-apks').glob('Omni_*_x86_64.apk'))
+        assert len(apks)==1,apks
+        with open(os.environ['GITHUB_ENV'],'a')as env:env.write('SMOKE_APK='+str(apks[0])+'\n')
+        PYAPK
     - name: Enable KVM
       run: |
         echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -719,7 +746,7 @@ jobs:
         emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
         disable-animations: true
         script: |
-          adb install -r smoke-apks/Omni_${{ needs.build.outputs.version }}_x86_64.apk
+          adb install -r "${SMOKE_APK}"
           adb shell cmd uimode night yes
           python3 tools/omni-native-ui-smoke.py
     - name: Preserve native screenshots and crash log
@@ -732,7 +759,7 @@ jobs:
 
   release:
     name: Publish GitHub release
-    if: (github.event_name == 'workflow_dispatch' && inputs.release_tag != '') || github.ref_type == 'tag'
+    if: ${{ !inputs.reuse_ui_run && ((github.event_name == 'workflow_dispatch' && inputs.release_tag != '') || github.ref_type == 'tag') }}
     needs: [build, ui-smoke]
     runs-on: ubuntu-latest
     permissions:
