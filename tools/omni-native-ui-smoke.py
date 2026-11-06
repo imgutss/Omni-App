@@ -42,6 +42,9 @@ def selected(label):
     return n is not None and (n.attrib.get('checked')=='true'or n.attrib.get('selected')=='true')
 
 try:
+    # The fresh emulator has no user-granted notification permission. Grant only
+    # that permission so the OS prompt cannot obscure the app's UI controls.
+    adb('shell','pm','grant',PACKAGE,'android.permission.POST_NOTIFICATIONS')
     adb('logcat','-c');launch();screenshot('01-home')
     menu();screenshot('02-drawer');tap('Blue');screenshot('03-blue-theme')
     assert selected('Blue'),'Theme chip does not expose its selected state'
