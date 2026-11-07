@@ -10,8 +10,15 @@ protected=['AndroidLibXrayLite','aether','hev-socks5-tunnel','third_party','guts
  'V2rayNG/app/src/main/java/com/v2ray/ang/core','V2rayNG/app/src/main/java/com/v2ray/ang/service',
  'V2rayNG/app/src/main/java/com/v2ray/ang/handler','V2rayNG/app/src/main/java/com/v2ray/ang/dto',
  'V2rayNG/app/src/main/java/com/v2ray/ang/fmt','V2rayNG/app/src/main/java/com/v2ray/ang/root',
- 'V2rayNG/app/src/main/java/com/v2ray/ang/contracts','V2rayNG/app/src/main/java/com/v2ray/ang/AppConfig.kt']
+ 'V2rayNG/app/src/main/java/com/v2ray/ang/contracts']
 subprocess.run(['git','diff','--exit-code',pin['commit'],'HEAD','--',*protected],cwd=root,check=True)
+# Only three exact public branding URLs may change in AppConfig. Every other
+# configuration byte remains compared to the pinned native-source baseline.
+from omni_branding_guard import same_native_app_config
+app_config='V2rayNG/app/src/main/java/com/v2ray/ang/AppConfig.kt'
+baseline_config=subprocess.check_output(['git','show',pin['commit']+':'+app_config],cwd=root,text=True)
+assert same_native_app_config(baseline_config,(root/app_config).read_text()),'Native AppConfig change: rebuild native inputs'
+
 # A dependency declared directly in the app Gradle file can own JNI too. Only the
 # release version fields may differ; all dependency/build configuration stays pinned.
 gradle='V2rayNG/app/build.gradle.kts'

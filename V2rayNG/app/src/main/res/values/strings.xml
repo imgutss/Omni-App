@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="omni_brand_signature" translatable="false">Omni — imgutss</string>
     <string name="app_name" translatable="false">Omni</string>
     <string name="app_widget_name">Switch</string>
     <string name="app_tile_name">Switch</string>

@@ -38,7 +38,7 @@ jobs:
       # One version for the whole build. The assemble step and the slim-copy step each used to
       # fall back to a different hard-coded version, so a push built Omni_<one>_*.apk and then
       # went looking for Omni_<other>_*.apk to slim — which is what failed the 0.11.2 build.
-      OMNI_VERSION: '0.15.0'
+      OMNI_VERSION: '1.0.0'
       # The latest stable release, as aether's own release workflow builds with. The libaether
       # cache is keyed by the rustc it installs, so a new stable release builds the core afresh.
       RUST_TOOLCHAIN: "stable"
@@ -577,6 +577,9 @@ jobs:
         test -n "${{ secrets.OMNI_KEYSTORE_BASE64 }}"
         printf '%s' '${{ secrets.OMNI_KEYSTORE_BASE64 }}' | base64 -d > android_keystore.jks
         echo "filePath=$GITHUB_WORKSPACE/android_keystore.jks" >> "$GITHUB_OUTPUT"
+
+    - name: Verify public branding URL guard
+      run: python3 -m unittest discover -s tools -p test_omni_branding_guard.py
 
     - name: Build APK
       run: |

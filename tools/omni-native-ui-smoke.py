@@ -61,7 +61,13 @@ def launch():
     assert adb('shell','pidof',PACKAGE).strip(),'App did not remain running'
     assert not any("isn't responding" in t for t,d in labels(dump())),'Application/emulator ANR obscures the app'
 
+HUB_ONLY=('Omni Privacy & Backup','Omni DNS Lab','Omni Routing Studio','Omni Sync Center','Omni Speed & Ping Lab')
 def menu():tap('Open navigation menu')
+def open_destination(label):
+    menu()
+    if label in HUB_ONLY:
+        tap('Omni Hub')
+    tap(label)
 def back_to_main():
     # Settings has its own nested routes, including UI settings. A single Back
     # need not leave the activity, especially after configuration recreation.
@@ -104,7 +110,10 @@ try:
         assert time.monotonic()<deadline,'Native 3D logo never produced a first frame: '+gl
         time.sleep(.75)
     (OUT/'render-proof.txt').write_text(gl)
-    time.sleep(.5);screenshot('02-drawer');tap('Blue');screenshot('03-blue-theme')
+    time.sleep(.5);screenshot('02-drawer')
+    for hidden in HUB_ONLY:
+        assert find(hidden) is None,'Hub-only destination duplicated in drawer: '+hidden
+    tap('Blue');screenshot('03-blue-theme')
     assert selected('Blue'),'Theme chip does not expose its selected state'
     tap('Off');assert selected('Off'),'Effects chip did not change'
     # Abrupt restart checks persisted appearance, not only the in-memory composition.
@@ -139,7 +148,7 @@ try:
     back_to_main();adb('shell','cmd','uimode','night','yes');time.sleep(2)
     # Real activities only. Merely opening the tools never starts a VPN or a probe.
     for i,label in enumerate(('Omni Hub','Omni Doctor','Omni Privacy & Backup','Omni DNS Lab','Omni Routing Studio','Omni Sync Center','Omni Speed & Ping Lab','DNS Scanner','Omni Scanner'),8):
-        menu();tap(label);time.sleep(.8)
+        open_destination(label);time.sleep(.8)
         assert adb('shell','pidof',PACKAGE).strip(),'Activity crashed: '+label
         screenshot(f'{i:02d}-'+re.sub(r'[^a-z0-9]+','-',label.lower()).strip('-'))
         if label=='Omni Scanner':

@@ -74,21 +74,37 @@ private val primaryDrawerItems = listOf(
     MainDestination.Settings
 )
 
-private val drawerItems = primaryDrawerItems + listOf(
+internal val drawerItems = primaryDrawerItems + listOf(
     MainDestination.OmniPanel,
     MainDestination.OmniDoctor,
     MainDestination.OmniScanner,
-    MainDestination.OmniPrivacy,
-    MainDestination.OmniDnsLab,
-    MainDestination.OmniRoutingStudio,
-    MainDestination.OmniSync,
-    MainDestination.OmniSpeed,
     MainDestination.OmniDnsScanner,
     MainDestination.Logcat,
     MainDestination.CheckUpdate,
     MainDestination.BackupRestore,
     MainDestination.About
 )
+
+internal fun MainDestination.referenceArtwork(): String = when (this) {
+    MainDestination.Subscriptions -> "subscriptions"
+    MainDestination.PerAppProxy -> "per-app"
+    MainDestination.Routing -> "routing"
+    MainDestination.UserAssets -> "assets"
+    MainDestination.Settings -> "settings"
+    MainDestination.OmniPanel -> "hub"
+    MainDestination.OmniDoctor -> "doctor"
+    MainDestination.OmniScanner -> "scanner"
+    MainDestination.OmniDnsScanner -> "language"
+    MainDestination.OmniPrivacy -> "backup"
+    MainDestination.OmniDnsLab -> "update"
+    MainDestination.OmniRoutingStudio -> "backup"
+    MainDestination.OmniSync -> "about"
+    MainDestination.OmniSpeed -> "effects"
+    MainDestination.Logcat -> "logs"
+    MainDestination.CheckUpdate -> "update"
+    MainDestination.BackupRestore -> "backup"
+    MainDestination.About -> "about"
+}
 
 @Composable
 fun MainDrawerContent(
@@ -169,26 +185,7 @@ fun MainDrawerContent(
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 com.v2ray.ang.ui.compose.OmniReferenceIcon(
-                                    artwork = when (item) {
-                                        MainDestination.Subscriptions -> "subscriptions"
-                                        MainDestination.PerAppProxy -> "per-app"
-                                        MainDestination.Routing -> "routing"
-                                        MainDestination.UserAssets -> "assets"
-                                        MainDestination.Settings -> "settings"
-                                        MainDestination.OmniPanel -> "hub"
-                                        MainDestination.OmniDoctor -> "doctor"
-                                        MainDestination.OmniScanner -> "scanner"
-                                        MainDestination.OmniDnsScanner -> "language"
-                                        MainDestination.OmniPrivacy -> "logs"
-                                        MainDestination.OmniDnsLab -> "update"
-                                        MainDestination.OmniRoutingStudio -> "backup"
-                                        MainDestination.OmniSync -> "about"
-                                        MainDestination.OmniSpeed -> "effects"
-                                        MainDestination.Logcat -> "theme"
-                                        MainDestination.CheckUpdate -> "update"
-                                        MainDestination.BackupRestore -> "backup"
-                                        MainDestination.About -> "about"
-                                    }
+                                    artwork = item.referenceArtwork()
                                 )
                                 Text(
                                     stringResource(item.labelRes),
