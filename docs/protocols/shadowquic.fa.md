@@ -61,7 +61,7 @@ openssl rand -hex 32
 
 ```sh
 id -u omni-shadowquic >/dev/null 2>&1 || \
-  sudo useradd --system --no-create-home --shell /usr/sbin/nologin omni-shadowquic
+  sudo useradd --system --user-group --no-create-home --shell /usr/sbin/nologin omni-shadowquic
 sudo install -d -o root -g omni-shadowquic -m 0750 /etc/omni-shadowquic
 sudo install -o root -g omni-shadowquic -m 0640 server.yaml /etc/omni-shadowquic/server.yaml
 sudo install -m 0644 omni-shadowquic.service /etc/systemd/system/omni-shadowquic.service
