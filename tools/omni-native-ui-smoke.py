@@ -157,7 +157,8 @@ try:
             tap('WARP / Aether scanner');screenshot('17-real-warp-tool')
             assert adb('shell','pidof',PACKAGE).strip(),'WARP tool crashed'
             adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
-        adb('shell','input','keyevent','KEYCODE_BACK');time.sleep(1)
+        # A Hub-owned tool returns to Hub first; finish the genuine Back stack.
+        back_to_main()
     # Empty editors are real native screens, not browser previews or prefilled demo forms.
     editor_labels=('Add [VMess]','Add [VLESS]','Add [Trojan]','Add [Shadowsocks]','Add [SOCKS]','Add [HTTP]','Add [Hysteria2]','Add [WireGuard]','Add [NaiveProxy]','Add [TUIC v5]','Add [ShadowQUIC]','MasterDNS','DNSTT','GUTS','Add [Policy group]','Add [Proxy chain]','Add Aether config manually')
     for i,label in enumerate(editor_labels,22):

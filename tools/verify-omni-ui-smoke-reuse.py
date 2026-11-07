@@ -15,7 +15,8 @@ def get(path):
     with urllib.request.urlopen(request,timeout=40)as response:return json.load(response)
 parent=get('/actions/runs/'+run)
 assert parent['head_repository']['full_name']==repo,'Foreign source repository'
-assert parent['workflow_id']==400256906,'Not the signed Omni build workflow'
+expected_workflow=get('/actions/workflows/omni-build.yml')
+assert parent['workflow_id']==expected_workflow['id'],"Not this repository signed Omni build workflow"
 sha=parent['head_sha'];assert re.fullmatch(r'[0-9a-f]{40}',sha),'Invalid parent source SHA'
 jobs=get('/actions/runs/'+run+'/jobs?per_page=100')['jobs']
 assert any(j['name']=='build'and j['conclusion']=='success'for j in jobs),'Parent build has not passed'
