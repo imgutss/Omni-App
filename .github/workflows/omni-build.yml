@@ -719,7 +719,7 @@ jobs:
         UI_PARENT_RUN: ${{ inputs.reuse_ui_run }}
         RELEASE_TAG: ${{ inputs.release_tag }}
       run: python3 tools/verify-omni-ui-smoke-reuse.py
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: omni-apks
         path: smoke-apks
@@ -769,7 +769,7 @@ jobs:
       contents: write
     steps:
     - name: Download signed APKs
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: omni-apks
         path: release-apks
