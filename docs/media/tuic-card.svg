@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="225" viewBox="0 0 640 225" role="img" aria-label="TUIC v5 — setup guide">
+<defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#14231e"/><stop offset="1" stop-color="#0a0f12"/></linearGradient><radialGradient id="g"><stop stop-color="#59cfff" stop-opacity=".22"/><stop offset="1" stop-color="#59cfff" stop-opacity="0"/></radialGradient></defs>
+<rect x="1" y="1" width="638" height="223" rx="24" fill="url(#bg)" stroke="#59cfff" stroke-opacity=".3"/><circle cx="559" cy="115" r="150" fill="url(#g)"/>
+<path d="M420 199C410 111 591 170 600 26M443 209C443 139 629 152 628 59" fill="none" stroke="#59cfff" stroke-opacity=".1"/>
+<text x="29" y="37" fill="#59cfff" font-family="Arial,sans-serif" font-size="12" letter-spacing="2.3">02 / QUIC / TCP + UDP</text>
+<text x="27" y="104" fill="#f1fff7" font-family="Arial,sans-serif" font-size="43" font-weight="700" letter-spacing="-1">TUIC v5</text>
+<text x="29" y="141" fill="#a2b8ad" font-family="Arial,sans-serif" font-size="17">One profile. Two transport paths.</text>
+<text x="29" y="193" fill="#59cfff" font-family="Arial,sans-serif" font-size="14" font-weight="700">EXPLORE THE SETUP</text><path d="M195 188H216M210 182L216 188L210 194" fill="none" stroke="#59cfff" stroke-width="1.8"/>
+<rect x="521" y="62" width="80" height="85" rx="24" fill="#0c1813" stroke="#59cfff" stroke-opacity=".45"/><g transform="translate(543 83)" fill="none" stroke="#59cfff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10H31M5 21H31M5 32H31M24 5L31 10L24 15M12 16L5 21L12 26M24 27L31 32L24 37"/></g>
+</svg>

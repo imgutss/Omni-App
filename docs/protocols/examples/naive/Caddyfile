@@ -1,0 +1,18 @@
+{
+    email you@example.com
+    order forward_proxy before file_server
+    servers {
+        protocols h1 h2
+    }
+}
+:443, naive.example.com {
+    forward_proxy {
+        basic_auth omni REPLACE_WITH_A_LONG_RANDOM_PASSWORD
+        hide_ip
+        hide_via
+        probe_resistance
+    }
+    file_server {
+        root /srv
+    }
+}

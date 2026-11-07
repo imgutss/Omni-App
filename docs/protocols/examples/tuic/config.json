@@ -1,0 +1,25 @@
+{
+  "log": {"level": "info"},
+  "inbounds": [{
+    "type": "tuic",
+    "tag": "tuic-in",
+    "listen": "0.0.0.0",
+    "listen_port": 443,
+    "users": [{
+      "name": "omni",
+      "uuid": "00000000-0000-4000-8000-000000000000",
+      "password": "REPLACE_WITH_A_LONG_RANDOM_PASSWORD"
+    }],
+    "congestion_control": "bbr",
+    "zero_rtt_handshake": false,
+    "tls": {
+      "enabled": true,
+      "server_name": "tuic.example.com",
+      "alpn": ["h3"],
+      "certificate_path": "/etc/letsencrypt/live/tuic.example.com/fullchain.pem",
+      "key_path": "/etc/letsencrypt/live/tuic.example.com/privkey.pem"
+    }
+  }],
+  "outbounds": [{"type": "direct", "tag": "direct"}],
+  "route": {"final": "direct"}
+}

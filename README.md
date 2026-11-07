@@ -21,6 +21,37 @@ Thoughtfully designed for Android, down to the last detail.
 
 <br />
 
+## More ways to connect
+
+Four distinctive tools, each with its own route from setup to your first profile.
+
+<table>
+<tr>
+<td width="50%"><a href="docs/protocols/naiveproxy.md"><img src="docs/media/naiveproxy-card.svg" alt="NaiveProxy — HTTPS/HTTP2 setup" width="100%" /></a></td>
+<td width="50%"><a href="docs/protocols/tuic.md"><img src="docs/media/tuic-card.svg" alt="TUIC v5 — QUIC server and client setup" width="100%" /></a></td>
+</tr><tr>
+<td width="50%"><a href="docs/protocols/shadowquic.md"><img src="docs/media/shadowquic-card.svg" alt="ShadowQUIC — server, JLS and Omni profile" width="100%" /></a></td>
+<td width="50%"><a href="docs/protocols/guts.md"><img src="docs/media/guts-card.svg" alt="GUTS — Google Apps Script Fetch setup" width="100%" /></a></td>
+</tr>
+</table>
+
+| Feature | The route | Build it |
+| :--- | :--- | :--- |
+| **NaiveProxy** | Chromium-based client, HTTPS/HTTP2, authenticated Caddy server | [Server + Omni profile](docs/protocols/naiveproxy.md) |
+| **TUIC v5** | QUIC transport, UUID authentication, TCP and UDP relay | [Server + Omni profile](docs/protocols/tuic.md) |
+| **ShadowQUIC** | Dedicated QUIC server, JLS name and per-user credentials | [Server + Omni profile](docs/protocols/shadowquic.md) |
+| **GUTS Fetch** | Your Google Apps Script door and a personal device certificate | [Deploy + Omni profile](docs/protocols/guts.md) |
+
+### GUTS, from Code.gs to your own door
+
+[![Download Code.gs](https://img.shields.io/badge/DOWNLOAD-Code.gs-22c779?style=for-the-badge&labelColor=101a15&logo=googleappsscript&logoColor=white)](https://github.com/imgutss/Omni-App/releases/download/v1.0.0/Code.gs)
+
+**[Download the Google Apps Script](https://github.com/imgutss/Omni-App/releases/download/v1.0.0/Code.gs)** · [Read the code](docs/guts/Code.gs) · [Open Apps Script](https://script.google.com/) · [Step-by-step guide](docs/protocols/guts.md)
+
+Deploy **Code.gs**, set a private shared key, then add the `/exec` URL to GUTS in Omni. This file is for **Certificate / Fetch mode**: no VPS or exit node is required. It carries web HTTP/HTTPS for clients that trust your own local CA—not arbitrary TCP/UDP. Read the certificate and privacy notes in the guide before installing a CA.
+
+[**Explore all setup guides →**](docs/protocols/README.md) &nbsp; · &nbsp; [راهنماهای فارسی](README.fa.md#چهار-مسیر-برای-اتصال)
+
 ## A little depth. A lot of control.
 
 Soft lighting. Layered artwork. A palette that feels like yours. Omni brings a distinctive look to the tools you use every day, with **19 themes**, light and dark modes, and effects you can turn up or dial back.
