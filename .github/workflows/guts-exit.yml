@@ -91,7 +91,7 @@ jobs:
       # one output of a still-running job that can be fetched programmatically the moment the
       # tunnel is up, instead of after the session ends.
       - name: Publish the exit URL
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: guts-exit-url
           path: guts-exit-url.txt

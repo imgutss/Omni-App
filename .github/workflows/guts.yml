@@ -46,7 +46,7 @@ jobs:
       - name: Build libguts.so for every ABI
         run: ./compile-guts.sh
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: guts-libs
           path: libs-guts/*/libguts.so
