@@ -1,0 +1,11 @@
+{
+  "commit": "e7e25a8ac2de6aa63cdaba7327ea2d8824659ad9",
+  "repository": "imgutss/Omni-App",
+  "release": "v1.0.0",
+  "sha256": {
+    "Omni_1.0.0_arm64-v8a.apk": "2449fd6222d80367f13d6354d862d43bb581b3cd44a3b5cc2c86e4e2254988b8",
+    "Omni_1.0.0_armeabi-v7a.apk": "06861fdc46d4ee97505abc6afef46177df270e143fcb3afae21801d63568566a",
+    "Omni_1.0.0_x86.apk": "b4cdaefd2c9fd66a7a0b64ae1fc8a68228fdecb55c00e8379504a7c7891e4076",
+    "Omni_1.0.0_x86_64.apk": "21f7c849cccfea3d4d19385e6aa2e9500d3c8436a33461df1aab2c5b974f8553"
+  }
+}

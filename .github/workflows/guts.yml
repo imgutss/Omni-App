@@ -1,0 +1,53 @@
+name: guts
+
+on:
+  push:
+    branches: ['**']
+    paths: ['guts/**', '.github/workflows/guts.yml', 'guts/**']
+  pull_request:
+    paths: ['guts/**']
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+
+      - name: Vet and test
+        working-directory: guts
+        run: |
+          gofmt -l . | tee /tmp/fmt.txt
+          test ! -s /tmp/fmt.txt
+          go vet ./...
+          go test ./... -count=1
+
+      - name: End to end through a door
+        working-directory: guts
+        run: ./scripts/smoke.sh
+
+  # The phone runs the same client the command line does: the app spawns it the way it already
+  # spawns the DNS tunnel engines, and Xray dials the SOCKS port it opens. Android will only execute
+  # a binary it finds in the APK's native library directory, so every ABI is built as libguts.so
+  # here, by the same script a local build uses.
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+
+      - name: Build libguts.so for every ABI
+        run: ./compile-guts.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: guts-libs
+          path: libs-guts/*/libguts.so
+          if-no-files-found: error

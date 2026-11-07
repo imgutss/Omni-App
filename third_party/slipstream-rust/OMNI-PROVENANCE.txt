@@ -1,0 +1,15 @@
+Source: https://github.com/anonvector/slipstream-rust
+Pinned commit: 60a5e38c7414b35e4c2fddf8d4d89a4341470c6a
+License: Apache-2.0; see LICENSE.
+
+The vendored tree includes the upstream picoquic source needed for a clean
+build. Omni adds an FD-control Unix-socket path for executable Android use;
+the original JNI path remains available for library embedders. No SlipNet
+application code, native binary, or keystore is used.
+
+Build-script helper modules are relocated from build/ to build_support/ so
+source archives that exclude build directories retain them. Omni also passes
+the exact vendored static OpenSSL archives to Android CMake; this avoids
+out-of-sysroot lookup failures and accidental host-library selection. The
+Android Cargo configuration also extends the 16-KB/separate-segment link
+flags to i686 so all four packaged ABIs follow the same ELF policy.

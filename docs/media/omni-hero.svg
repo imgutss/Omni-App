@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="560" viewBox="0 0 1440 560" role="img" aria-label="Omni by imgutss — native Android, beautifully connected">
+<defs>
+<linearGradient id="bg" x2="1" y2="1"><stop stop-color="#111d19"/><stop offset="1" stop-color="#070b0d"/></linearGradient>
+<linearGradient id="green" x2=".7" y2="1"><stop stop-color="#b9ffcf"/><stop offset=".4" stop-color="#22e781"/><stop offset="1" stop-color="#076c3b"/></linearGradient>
+<linearGradient id="glass" x2="1" y2="1"><stop stop-color="#465b54"/><stop offset=".4" stop-color="#142b25"/><stop offset="1" stop-color="#091a14"/></linearGradient>
+<radialGradient id="glow"><stop stop-color="#21e985" stop-opacity=".28"/><stop offset="1" stop-color="#21e985" stop-opacity="0"/></radialGradient>
+<pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#73eaaa" stroke-opacity=".045"/></pattern>
+</defs>
+<rect width="1440" height="560" rx="32" fill="url(#bg)"/><rect width="1440" height="560" rx="32" fill="url(#grid)"/>
+<circle cx="1130" cy="240" r="380" fill="url(#glow)"/><path d="M48 1H1392Q1439 1 1439 48V512Q1439 559 1392 559H48Q1 559 1 512V48Q1 1 48 1Z" fill="none" stroke="#4fe898" stroke-opacity=".25"/>
+<rect x="76" y="65" width="235" height="34" rx="17" fill="#122d22" stroke="#2b7150"/>
+<circle cx="96" cy="82" r="4" fill="#50f99f"/><text x="111" y="88" font-family="Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="2" fill="#b5f5cf">ANDROID · OPEN SOURCE</text>
+<text x="70" y="255" font-family="Arial,sans-serif" font-size="146" font-weight="800" letter-spacing="-9" fill="#f0fff6">Omni<tspan fill="#31e584">.</tspan></text>
+<text x="79" y="316" font-family="Arial,sans-serif" font-size="30" fill="#c3d3cb">Your network. Your way.</text>
+<text x="80" y="362" font-family="Arial,sans-serif" font-size="19" fill="#849c90">Connections, profiles, and tools. All in one place.</text>
+<rect x="80" y="414" width="185" height="51" rx="14" fill="#25d876"/><text x="105" y="446" font-family="Arial,sans-serif" font-size="17" font-weight="700" fill="#06170d">OMNI / 1.0.0</text>
+<text x="290" y="446" font-family="Arial,sans-serif" font-size="17" letter-spacing="3" fill="#9bb6a5">BY IMGUTSS</text>
+<g transform="translate(1110 270)">
+<ellipse rx="226" ry="94" fill="none" stroke="#72ffc3" stroke-opacity=".45" transform="rotate(-24)"/>
+<ellipse rx="229" ry="91" fill="none" stroke="#c1fddd" stroke-opacity=".25" transform="rotate(49)"/>
+<rect x="-127" y="-131" width="254" height="272" rx="63" fill="#03120b" transform="rotate(-9) translate(3 13)"/>
+<rect x="-130" y="-144" width="260" height="272" rx="63" fill="url(#glass)" stroke="#92f0bc" stroke-width="2.5" transform="rotate(-9)"/>
+<rect x="-106" y="-121" width="212" height="226" rx="46" fill="#0a1612" stroke="#315c43" stroke-width="2" transform="rotate(-9)"/>
+<circle r="80" fill="none" stroke="#15763d" stroke-width="20"/>
+<path d="M59 -54A80 80 0 1 0 63 49" fill="none" stroke="url(#green)" stroke-width="14" stroke-linecap="round"/>
+<path d="M17 -69L-44 14H-4L-21 74L49 -14H8Z" fill="url(#green)" stroke="#c3ffdd" stroke-width="1.2"/>
+<circle cx="-214" cy="68" r="6" fill="#8ef7c6"/><circle cx="180" cy="-104" r="5" fill="#35ed84"/>
+</g>
+<path d="M80 513H1360" stroke="#b4e8c8" stroke-opacity=".12"/><text x="80" y="540" font-family="Arial,sans-serif" font-size="12" letter-spacing="2" fill="#769382">BUILT FOR ANDROID • MADE TO FEEL LIKE YOURS</text>
+</svg>

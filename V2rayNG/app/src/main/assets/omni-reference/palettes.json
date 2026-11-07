@@ -1,0 +1,205 @@
+{
+  "violet": [
+    "Violet",
+    "#8b5cf6",
+    "#fff",
+    "#05030f",
+    "#0d0a20",
+    "#120e2b",
+    "#1a1440",
+    "#231a55",
+    "#f4f1ff",
+    "#b4a9e6",
+    "Inter",
+    "Inter"
+  ],
+  "blue": [
+    "Blue",
+    "#4d8dff",
+    "#fff"
+  ],
+  "teal": [
+    "Teal",
+    "#2dd4bf",
+    "#052b27"
+  ],
+  "pink": [
+    "Pink",
+    "#f43f9e",
+    "#fff"
+  ],
+  "orange": [
+    "Orange",
+    "#fb923c",
+    "#2a1100"
+  ],
+  "green": [
+    "Green",
+    "#4ade80",
+    "#05260f"
+  ],
+  "yellow": [
+    "Yellow",
+    "#facc15",
+    "#2a2100"
+  ],
+  "omni": [
+    "Omni",
+    "#3ddc97",
+    "#04231a"
+  ],
+  "spotify": [
+    "Spotify",
+    "#1ed760",
+    "#000",
+    "#121212",
+    "#181818",
+    "#1f1f1f",
+    "#252525",
+    "#2c2c2c",
+    "#fff",
+    "#b3b3b3",
+    "Figtree",
+    "Figtree"
+  ],
+  "apple": [
+    "Apple",
+    "#2997ff",
+    "#fff",
+    "#000",
+    "#1d1d1f",
+    "#272729",
+    "#2a2a2c",
+    "#333",
+    "#fff",
+    "#ccc",
+    "Inter",
+    "Inter"
+  ],
+  "claude": [
+    "Claude",
+    "#cc785c",
+    "#fff",
+    "#181715",
+    "#1f1e1b",
+    "#252320",
+    "#2c2a26",
+    "#35322d",
+    "#faf9f5",
+    "#a39e93",
+    "Lora",
+    "Inter"
+  ],
+  "ferrari": [
+    "Ferrari",
+    "#da291c",
+    "#fff",
+    "#000",
+    "#0d0d0d",
+    "#181818",
+    "#202020",
+    "#303030",
+    "#fff",
+    "#969696",
+    "Barlow Condensed",
+    "Inter"
+  ],
+  "lamborghini": [
+    "Lamborghini",
+    "#ffc000",
+    "#000",
+    "#000",
+    "#181818",
+    "#202020",
+    "#2a2a2a",
+    "#333",
+    "#fff",
+    "#a0a0a0",
+    "Rajdhani",
+    "Inter"
+  ],
+  "renault": [
+    "Renault",
+    "#ffed00",
+    "#000",
+    "#000",
+    "#111",
+    "#1a1a1a",
+    "#222",
+    "#2b2b2b",
+    "#fff",
+    "#b5b5b5",
+    "Plus Jakarta Sans",
+    "Plus Jakarta Sans"
+  ],
+  "pinterest": [
+    "Pinterest",
+    "#e60023",
+    "#fff",
+    "#130e14",
+    "#211922",
+    "#2a212b",
+    "#332a34",
+    "#3d323e",
+    "#fff",
+    "#b9b0ba",
+    "Nunito Sans",
+    "Nunito Sans"
+  ],
+  "webflow": [
+    "Webflow",
+    "#4d8dff",
+    "#fff",
+    "#080808",
+    "#121212",
+    "#1a1a1a",
+    "#222",
+    "#2b2b2b",
+    "#fff",
+    "#ababab",
+    "Inter",
+    "Inter"
+  ],
+  "lovable": [
+    "Lovable",
+    "#f7f4ed",
+    "#1c1c1c",
+    "#141414",
+    "#1c1c1c",
+    "#232321",
+    "#2b2a27",
+    "#34322e",
+    "#fcfbf8",
+    "#a8a69f",
+    "Figtree",
+    "Figtree"
+  ],
+  "nintendo": [
+    "Nintendo 2001",
+    "#f68d1f",
+    "#1a0c00",
+    "#131833",
+    "#1a2142",
+    "#222b55",
+    "#2b3668",
+    "#34417a",
+    "#eef2ff",
+    "#a9b6e6",
+    "Nunito Sans",
+    "Nunito Sans"
+  ],
+  "dell": [
+    "Dell 1996",
+    "#fcc20f",
+    "#000",
+    "#0a0a0a",
+    "#151515",
+    "#1d1d1d",
+    "#262626",
+    "#303030",
+    "#fff",
+    "#bdbdbd",
+    "Tinos",
+    "Arimo"
+  ]
+}

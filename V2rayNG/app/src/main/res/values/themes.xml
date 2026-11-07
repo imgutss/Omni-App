@@ -1,0 +1,31 @@
+<resources>
+    <color name="window_background_light">#FFFFFFFF</color>
+    <color name="window_background_dark">#FF1C1B1F</color>
+    <color name="omni_splash_background">#FF050510</color>
+
+    <style name="Theme.Omni.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/omni_splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_omni_splash</item>
+        <item name="postSplashScreenTheme">@style/AppThemeDayNight.NoActionBar</item>
+    </style>
+
+    <style name="AppThemeBaseCommon" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">@color/window_background_light</item>
+    </style>
+
+    <style name="AppThemeBase" parent="AppThemeBaseCommon">
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+
+    <style name="AppThemeDayNight" parent="AppThemeBase" />
+
+    <style name="AppThemeDayNight.NoActionBar" parent="AppThemeBase" />
+
+    <style name="AppThemeDayNight.NoActionBar.Translucent" parent="AppThemeBase">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+    </style>
+</resources>

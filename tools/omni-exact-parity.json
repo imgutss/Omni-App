@@ -1,0 +1,481 @@
+{
+  "reference": "Omni-0.13.1.html",
+  "sha256": "f0b6d3e86292b2b89ed171eece766e46706b5ab2b7203b9f65c314323afe650a",
+  "screens": [
+    {
+      "id": "screen-servers",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-subscriptions",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-subscription-edit",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-vless",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-vmess",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-trojan",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-shadowsocks",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-socks",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-http",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-hysteria2",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-wireguard",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-custom",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-policy-group",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-proxy-chain",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-aether",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-aether-keys",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-settings",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-per-app",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-app-picker",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-routing",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-routing-edit",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-assets",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-asset-edit",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-logs",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-backup",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-update",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-about",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-translators",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-hub",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-scanner",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-speed-lab",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-sync-center",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-routing-studio",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-dns-lab",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-privacy-center",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-doctor",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-naive",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-tuic",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-shadowquic",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-masterdns",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-dnstt",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-guts",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    },
+    {
+      "id": "screen-dns-scanner",
+      "status": "native capture available; independent pixel-perfect parity not claimed"
+    }
+  ],
+  "drawerDestinations": [
+    {
+      "id": "subscriptions",
+      "label": "Subscriptions"
+    },
+    {
+      "id": "per-app",
+      "label": "Per-app settings"
+    },
+    {
+      "id": "routing",
+      "label": "Routing Settings"
+    },
+    {
+      "id": "assets",
+      "label": "Asset files"
+    },
+    {
+      "id": "settings",
+      "label": "Settings"
+    },
+    {
+      "id": "hub",
+      "label": "Omni Hub"
+    },
+    {
+      "id": "doctor",
+      "label": "Omni Doctor"
+    },
+    {
+      "id": "scanner",
+      "label": "Omni Scanner"
+    },
+    {
+      "id": "privacy-center",
+      "label": "Omni Privacy Center"
+    },
+    {
+      "id": "dns-lab",
+      "label": "Omni DNS Lab"
+    },
+    {
+      "id": "routing-studio",
+      "label": "Omni Routing Studio"
+    },
+    {
+      "id": "sync-center",
+      "label": "Omni Sync Center"
+    },
+    {
+      "id": "speed-lab",
+      "label": "Omni Speed Lab"
+    },
+    {
+      "id": "dns-scanner",
+      "label": "Omni DNS Scanner"
+    },
+    {
+      "id": "logs",
+      "label": "Logcat"
+    },
+    {
+      "id": "update",
+      "label": "Check for update"
+    },
+    {
+      "id": "backup",
+      "label": "Backup & Restore"
+    },
+    {
+      "id": "about",
+      "label": "About"
+    }
+  ],
+  "visualLayers": [
+    {
+      "id": "unnamed",
+      "type": "style",
+      "bytes": 24674
+    },
+    {
+      "id": "omni-skin",
+      "type": "style",
+      "bytes": 14898
+    },
+    {
+      "id": "omni-0131-style",
+      "type": "style",
+      "bytes": 560
+    },
+    {
+      "id": "unnamed",
+      "type": "script",
+      "bytes": 11191
+    },
+    {
+      "id": "unnamed",
+      "type": "script",
+      "bytes": 603445
+    },
+    {
+      "id": "unnamed",
+      "type": "script",
+      "bytes": 5228
+    },
+    {
+      "id": "omni-logs3d",
+      "type": "style",
+      "bytes": 4395
+    },
+    {
+      "id": "omni-logs3d-js",
+      "type": "script",
+      "bytes": 4944
+    },
+    {
+      "id": "omni-xs",
+      "type": "style",
+      "bytes": 10310
+    },
+    {
+      "id": "omni-icon3d-js",
+      "type": "script",
+      "bytes": 5823
+    },
+    {
+      "id": "omni-hd",
+      "type": "style",
+      "bytes": 11554
+    },
+    {
+      "id": "omni-hd-js",
+      "type": "script",
+      "bytes": 10128
+    },
+    {
+      "id": "omni-main",
+      "type": "style",
+      "bytes": 43342
+    },
+    {
+      "id": "omni-main-js",
+      "type": "script",
+      "bytes": 3026
+    },
+    {
+      "id": "omni-sx",
+      "type": "style",
+      "bytes": 3164
+    },
+    {
+      "id": "omni-sx-js",
+      "type": "script",
+      "bytes": 8233
+    },
+    {
+      "id": "omni-mashup",
+      "type": "style",
+      "bytes": 11947
+    },
+    {
+      "id": "omni-pager",
+      "type": "style",
+      "bytes": 894
+    },
+    {
+      "id": "omni-mashup-js",
+      "type": "script",
+      "bytes": 1905
+    },
+    {
+      "id": "omni-pager-js",
+      "type": "script",
+      "bytes": 2057
+    },
+    {
+      "id": "omni-menu",
+      "type": "style",
+      "bytes": 2732
+    },
+    {
+      "id": "omni-menu-js",
+      "type": "script",
+      "bytes": 1555
+    },
+    {
+      "id": "omni-drawer",
+      "type": "style",
+      "bytes": 2159
+    },
+    {
+      "id": "omni-zap",
+      "type": "style",
+      "bytes": 907
+    },
+    {
+      "id": "omni-zap-js",
+      "type": "script",
+      "bytes": 8441
+    },
+    {
+      "id": "omni-minimal",
+      "type": "style",
+      "bytes": 2011
+    },
+    {
+      "id": "omni-polish",
+      "type": "style",
+      "bytes": 4083
+    },
+    {
+      "id": "omni-polish-js",
+      "type": "script",
+      "bytes": 87510
+    },
+    {
+      "id": "omni-menu2",
+      "type": "style",
+      "bytes": 10607
+    },
+    {
+      "id": "unnamed",
+      "type": "script",
+      "bytes": 5137
+    },
+    {
+      "id": "omni-current-presets",
+      "type": "script",
+      "bytes": 3562
+    },
+    {
+      "id": "omni-dns-range-groups",
+      "type": "script",
+      "bytes": 4036
+    },
+    {
+      "id": "omni-0131-behavior",
+      "type": "script",
+      "bytes": 11126
+    }
+  ],
+  "unfinished": [
+    "Full layout and interaction audit for all43 native routes against the accepted HTML",
+    "Matched-viewport emulator/visual and real-profile/group validation of server cards, latency observations and sliding tab thumb (compiler/unit stage passed ecfc63bb)",
+    "Remaining popup/dialog/form transitions and matched-viewport visual comparisons",
+    "Expanded Android15 route/log/light-mode smoke on current head",
+    "Physical-device VPN/protocol, audio/haptics and rapid-toggle validation; no release yet"
+  ],
+  "implementedInWorkingTree": [
+    "Actual final-layer SVG IC artwork extracted reproducibly: 285 PNGs / 19 skins, native image decoder; original layered geometry, not Material replacements",
+    "Native lightning fractal main channel / recursive forks / stepped leader / return stroke / restrikes / impact glow / shock ring / ballistic particles",
+    "Native raised power surface / animated conic border / active pulse / original 46dp and 16dp radius tokens",
+    "Power effect connected to existing real ToggleService callback; no fabricated connection state",
+    "Native eight accepted scenes, PBR drawer logo, backdrop/parallax, labeled read-only UID telemetry, source lightning/coronas/audio/haptics and raised controls.",
+    "Real panel-count Hub orbital map and actual nine-stage Doctor ring, without fabricated reachability or test outcomes.",
+    "Accepted scanner chooser preserves full real WARP/Aether tool, DNS scanner and protocol-template callers without a manifest change.",
+    "Projected 3D log slab with actual application logs only: lifecycle polling/pause, real duplicate-aware arrival rate, raw rows, existing search/copy/share/clear/refresh and long-press retained.",
+    "Log I/O moved off Main; snapshots/clear/filter publication serialized on Main, clear exit status checked, pending refresh cancellation and duplicate preservation.",
+    "Drawer scanner radar mapping corrected from rendered native screenshot; 112dp minimum tiles grow for larger text rather than clipping two-line labels.",
+    "Original seven raised theme orbs plus twelve subtle brand tiles, inset pill segments and drawer-specific layered gradients; actual saved appearance callbacks retained.",
+    "Known Connecting state uses the original rotating partial ring, not a completed ring. Bottom status dot/weight/gradient restored.",
+    "Dark terminal foreground remains readable in application light mode; failed log reads retain the last real snapshot and report no invented arrival rate.",
+    "Real service action dispatch is immediate and once per click; visual cancellation/rapid taps cannot swallow or defer the native callback.",
+    "Native server cards now use source perspective, selected depth, passive pointer reflection/sheens, 104dp minimum and original outline action paths; selection/reorder/share/edit/delete callbacks unchanged.",
+    "Original latency color thresholds use real stored delays; tiny chart shows only observed successful result changes, never the HTML decorative fake waveform.",
+    "One sliding 3D tab thumb tracks measured real tab bounds, including RTL/scroll; natural widths grow as the reference flex layout, genuine group counts retained.",
+    "Source-wide card/dialog glass stops and CSS angle projection, source header typography, label line height/focus glow and editor top inset; corrected neutral light surfaces.",
+    "Material-backed dialog adapter forwards all content/action/focus/IME/dismissal properties while drawing source 30dp glass and 400ms perspective entry.",
+    "Material-backed filled/outlined/text/tonal button adapters preserve callbacks, disabled state, interaction source, colors and original nullable button API; source bevel/46dp minima/pressed pose and original skin on-accent inks.",
+    "Actual log clear is immediate, with independent 320ms outgoing-snapshot wipe and projected cursor inside the body. It cannot delay/cancel native clear; footer count remains actual.",
+    "Latest actual images identified toolbar chrome allocating 54dp instead of reference 48dp target/44dp visible. Explicit sizes and header-scoped native IconButton adapter now preserve all actions while avoiding duplicate chrome and leaving compact row/terminal actions untouched.",
+    "Latest actual log image showed hard-band halo. Separate native 14dp unbounded blur/conic layer (API31+) now follows source 7-second rotation/depth; API29/30 gets smooth distance falloff, not unsupported blur or synthetic data.",
+    "Corrected harness action lookup to the actual Refresh log resource; retained capability was present in actual UI XML."
+  ],
+  "validated": [
+    "Nonpublishing CI42256966055 / 8f1bc069: both Kotlin flavors, unit tests, signed APK/native ABI checks, Android15 launch and navigation smoke passed.",
+    "Android15 renderer log and native drawer screenshot confirm original mesh/PBR produced an actual frame; host GL is not used as Android proof.",
+    "Current diagnostic heroes, scanner chooser and real log slab: Kotlin syntax and resource checks only; awaiting next-head compiler/device validation.",
+    "Native engine/manifest guard remains unchanged. New scanner chooser reuses existing declared activity before initializing the WARP ViewModel.",
+    "88843d5f / CI42260713129 build and both-flavor unit tests passed. Expanded emulator smoke stopped on nested Settings back-navigation in the test harness before new tool routes; not an app-crash proof or tool-validation pass.",
+    "2af9f2e6 / CI42264165319: both-flavor Kotlin/unit build passed, including 19-skin terminal contrast test; matched-viewport smoke blocked at startup by a Pixel Launcher ANR, before app navigation. No tool/runtime pass claimed.",
+    "ecfc63bb / CI42266497207: both-flavor build/unit tests and signing/ABI checks passed, including server/tab compilation and latency threshold tests. Emulator test failed in the harness am-start command before app interaction; output was not exposed by old helper. No device/UI pass claimed.",
+    "852acddc / CI42270361404: both-flavor build/unit/signing/ABI checks passed. Actual Android15 app launch, original PBR first frame, appearance persistence/large text, all nine tool routes, genuine WARP tool and actual renderer log text succeeded up to smoke line134. Smoke failed because test expected Refresh instead of the real retained content-description Refresh log. Artifact13532530501: eighteen real Android images, real logcat/render proof and XML downloaded to /home/user/omni-exact-native-smoke-852acddc. No full smoke pass claimed."
+  ],
+  "notValidated": [
+    "Current appearance, connecting status, dark/light terminal and immediate callback changes await new-head Kotlin/unit validation.",
+    "Current expanded Android15 tool/scanner/log interaction smoke and screenshots.",
+    "Golden comparisons across all43 screens and transient states at matched viewport/fonts.",
+    "Physical phone, actual VPN/protocol connectivity, audio/haptics, rapid toggling and window inset behavior."
+  ],
+  "purpose": "Reference pixel-parity tracking, not a claim of independent pixel-perfect verification.",
+  "independentPixelParityVerified": false,
+  "releaseEvidence": {
+    "version": "1.0.0",
+    "appSource": "e7e25a8ac2de6aa63cdaba7327ea2d8824659ad9",
+    "buildRun": 42352099599,
+    "nativeUiRun": 42353451066,
+    "buildAndUnitChecks": "passed",
+    "exactSignedApkNativeUi": "passed with fail-closed source equality",
+    "nativeDestinationsCaptured": 43,
+    "physicalDeviceVpnVerified": false,
+    "publicRelease": "https://github.com/imgutss/Omni-App/releases/tag/v1.0.0"
+  }
+}

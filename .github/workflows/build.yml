@@ -1,0 +1,525 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        required: false
+        type: string
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # The latest stable release, as aether's own release workflow builds with. The libaether
+      # cache is keyed by the rustc it installs, so a new stable release builds the core afresh.
+      RUST_TOOLCHAIN: "stable"
+      # The Go line the Psiphon client's go.mod asks for, which also covers lyrebird's older one;
+      # aether/psiphon-build.sh and aether/pt-build.sh pin the programs themselves. Bump it when a
+      # bumped aether submodule pins a program that asks for a newer line.
+      GO_VERSION: "1.26"
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+      with:
+        submodules: 'recursive'
+        fetch-depth: '0'
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v4
+      with:
+        log-accepted-android-sdk-licenses: false
+        cmdline-tools-version: '14742923'
+        packages: 'platforms;android-37.0 build-tools;37.0.0 platform-tools'
+
+    - name: Install NDK
+      run: |
+        echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+          --channel=0 \
+          --install "ndk;30.0.16248370"
+        echo "NDK_HOME=$ANDROID_HOME/ndk/30.0.16248370" >> $GITHUB_ENV
+        sed -i '10i\
+        \
+            ndkVersion = "30.0.16248370"' ${{ github.workspace }}/V2rayNG/app/build.gradle.kts
+
+    - name: Restore cached libhevtun
+      id: cache-libhevtun-restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ github.workspace }}/libs
+        key: libhevtun-${{ runner.os }}-${{ env.NDK_HOME }}-${{ hashFiles('.git/modules/hev-socks5-tunnel/HEAD') }}-${{ hashFiles('compile-hevtun.sh') }}
+
+    - name: Build libhevtun
+      if: steps.cache-libhevtun-restore.outputs.cache-hit != 'true'
+      run: |
+        bash compile-hevtun.sh
+    
+    - name: Save libhevtun
+      if: steps.cache-libhevtun-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ github.workspace }}/libs
+        key: libhevtun-${{ runner.os }}-${{ env.NDK_HOME }}-${{ hashFiles('.git/modules/hev-socks5-tunnel/HEAD') }}-${{ hashFiles('compile-hevtun.sh') }}
+
+    - name: Install Rust
+      id: rust-toolchain
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ env.RUST_TOOLCHAIN }}
+        targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android,i686-linux-android
+
+    - name: Restore cached libaether
+      id: cache-libaether-restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ github.workspace }}/libs-aether
+        key: libaether-${{ runner.os }}-${{ env.NDK_HOME }}-${{ steps.rust-toolchain.outputs.cachekey }}-${{ hashFiles('.git/modules/aether/HEAD') }}-${{ hashFiles('compile-aether.sh') }}
+
+    - name: Build libaether
+      if: steps.cache-libaether-restore.outputs.cache-hit != 'true'
+      run: |
+        bash compile-aether.sh
+
+    - name: Save libaether
+      if: steps.cache-libaether-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ github.workspace }}/libs-aether
+        key: libaether-${{ runner.os }}-${{ env.NDK_HOME }}-${{ steps.rust-toolchain.outputs.cachekey }}-${{ hashFiles('.git/modules/aether/HEAD') }}-${{ hashFiles('compile-aether.sh') }}
+
+    - name: Install Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        # The client is built from a checkout of its own; there is no go.sum here to cache by.
+        cache: false
+
+    - name: Restore cached MasterDnsVPN client
+      id: cache-masterdns-restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ github.workspace }}/libs-masterdns
+        key: masterdns-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-masterdns.sh', 'third_party/masterdnsvpn/**') }}
+
+    - name: Build MasterDnsVPN client
+      if: steps.cache-masterdns-restore.outputs.cache-hit != 'true'
+      run: bash compile-masterdns.sh
+
+    - name: Test MasterDnsVPN upstream packages
+      run: |
+        cd third_party/masterdnsvpn
+        GOTOOLCHAIN=local CGO_ENABLED=0 go test ./...
+
+    - name: Test MasterDNS Android client and Omni profile loopback
+      env:
+        MASTERDNS_E2E_CLIENT_BIN: ${{ github.workspace }}/libs-masterdns/x86_64/libmasterdns.so
+      run: |
+        cd third_party/masterdnsvpn
+        GOTOOLCHAIN=local CGO_ENABLED=0 go test -tags e2e -run '^TestOmniNativeProfilesThroughAndroidClient$' -count=1 -timeout 180s ./test/e2e
+
+    - name: Save MasterDnsVPN client
+      if: steps.cache-masterdns-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ github.workspace }}/libs-masterdns
+        key: masterdns-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-masterdns.sh', 'third_party/masterdnsvpn/**') }}
+
+    - name: Restore cached CottenDNS client
+      id: cache-cottendns-restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ github.workspace }}/libs-cottendns
+        key: cottendns-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-cottendns.sh', 'third_party/cottendns/**') }}
+
+    - name: Build CottenDNS client
+      if: steps.cache-cottendns-restore.outputs.cache-hit != 'true'
+      run: bash compile-cottendns.sh
+
+    - name: Test CottenDNS packages
+      run: |
+        cd third_party/cottendns
+        GOTOOLCHAIN=local CGO_ENABLED=0 go test ./...
+
+    - name: Test CottenDNS Android client and real SOCKS5 profile loopback
+      env:
+        COTTENDNS_E2E_CLIENT_BIN: ${{ github.workspace }}/libs-cottendns/x86_64/libcottendns.so
+      run: |
+        cd third_party/cottendns
+        GOTOOLCHAIN=local CGO_ENABLED=0 go test -tags e2e -count=1 -timeout 300s ./test/e2e
+
+    - name: Save CottenDNS client
+      if: steps.cache-cottendns-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ github.workspace }}/libs-cottendns
+        key: cottendns-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-cottendns.sh', 'third_party/cottendns/**') }}
+
+    - name: Restore cached Soar client
+      id: cache-soar-restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ github.workspace }}/libs-soar
+        key: soar-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-soar.sh', 'third_party/soar/**') }}
+
+    - name: Build Soar client
+      if: steps.cache-soar-restore.outputs.cache-hit != 'true'
+      run: bash compile-soar.sh
+
+    - name: Test Soar packages
+      run: |
+        cd third_party/soar
+        GOTOOLCHAIN=local CGO_ENABLED=0 go test ./...
+
+    - name: Test packaged Soar Android launcher loopback
+      env:
+        SOAR_E2E_CLIENT_BIN: ${{ github.workspace }}/libs-soar/x86_64/libsoar.so
+      run: |
+        cd third_party/soar
+        GOTOOLCHAIN=local CGO_ENABLED=0 go test ./cmd/omni-client -run '^TestSOARLauncherThroughRealLoopback$' -count=1 -timeout 120s
+
+    - name: Save Soar client
+      if: steps.cache-soar-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ github.workspace }}/libs-soar
+        key: soar-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-soar.sh', 'third_party/soar/**') }}
+
+    - name: Restore cached DNSTT client
+      id: cache-dnstt-restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ github.workspace }}/libs-dnstt
+        key: dnstt-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-dnstt.sh', 'third_party/dnstt/**') }}
+
+    - name: Build DNSTT client
+      if: steps.cache-dnstt-restore.outputs.cache-hit != 'true'
+      run: bash compile-dnstt.sh
+
+    - name: Test DNSTT upstream packages
+      run: |
+        cd third_party/dnstt
+        GOTOOLCHAIN=local CGO_ENABLED=0 go test ./...
+
+    - name: Save DNSTT client
+      if: steps.cache-dnstt-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ github.workspace }}/libs-dnstt
+        key: dnstt-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-dnstt.sh', 'third_party/dnstt/**') }}
+
+    - name: Restore cached NoizDNS client
+      id: cache-noizdns-restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ github.workspace }}/libs-noizdns
+        key: noizdns-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-noizdns.sh', 'third_party/slipnet/noizdns/**', 'third_party/slipnet/dnstt/**') }}
+
+    - name: Build NoizDNS client
+      if: steps.cache-noizdns-restore.outputs.cache-hit != 'true'
+      run: bash compile-noizdns.sh
+
+    - name: Test NoizDNS upstream packages
+      run: |
+        cd third_party/slipnet/noizdns
+        GOTOOLCHAIN=local CGO_ENABLED=0 go test ./...
+
+    - name: Test NoizDNS real loopback tunnel
+      run: bash test-noizdns-loopback.sh
+
+    - name: Save NoizDNS client
+      if: steps.cache-noizdns-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ github.workspace }}/libs-noizdns
+        key: noizdns-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-noizdns.sh', 'third_party/slipnet/noizdns/**', 'third_party/slipnet/dnstt/**') }}
+
+    - name: Restore cached VayDNS client
+      id: cache-vaydns-restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ github.workspace }}/libs-vaydns
+        key: vaydns-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-vaydns.sh', 'third_party/vaydns/**') }}
+
+    - name: Build VayDNS client
+      if: steps.cache-vaydns-restore.outputs.cache-hit != 'true'
+      run: bash compile-vaydns.sh
+
+    - name: Test VayDNS packages
+      run: |
+        cd third_party/vaydns
+        GOTOOLCHAIN=local CGO_ENABLED=0 go test ./...
+
+    - name: Test VayDNS real raw and SOCKS loopback tunnels
+      run: bash test-vaydns-loopback.sh
+
+    - name: Save VayDNS client
+      if: steps.cache-vaydns-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ github.workspace }}/libs-vaydns
+        key: vaydns-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-vaydns.sh', 'third_party/vaydns/**') }}
+
+    - name: Install Slipstream native build tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends cmake ninja-build nasm
+
+    - name: Restore cached Slipstream client
+      id: cache-slipstream-restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ github.workspace }}/libs-slipstream
+        key: slipstream-${{ runner.os }}-${{ env.NDK_HOME }}-${{ steps.rust-toolchain.outputs.cachekey }}-${{ hashFiles('compile-slipstream.sh', 'third_party/slipstream-rust/**') }}
+
+    - name: Test Slipstream protocol crates
+      run: |
+        cd third_party/slipstream-rust
+        cargo test --locked -p slipstream-core -p slipstream-dns
+
+    - name: Build Slipstream client
+      if: steps.cache-slipstream-restore.outputs.cache-hit != 'true'
+      env:
+        CARGO_BUILD_JOBS: 2
+        RUSTFLAGS: -C link-arg=-Wl,-z,max-page-size=16384 -C link-arg=-Wl,-z,separate-loadable-segments
+      run: bash compile-slipstream.sh
+
+    - name: Audit DNS tunnel native binaries
+      run: |
+        READELF="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
+        audit_elf() {
+          local file="$1" expected_type="$2" expected_machine="$3" header alignments
+          test -s "$file"
+          header=$("$READELF" -h "$file")
+          if ! grep -Eq "Type:[[:space:]]+$expected_type" <<<"$header" || ! grep -Eq "Machine:[[:space:]]+$expected_machine" <<<"$header"; then
+            echo "::error::$file has the wrong ELF type or architecture"
+            return 1
+          fi
+          alignments=$("$READELF" -lW "$file" | awk '$1 == "LOAD" { print $NF }')
+          if [[ -z "$alignments" ]] || grep -Fvx '0x4000' <<<"$alignments" >/dev/null; then
+            echo "::error::$file does not use 16-KB LOAD alignment"
+            return 1
+          fi
+        }
+        for abi in arm64-v8a armeabi-v7a x86_64 x86; do
+          case "$abi" in
+            arm64-v8a) machine='AArch64' ;;
+            armeabi-v7a) machine='ARM' ;;
+            x86) machine='Intel 80386' ;;
+            x86_64) machine='Advanced Micro Devices X86-64' ;;
+          esac
+          audit_elf "libs-cottendns/$abi/libcottendns.so" EXEC "$machine"
+          audit_elf "libs-soar/$abi/libsoar.so" EXEC "$machine"
+          audit_elf "libs-vaydns/$abi/libvaydns.so" EXEC "$machine"
+          audit_elf "libs-slipstream/$abi/libslipstream.so" DYN "$machine"
+        done
+
+    - name: Save Slipstream client
+      if: steps.cache-slipstream-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ github.workspace }}/libs-slipstream
+        key: slipstream-${{ runner.os }}-${{ env.NDK_HOME }}-${{ steps.rust-toolchain.outputs.cachekey }}-${{ hashFiles('compile-slipstream.sh', 'third_party/slipstream-rust/**') }}
+
+    # The Aether core runs Psiphon as a program of its own, the psiphon-tunnel-core console client,
+    # which the app ships beside the core as libpsiphon-tunnel-core.so; see compile-psiphon.sh.
+    - name: Restore cached Psiphon client
+      id: cache-psiphon-restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ github.workspace }}/libs-psiphon
+        key: psiphon-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('aether/psiphon-build.sh') }}-${{ hashFiles('compile-psiphon.sh') }}
+
+    - name: Build the Psiphon client
+      if: steps.cache-psiphon-restore.outputs.cache-hit != 'true'
+      run: |
+        bash compile-psiphon.sh
+
+    - name: Save the Psiphon client
+      if: steps.cache-psiphon-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ github.workspace }}/libs-psiphon
+        key: psiphon-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('aether/psiphon-build.sh') }}-${{ hashFiles('compile-psiphon.sh') }}
+
+    # Tor's bridges run through a pluggable transport, a program of its own: lyrebird, which aether
+    # builds and the app ships beside the core as liblyrebird.so; see compile-pt.sh.
+    - name: Restore cached pluggable transport
+      id: cache-pt-restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ github.workspace }}/libs-pt
+        key: pt-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('aether/pt-build.sh') }}-${{ hashFiles('compile-pt.sh') }}
+
+    - name: Build the pluggable transport
+      if: steps.cache-pt-restore.outputs.cache-hit != 'true'
+      run: |
+        bash compile-pt.sh
+
+    - name: Save the pluggable transport
+      if: steps.cache-pt-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ github.workspace }}/libs-pt
+        key: pt-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('aether/pt-build.sh') }}-${{ hashFiles('compile-pt.sh') }}
+
+    - name: Stage the native libraries
+      run: |
+        cp -r ${{ github.workspace }}/libs ${{ github.workspace }}/V2rayNG/app
+        cp -r ${{ github.workspace }}/libs-aether/. ${{ github.workspace }}/V2rayNG/app/libs/
+        cp -r ${{ github.workspace }}/libs-psiphon/. ${{ github.workspace }}/V2rayNG/app/libs/
+        cp -r ${{ github.workspace }}/libs-pt/. ${{ github.workspace }}/V2rayNG/app/libs/
+        cp -r ${{ github.workspace }}/libs-masterdns/. ${{ github.workspace }}/V2rayNG/app/libs/
+        cp -r ${{ github.workspace }}/libs-cottendns/. ${{ github.workspace }}/V2rayNG/app/libs/
+        cp -r ${{ github.workspace }}/libs-soar/. ${{ github.workspace }}/V2rayNG/app/libs/
+        cp -r ${{ github.workspace }}/libs-dnstt/. ${{ github.workspace }}/V2rayNG/app/libs/
+        cp -r ${{ github.workspace }}/libs-noizdns/. ${{ github.workspace }}/V2rayNG/app/libs/
+        cp -r ${{ github.workspace }}/libs-vaydns/. ${{ github.workspace }}/V2rayNG/app/libs/
+        cp -r ${{ github.workspace }}/libs-slipstream/. ${{ github.workspace }}/V2rayNG/app/libs/
+
+    # Psiphon's client starts with the newest server list the build could fetch, so a fresh install has
+    # servers before it can reach the list on its own; see fetch-psiphon-servers.sh.
+    - name: Fetch the Psiphon server list
+      run: |
+        bash fetch-psiphon-servers.sh
+
+    - name: Fetch AndroidLibXrayLite tag
+      run: |
+        pushd AndroidLibXrayLite
+        CURRENT_TAG=$(git describe --tags --abbrev=0)
+        echo "Current tag in this repo: $CURRENT_TAG"
+        echo "CURRENT_TAG=$CURRENT_TAG" >> $GITHUB_ENV
+        popd
+
+    - name: Download libv2ray
+      uses: robinraju/release-downloader@v1.13
+      with:
+        repository: 'patterniha/AndroidLibXrayLite'
+        tag: ${{ env.CURRENT_TAG }}
+        fileName: 'libv2ray.aar'
+        out-file-path: V2rayNG/app/libs/
+
+    - name: Setup Java
+      uses: actions/setup-java@v6.1.0
+      with:
+        distribution: 'temurin'
+        java-version: '21'
+
+    - name: Decode Keystore
+      uses: timheuer/base64-to-file@v2.0.0
+      id: android_keystore
+      with:
+        fileName: "android_keystore.jks"
+        encodedString: ${{ secrets.APP_KEYSTORE_BASE64 }}
+
+    - name: Build APK
+      run: |
+        cd ${{ github.workspace }}/V2rayNG
+        echo "sdk.dir=${ANDROID_HOME}" > local.properties
+        chmod 755 gradlew
+        # The JVM unit tests are the only automated check of the Kotlin logic; a failure stops the
+        # build before anything is assembled or signed.
+        ./gradlew :app:testPlaystoreDebugUnitTest :app:testFdroidDebugUnitTest
+        ./gradlew licenseFdroidReleaseReport
+        ./gradlew assembleRelease -PpattngVersion="${{ inputs.release_tag }}" -Pandroid.injected.signing.store.file=${{ steps.android_keystore.outputs.filePath }} -Pandroid.injected.signing.store.password=${{ secrets.APP_KEYSTORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.APP_KEYSTORE_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.APP_KEY_PASSWORD }}
+    
+    - name: Check the native libraries in the APKs
+      run: |
+        # Looked into as ZIP files: every ABI the Aether core is built for has to carry the core, its
+        # Psiphon client and its pluggable transport, and each APK's native files are listed for the record.
+        status=0
+        for apk in ${{ github.workspace }}/V2rayNG/app/build/outputs/apk/*/release/*.apk; do
+          entries=$(unzip -Z1 "$apk" | grep '^lib/' || true)
+          echo "$(basename "$apk"):"
+          echo "$entries" | sed 's/^/  /'
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            echo "$entries" | grep -q "^lib/$abi/" || continue
+            for lib in libaether.so libpsiphon-tunnel-core.so liblyrebird.so; do
+              if ! echo "$entries" | grep -qx "lib/$abi/$lib"; then
+                echo "::error::$(basename "$apk") lacks lib/$abi/$lib"
+                status=1
+              fi
+            done
+          done
+          for abi in arm64-v8a armeabi-v7a x86_64 x86; do
+            echo "$entries" | grep -q "^lib/$abi/" || continue
+            for lib in libmasterdns.so libdnstt.so libnoizdns.so libvaydns.so libslipstream.so libcottendns.so libsoar.so; do
+              if ! echo "$entries" | grep -qx "lib/$abi/$lib"; then
+                echo "::error::$(basename "$apk") lacks lib/$abi/$lib"
+                status=1
+              fi
+            done
+          done
+        done
+        exit $status
+
+    - name: Upload arm64-v8a APK
+      uses: actions/upload-artifact@v7
+      if: ${{  success() }}
+      with:
+        name: arm64-v8a
+        path: ${{ github.workspace }}/V2rayNG/app/build/outputs/apk/*/release/*arm64-v8a*.apk
+
+    - name: Upload armeabi-v7a APK
+      uses: actions/upload-artifact@v7
+      if: ${{  success() }}
+      with:
+        name: armeabi-v7a
+        path: ${{ github.workspace }}/V2rayNG/app/build/outputs/apk/*/release/*armeabi-v7a*.apk
+
+    - name: Upload x86 APK
+      uses: actions/upload-artifact@v7
+      if: ${{  success() }}
+      with:
+        name: x86-apk
+        path: ${{ github.workspace }}/V2rayNG/app/build/outputs/apk/*/release/*x86*.apk
+
+    - name: Upload universal APK
+      uses: actions/upload-artifact@v7
+      if: ${{ success() }}
+      with:
+        name: universal-apk
+        path: ${{ github.workspace }}/V2rayNG/app/build/outputs/apk/*/release/*universal*.apk
+
+  sign-and-release:
+    needs: build
+    runs-on: ubuntu-26.04
+    if: github.event_name == 'workflow_dispatch' && inputs.release_tag != ''
+
+    steps:
+      - name: Download APK artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: release
+
+      - name: Sign APK files
+        run: |
+          # Quiet: a plain import prints the key's user ID, name and email, into the public log.
+          printf '%s' "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --quiet --import
+          KEY=$(gpg --list-secret-keys --with-colons | awk -F: '/^fpr:/ {print $10; exit}')
+          mkdir -p release-files
+
+          find release -type f -name '*.apk' | while read apk; do
+            cp "$apk" release-files/
+            gpg --batch --yes --local-user "$KEY" --detach-sign --output "release-files/$(basename "$apk").sig" "$apk"
+          done
+
+          gpg --armor --export "$KEY" > release-files/PattNG-public-key.asc
+
+      - name: Upload APKs, signatures and public key to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          file: release-files/*
+          tag: ${{ inputs.release_tag }}
+          release_name: PattNG v${{ inputs.release_tag }}
+          body: "."
+          target_commit: ${{ github.sha }}
+          file_glob: true
+          prerelease: true
+          overwrite: true

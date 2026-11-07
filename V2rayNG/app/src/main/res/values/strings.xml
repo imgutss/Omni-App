@@ -1,0 +1,1018 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="omni_brand_signature" translatable="false">Omni — imgutss</string>
+    <string name="app_name" translatable="false">Omni</string>
+    <string name="app_widget_name">Switch</string>
+    <string name="app_tile_name">Switch</string>
+    <string name="app_tile_first_use">Add a profile in the app before using this feature.</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="migration_success">Data migration succeeded!</string>
+    <string name="action_stop_service">Stop service</string>
+    <string name="action_ok">OK</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="migration_fail">Data migration failed!</string>
+    <string name="pull_down_to_refresh">Please pull down to refresh!</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_service">Omni service</string>
+    <string name="notification_channel_subscription_updates">Subscription updates</string>
+    <string name="notification_channel_connection_checks">Connection checks</string>
+    <string name="notification_action_stop_v2ray">Stop</string>
+    <string name="toast_permission_denied">Permission denied</string>
+    <string name="toast_permission_denied_notification">Notification permission denied</string>
+    <string name="notification_action_more">Tap for more</string>
+    <string name="toast_services_start">Starting service</string>
+    <string name="toast_services_stop">Stopping service</string>
+    <string name="toast_services_success">Service started successfully</string>
+    <string name="toast_services_failure">Failed to start service</string>
+
+    <!--ServerActivity-->
+    <string name="title_server">Servers</string>
+    <string name="menu_item_add_config">Add config</string>
+    <string name="menu_item_save_config">Save config</string>
+    <string name="menu_item_edit_config">Edit config</string>
+    <string name="menu_item_del_config">Delete config</string>
+    <string name="menu_item_import_config_qrcode">Import from QR code</string>
+    <string name="menu_item_import_config_clipboard">Import from Clipboard</string>
+    <string name="menu_item_import_config_local">Import from a local file</string>
+    <string name="menu_item_import_config_policy_group">Add [Policy group]</string>
+    <string name="menu_item_import_config_proxy_chain">Add [Proxy chain]</string>
+    <string name="menu_item_import_config_manually_vmess">Add [VMess]</string>
+    <string name="menu_item_import_config_manually_vless">Add [VLESS]</string>
+    <string name="menu_item_import_config_manually_ss">Add [Shadowsocks]</string>
+    <string name="menu_item_import_config_manually_socks">Add [SOCKS]</string>
+    <string name="menu_item_import_config_manually_http">Add [HTTP]</string>
+    <string name="menu_item_import_config_manually_trojan">Add [Trojan]</string>
+    <string name="menu_item_import_config_manually_wireguard">Add [WireGuard]</string>
+    <string name="menu_item_import_config_manually_hysteria2">Add [Hysteria2]</string>
+    <string name="confirm_delete_visible_profiles">Are you sure you want to delete all profiles currently shown?</string>
+    <string name="confirm_delete_duplicate_profiles">Are you sure you want to delete all duplicate profiles currently shown?</string>
+    <string name="confirm_delete_invalid_profiles">Please test the profiles first. Are you sure you want to delete all invalid profiles currently shown?</string>
+    <string name="confirm_delete_profile">Are you sure you want to delete this profile?</string>
+    <string name="confirm_delete_policy_group">Are you sure you want to delete this policy group?</string>
+    <string name="confirm_delete_proxy_chain_member">Are you sure you want to delete this chain member?</string>
+    <string name="confirm_delete_routing_rule">Are you sure you want to delete this routing rule?</string>
+    <string name="confirm_delete_subscription_group">Are you sure you want to delete this subscription group?</string>
+    <string name="confirm_delete_asset_file">Are you sure you want to delete this asset file?</string>
+    <string name="confirm_delete_asset_source">Are you sure you want to delete this asset source?</string>
+    <string name="server_lab_remarks">remarks</string>
+    <string name="server_lab_address">address</string>
+    <string name="server_lab_port">port</string>
+    <string name="server_lab_id">id</string>
+    <string name="server_lab_alterid">alterId</string>
+    <string name="server_lab_security">security</string>
+    <string name="server_lab_network">Network</string>
+    <string name="server_lab_more_function">Transport</string>
+    <string name="server_lab_head_type">head type</string>
+    <string name="server_lab_mode_type">gRPC mode</string>
+    <string name="server_lab_request_host">host</string>
+    <string name="server_lab_request_host_http">http host</string>
+    <string name="server_lab_request_host_ws">ws host</string>
+    <string name="server_lab_request_host_httpupgrade">httpupgrade host</string>
+    <string name="server_lab_request_host_xhttp">xhttp host</string>
+    <string name="server_lab_request_host_h2">h2 host</string>
+    <string name="server_lab_request_host_quic">QUIC security</string>
+    <string name="server_lab_request_host_grpc">gRPC Authority</string>
+    <string name="server_lab_path">path</string>
+    <string name="server_lab_path_ws">ws path</string>
+    <string name="server_lab_path_httpupgrade">httpupgrade path</string>
+    <string name="server_lab_path_xhttp">xhttp path</string>
+    <string name="server_lab_path_h2">h2 path</string>
+    <string name="server_lab_path_quic">QUIC key</string>
+    <string name="server_lab_path_kcp">kcp seed</string>
+    <string name="server_lab_path_grpc">gRPC serviceName</string>
+    <string name="server_lab_stream_security" translatable="false">TLS</string>
+    <string name="server_lab_stream_fingerprint">Fingerprint</string>
+    <string name="server_lab_stream_alpn" translatable="false">ALPN</string>
+    <string name="server_lab_cipher_suites">Cipher Suites</string>
+    <string name="toast_cipher_suites_need_unsafe">cipherSuites only apply with the unsafe fingerprint. Choose unsafe, or clear cipherSuites.</string>
+    <string name="toast_websocket_alpn_http1_only">WebSocket and HTTPUpgrade connect only with alpn http/1.1 or none. Choose http/1.1, or leave alpn empty.</string>
+    <string name="server_lab_allow_insecure">allowInsecure</string>
+    <string name="server_lab_sni" translatable="false">SNI</string>
+    <string name="server_lab_address3">address</string>
+    <string name="server_lab_port3">port</string>
+    <string name="server_lab_id3">password</string>
+    <string name="server_lab_security3">security</string>
+    <string name="server_lab_id4">Password (optional)</string>
+    <string name="server_lab_security4">User (optional)</string>
+    <string name="server_lab_encryption">encryption</string>
+    <string name="server_lab_flow">flow</string>
+    <string name="server_lab_public_key">PublicKey</string>
+    <string name="server_lab_preshared_key">PreSharedKey (optional)</string>
+    <string name="server_lab_short_id">ShortId</string>
+    <string name="server_lab_spider_x" translatable="false">SpiderX</string>
+    <string name="server_lab_mldsa65_verify" translatable="false">mldsa65Verify</string>
+    <string name="server_lab_secret_key">SecretKey</string>
+    <string name="server_lab_reserved">Reserved (optional, separated by commas)</string>
+    <string name="server_lab_local_address">Local address (optional IPv4/IPv6, separated by commas)</string>
+    <string name="server_lab_local_mtu">MTU (optional, default 1420)</string>
+    <string name="server_lab_remote_dns">remoteDNS (optional, comma-separated IPv4/IPv6)</string>
+    <string name="server_lab_kcp_mtu">mKCP MTU (optional, default 1350)</string>
+    <string name="server_lab_kcp_tti">mKCP TTI (optional, default 50 ms)</string>
+    <string name="toast_success">Success</string>
+    <string name="toast_failure">Failure</string>
+    <string name="toast_none_data">No data available</string>
+    <string name="toast_incorrect_protocol">Incorrect protocol</string>
+    <string name="toast_decoding_failed">Decoding failed</string>
+    <string name="title_file_chooser">Select a config</string>
+    <string name="toast_require_file_manager">Please install a file manager.</string>
+    <string name="server_customize_config">Customize config</string>
+    <string name="toast_config_file_invalid">Invalid config</string>
+    <string name="server_lab_content">Content</string>
+    <string name="toast_none_data_clipboard">There is no data in the clipboard</string>
+    <string name="toast_invalid_url">Invalid URL</string>
+    <string name="toast_insecure_url_protocol">Do not use an insecure HTTP subscription URL</string>
+    <string name="server_lab_need_inbound">Make sure the inbound port matches the settings</string>
+    <string name="toast_malformed_json">Invalid configuration.</string>
+    <string name="server_lab_request_host6">Host (SNI) (optional)</string>
+    <string name="toast_action_not_allowed">Action not allowed</string>
+    <string name="server_obfs_password">Obfs password</string>
+    <string name="server_lab_port_hop">Port hopping (overrides the port)</string>
+    <string name="server_lab_port_hop_interval">Port hopping interval (seconds)</string>
+    <string name="server_lab_bandwidth_down">Download bandwidth (supported units: k/m/g/t)</string>
+    <string name="server_lab_bandwidth_up">Upload bandwidth (supported units: k/m/g/t)</string>
+    <string name="server_lab_xhttp_mode">XHTTP Mode</string>
+    <string name="server_lab_xhttp_extra">XHTTP Extra raw JSON, format: { XHTTPObject }</string>
+    <string name="server_lab_final_mask">finalMask raw JSON, format: { FinalMaskObject }</string>
+    <string name="preset_replace_title">Replace the %1$s?</string>
+    <string name="preset_replace_message">The current %1$s is not on the list and will be lost. Replace it with %2$s?</string>
+    <string name="preset_action_replace">Replace</string>
+    <string name="preset_default">default</string>
+    <string name="acc_choose_preset">Choose a ready-made %1$s</string>
+    <string name="preset_setting_final_mask" translatable="false">finalMask</string>
+    <string name="preset_setting_cipher_suites" translatable="false">cipherSuites</string>
+    <string name="server_lab_dial_mode" translatable="false">dialMode</string>
+    <string name="server_lab_target_strategy" translatable="false">targetStrategy</string>
+    <string name="server_lab_ech_config_list" translatable="false">echConfigList</string>
+    <string name="server_lab_ech_outbound">echOutbound raw JSON, format: { OutboundObject }</string>
+    <string name="toast_ech_outbound_needs_ech_config_list">echOutbound requires echConfigList</string>
+    <string name="toast_ech_outbound_invalid_tag">echOutbound needs a \"tag\" that is not empty, not direct or block, and does not start with proxy</string>
+    <string name="toast_ech_outbound_tag_conflict">The tag \"%1$s\" of echOutbound is already used by another outbound</string>
+    <string name="server_lab_verify_peer_cert_by_name">Verify peer certificate by name</string>
+    <string name="server_lab_pinned_ca256">Certificate fingerprint (SHA-256)</string>
+    <string name="server_lab_browser_dialer">Enable Browser Dialer</string>
+    <string name="server_lab_browser_dialer_tip">Only supports xhttp (packet-up) and ws outbound; TLS-related settings may be ignored or conflict</string>
+    <string name="toast_allow_insecure_deprecated">Current node uses an unencrypted connection. Your communication may be directly viewed by network intermediate facilities controlled by authoritarian governments.\nFor security reasons, such nodes cannot be connected via Xray core version 26.2.6+.\nIf it is a self-built node, please enable security encryption such as TLS, or pin the certificate pinnedCA256.\nIf it is a provider node, please contact the service provider to complete the technical upgrade. If the service provider refuses to cooperate, it is recommended to switch to a provider that pays more attention to user security.\nFor more information, please visit https://github.com/2dust/v2rayN/discussions/9460</string>
+    <string name="pinned_ca256_action_fetch">Fetch certificate fingerprint</string>
+    <string name="toast_fetch_cert_sha256_success">Certificate fingerprint fetched successfully</string>
+    <string name="toast_fetch_cert_sha256_failed">Failed to fetch certificate fingerprint</string>
+
+    <!-- UserAssetActivity -->
+    <string name="toast_asset_copy_failed">File copy failed, please use File Manager</string>
+    <string name="menu_item_add_asset">Add asset</string>
+    <string name="menu_item_add_file">Add files</string>
+    <string name="menu_item_add_url">Add URL</string>
+    <string name="menu_item_scan_qrcode">Scan QR code</string>
+    <string name="title_url" translatable="false">URL</string>
+    <string name="menu_item_download_file">Download files</string>
+    <string name="title_user_asset_add_url">Add asset URL</string>
+    <string name="msg_file_not_found">File not found</string>
+    <string name="msg_remark_is_duplicate">This name already exists</string>
+    <string name="asset_geo_files_sources">Geo file source (optional)</string>
+
+    <!-- PerAppProxyActivity -->
+    <string name="msg_dialog_progress">Loading</string>
+    <string name="menu_item_search">Search</string>
+    <string name="menu_item_select_all">Select all</string>
+    <string name="menu_item_invert_selection">Invert selection</string>
+    <string name="msg_enter_keywords">Enter keywords</string>
+    <string name="switch_bypass_apps_mode">Bypass Mode</string>
+    <string name="menu_item_select_proxy_app">Auto-select apps to be proxied</string>
+    <string name="msg_downloading_content">Downloading content</string>
+    <string name="menu_item_export_proxy_app">Export to Clipboard</string>
+    <string name="menu_item_import_proxy_app">Import from Clipboard</string>
+    <string name="per_app_proxy_settings">Per-app settings</string>
+    <string name="per_app_proxy_settings_enable">Enable per-app</string>
+    <string name="app_picker_unknown_app">Unknown app (UID not recognized)</string>
+
+    <!-- Preferences -->
+    <string name="title_settings">Settings</string>
+    <string name="title_advanced">Advanced Settings</string>
+    <string name="title_core_settings">Core Settings</string>
+    <string name="title_vpn_settings">VPN Settings</string>
+    <string name="title_pref_per_app_proxy">Per-app proxy</string>
+    <string name="summary_pref_per_app_proxy">General: checked apps use the proxy, and unchecked apps connect directly;\nBypass mode: checked apps connect directly, and unchecked apps use the proxy.\nThe option to automatically select apps that should use the proxy is in the menu.</string>
+    <string name="title_pref_is_booted">Connect after device boot</string>
+    <string name="summary_pref_is_booted">Automatically connect to the selected server after the device starts. Android may restrict background starts.</string>
+    <string name="title_system_vpn_settings">System VPN settings</string>
+    <string name="summary_system_vpn_settings">Open Android VPN settings to configure Always-on VPN, if supported by this device.</string>
+    <string name="toast_system_vpn_settings_unavailable">System VPN settings are unavailable.</string>
+
+
+    <string name="subscription_updater_job_tips">The task will run in the background, and progress information will be displayed in the notification.</string>
+    <string name="title_pref_auto_test_after_update_subscription">Auto test after updating subscription</string>
+    <string name="summary_pref_auto_test_after_update_subscription">Automated testing takes a long time. If enabled, the task will run in the background; otherwise, it will run on the current page.</string>
+    <string name="title_pref_auto_remove_invalid_after_test">Auto delete invalid config after testing</string>
+    <string name="summary_pref_auto_remove_invalid_after_test">Test results may not be accurate; deleted config cannot be recovered.</string>
+    <string name="title_pref_auto_sort_after_test">Auto sort after testing</string>
+    <string name="summary_pref_auto_sort_after_test">Test results may not be accurate;</string>
+
+    <string name="title_mux_settings">Mux Settings</string>
+    <string name="title_pref_mux_enabled">Enable Mux</string>
+    <string name="summary_pref_mux_enabled">Faster, but it may cause unstable connectivity\nCustomize how to handle TCP, UDP and QUIC below</string>
+    <string name="title_pref_mux_concurrency">TCP connections (range -1 to 1024)</string>
+    <string name="title_pref_mux_xudp_concurrency">XUDP connections (range -1 to 1024)</string>
+    <string name="title_pref_mux_xudp_quic">Handling of QUIC in mux tunnel</string>
+    <string-array name="mux_xudp_quic_entries">
+        <item>reject</item>
+        <item>allow</item>
+        <item>skip</item>
+    </string-array>
+
+    <string name="title_pref_speed_enabled">Enable speed display</string>
+    <string name="summary_pref_speed_enabled">Show current speeds in the notification.\nThe icon indicates whether proxy or direct traffic is dominant.</string>
+
+    <string name="title_pref_sniffing_enabled">Enable Sniffing</string>
+    <string name="summary_pref_sniffing_enabled">Detect destination domains from traffic (enabled by default).</string>
+    <string name="title_pref_route_only_enabled">Enable routeOnly</string>
+    <string name="summary_pref_route_only_enabled">Use the sniffed domain name for routing only, and keep the target address as the IP address.</string>
+
+    <string name="title_pref_local_dns_enabled">Enable local DNS</string>
+    <string name="summary_pref_local_dns_enabled">DNS processed by core‘s DNS module (Recommended if you need routing bypassing LAN and mainland addresses)</string>
+
+    <string name="title_pref_fake_dns_enabled">Enable FakeDNS</string>
+    <string name="summary_pref_fake_dns_enabled">FakeDNS returns synthetic IP addresses for domain lookups (faster, but may not work with some apps).</string>
+
+    <string name="title_pref_ipv6_enabled">Enable IPv6</string>
+    <string name="summary_pref_ipv6_enabled">Add IPv6 address and routes to the VPN interface</string>
+
+    <string name="title_pref_prefer_ipv6">Prefer IPv6</string>
+    <string name="summary_pref_prefer_ipv6">Prefer IPv6 addresses when resolving domain names</string>
+
+    <string name="title_pref_remote_dns">Remote DNS (UDP/TCP/HTTPS/QUIC, optional)</string>
+    <string name="summary_pref_remote_dns" translatable="false">DNS</string>
+
+    <string name="title_pref_vpn_dns">VPN DNS (IPv4/IPv6 only)</string>
+    <string name="title_pref_vpn_bypass_lan">Bypass LAN in VPN mode</string>
+
+    <string name="title_pref_vpn_interface_address">VPN Interface Address</string>
+
+    <string name="title_pref_vpn_mtu">VPN MTU (default 1500)</string>
+
+
+    <string name="title_pref_domestic_dns">Direct DNS (optional)</string>
+    <string name="summary_pref_domestic_dns" translatable="false">DNS</string>
+
+    <string name="title_pref_dns_hosts">DNS host mappings (format: domain:address,…)</string>
+    <string name="summary_pref_dns_hosts">domain:address,…</string>
+
+    <string name="title_pref_delay_test_url">Real delay test URL</string>
+    <string name="summary_pref_delay_test_url" translatable="false">URL</string>
+    <string name="title_pref_real_ping_concurrency">Concurrent real-delay tests</string>
+    <string name="title_pref_real_ping_samples">Real HTTP samples (1–5, after warm-up)</string>
+
+    <string name="title_pref_ip_api_url">Current connection info test URL</string>
+    <string name="summary_pref_ip_api_url" translatable="false">URL</string>
+
+    <string name="title_pref_proxy_sharing_enabled">Allow connections from the LAN</string>
+    <string name="summary_pref_proxy_sharing_enabled">Other devices can connect to proxy by your IP address through local proxy. Only enable in trusted networks to avoid unauthorized connections</string>
+    <string name="toast_warning_pref_proxysharing_short">Allow connections from the LAN. Make sure you are in a trusted network</string>
+
+    <string name="title_pref_socks_port">Local proxy port</string>
+    <string name="title_pref_aether_listen_port">Aether listen port</string>
+    <string name="title_pref_enable_local_proxy">Enable local proxy</string>
+    <string name="summary_pref_enable_local_proxy">When disabled, no SOCKS proxy is available, so subscription updates and similar actions cannot use the proxy</string>
+    <string name="title_pref_socks_enable_udp" translatable="false">SOCKS5 UDP</string>
+    <string name="summary_pref_socks_enable_udp">SOCKS5 authentication is not fully secure when using UDP.</string>
+    <string name="summary_pref_socks_port">Local proxy port</string>
+    <string name="title_pref_dynamic_socks_port">Enable dynamic local proxy port</string>
+    <string name="summary_pref_dynamic_socks_port">Use a random local proxy port for each inbound</string>
+    <string name="title_pref_socks_username">Local proxy username (optional)</string>
+    <string name="summary_pref_socks_username">Username</string>
+    <string name="title_pref_socks_password">Local proxy password (optional)</string>
+    <string name="summary_pref_socks_password">Password</string>
+
+    <string name="title_pref_local_dns_port">Local DNS port</string>
+    <string name="summary_pref_local_dns_port">Local DNS port</string>
+
+    <string name="title_pref_confirm_remove">Delete config confirmation</string>
+    <string name="summary_pref_confirm_remove">Whether deleting a config requires a second confirmation by the user</string>
+
+
+    <string name="title_pref_append_http_proxy">Add HTTP proxy to VPN</string>
+    <string name="summary_pref_append_http_proxy">Allow browsers and supported apps to use the HTTP proxy directly instead of the virtual network interface (Android 10+).</string>
+
+    <string name="title_pref_double_column_display">Use two-column layout</string>
+    <string name="summary_pref_double_column_display">Display the profile list in two columns to fit more content on screen.</string>
+
+    <string name="title_pref_group_all_display">Show an "All" group tab</string>
+    <string name="summary_pref_group_all_display">Combine profiles from every subscription group in one tab.</string>
+
+    <!-- AboutActivity -->
+    <string name="title_pref_feedback">Feedback</string>
+    <string name="summary_pref_feedback">Suggest improvements or report bugs on GitHub</string>
+    <string name="summary_pref_tg_group">Join the Telegram group</string>
+    <string name="toast_tg_app_not_found">Telegram app not found</string>
+    <string name="title_privacy_policy">Privacy policy</string>
+    <string name="title_qr_code">QR code</string>
+    <string name="title_about">About</string>
+    <string name="title_source_code">Source code</string>
+    <string name="title_oss_license">Open-source licenses</string>
+    <string name="title_translators">Translators</string>
+    <string name="title_tg_channel">Telegram channel</string>
+
+    <string name="title_pref_promotion">Promotion</string>
+
+    <string name="title_pref_auto_update_subscription">Automatically update subscriptions</string>
+    <string name="summary_pref_auto_update_subscription">Update your subscriptions automatically at set intervals in the background. Depending on the device, this feature may not always work</string>
+    <string name="title_pref_auto_update_interval">Automatic update interval (minutes; minimum 15)</string>
+
+    <string name="title_core_loglevel">Log Level</string>
+    <string name="title_outbound_domain_resolve_method">Outbound domain resolution</string>
+    <string name="title_mode">Mode</string>
+    <string name="title_mode_help">Click me for more help</string>
+    <string name="title_language">Language</string>
+    <string name="title_ui_settings">UI settings</string>
+    <string name="title_pref_ui_mode_night">UI mode settings</string>
+    <string name="title_pref_dynamic_color">Enable dynamic color</string>
+    <string name="summary_pref_dynamic_color">Only works on Android 12+ devices</string>
+    <string name="title_pref_use_hev_tunnel">Use Hev TUN</string>
+    <string name="summary_pref_use_hev_tunnel">When enabled, TUN will use hev-socks5-tunnel; otherwise, it will use xray-core.</string>
+    <string name="title_pref_hev_tunnel_loglevel">Hev TUN log level</string>
+    <string name="title_pref_hev_tunnel_rw_timeout">Hev TUN read/write timeout (seconds; TCP/UDP defaults: 300/60)</string>
+    <string name="title_mode_settings">Mode Settings</string>
+    <string name="title_root_mode_enabled">Enable root mode (root users)</string>
+    <string name="summary_root_mode_enabled">Use root access for low-level transparent proxying. Root mode handles network traffic directly instead of using the Android VPN service. Standard mode, per-app routing, and VPN-related settings do not apply while root mode is enabled.</string>
+    <string name="toast_root_required">Root access is required for this feature</string>
+    <string name="title_root_lan_sharing">Share VPN with LAN / tethered devices (root users)</string>
+    <string name="summary_root_lan_sharing">Route traffic from Wi-Fi hotspot and USB-tethered devices through the VPN.</string>
+
+    <string name="title_logcat" translatable="false">Logcat</string>
+    <string name="logcat_copy">Copy</string>
+    <string name="logcat_clear">Clear</string>
+    <string name="logcat_share">Share log</string>
+    <string name="title_service_restart">Restart service</string>
+    <string name="title_del_all_config">Delete configs</string>
+    <string name="title_del_duplicate_config">Delete duplicate configs</string>
+    <string name="title_del_invalid_config">Delete invalid configs</string>
+    <string name="title_export_all">Export configs to clipboard</string>
+    <string name="title_sub_setting">Subscriptions</string>
+    <string name="sub_setting_remarks">Remarks</string>
+    <string name="sub_setting_url">Optional URL</string>
+    <string name="sub_setting_user_agent" translatable="false">User Agent</string>
+    <string name="sub_setting_request_headers">Request Headers (JSON format)</string>
+    <string name="sub_setting_filter">Remarks filter (regular expression)</string>
+    <string name="sub_setting_override_address">Override address</string>
+    <string name="sub_setting_override_port">Override port</string>
+    <string name="sub_setting_override_tip">Leave empty to keep the value from the subscription</string>
+    <string name="sub_setting_enable">Enable update</string>
+    <string name="sub_auto_update">Enable automatic update</string>
+    <string name="sub_allow_insecure_url">Allow insecure HTTP address</string>
+    <string name="sub_setting_pre_profile">Entry proxy</string>
+    <string name="sub_setting_next_profile">Exit proxy</string>
+    <string name="sub_setting_pre_profile_tip">Make sure the config remarks exist and are unique</string>
+    <string name="sub_setting_entry_proxy_tip">The selected proxy is added before every profile in this subscription as the entry link in the proxy chain for that profile.</string>
+    <string name="sub_setting_exit_proxy_tip">The selected proxy is added after every profile in this subscription as the exit link in the proxy chain for that profile.</string>
+    <string name="toast_invalid_update_interval">Invalid update interval. Minimum is 15 minutes.</string>
+    <string name="toast_invalid_override_port">Invalid override port. Use a value from 1 to 65535.</string>
+    <string name="title_sub_update">Update subscription</string>
+    <string name="title_ping_all_server">Test TCP delays (TCPing)</string>
+    <string name="title_real_ping_all_server">Test real HTTP delays (median of samples)</string>
+    <string name="title_user_asset_setting">Asset files</string>
+    <string name="title_sort_by_test_results">Sort by test results</string>
+    <string name="title_filter_config">Filter configs</string>
+    <string name="filter_config_all">All</string>
+    <string name="summary_scan_qrcode">Tap the screen to open the camera and scan</string>
+    <string name="title_del_duplicate_config_count">Delete %d duplicate configs</string>
+    <string name="title_del_config_count">Delete %d configs</string>
+    <string name="title_import_config_count">Import %d configs</string>
+    <string name="title_export_config_count">Export %d configs</string>
+    <plurals name="title_update_config_count">
+        <item quantity="one">Updated %1$d config</item>
+        <item quantity="other">Updated %1$d configs</item>
+    </plurals>
+    <plurals name="title_update_asset_count">
+        <item quantity="one">Updated %1$d asset file</item>
+        <item quantity="other">Updated %1$d asset files</item>
+    </plurals>
+    <string name="title_update_subscription_result">Updated %1$d configs (%2$d success, %3$d failed, %4$d skipped)</string>
+    <string name="title_update_subscription_no_subscription">No subscriptions</string>
+    <string name="toast_server_not_found_in_group">Selected server not found in current group</string>
+    <string name="title_locate_selected_config">Find selected configuration</string>
+
+    <string name="tasker_start_service">Start Service</string>
+    <string name="tasker_setting_confirm">Confirm</string>
+
+    <!-- RoutingSettingActivity -->
+    <string name="routing_settings_domain_strategy">Domain strategy</string>
+    <string name="routing_settings_title">Routing Settings</string>
+    <string name="routing_settings_tips">A rule applies only when every configured matching condition is satisfied (AND). Rules are checked from top to bottom; the first matching rule is applied.</string>
+    <string name="routing_settings_comma_tip">Separate multiple entries with commas (,).</string>
+    <string name="routing_settings_save">Save</string>
+    <string name="routing_settings_delete">Clear</string>
+    <string name="routing_settings_rule_title">Routing Rule Settings</string>
+    <string name="routing_settings_add_rule">Add rule</string>
+    <string name="routing_settings_import_predefined_rulesets">Import predefined rulesets</string>
+    <string name="routing_settings_import_rulesets_tip">Existing rulesets will be deleted. Continue?</string>
+    <string name="routing_settings_import_rulesets_from_clipboard">Import ruleset from clipboard</string>
+    <string name="routing_settings_import_rulesets_from_qrcode">Import ruleset from QR code</string>
+    <string name="routing_settings_export_rulesets_to_clipboard">Export ruleset to clipboard</string>
+    <string name="routing_settings_locked">Locked; keep this rule when importing presets</string>
+    <string name="routing_settings_domain" translatable="false">domain</string>
+    <string name="routing_settings_ip" translatable="false">ip</string>
+    <string name="routing_settings_process">process (Package Name — only supported when using Xray TUN, routeOnly enabled, and Android 10+)</string>
+    <string name="routing_settings_process_select">Select package name</string>
+    <string name="routing_settings_port" translatable="false">port</string>
+    <string name="routing_settings_protocol" translatable="false">protocol</string>
+    <string name="routing_settings_protocol_tip" translatable="false">[http,tls,bittorrent]</string>
+    <string name="routing_settings_network" translatable="false">network</string>
+    <string name="routing_settings_outbound_tag_hint">proxy / direct / block / &lt;%1$s&gt;</string>
+    <string name="routing_settings_outbound_tag" translatable="false">outboundTag</string>
+
+    <string name="connection_test_pending">Check connectivity</string>
+    <string name="connection_test_testing">Testing…</string>
+    <string name="connection_test_testing_count">Testing %d configs…</string>
+    <string name="connection_test_available">Connection succeeded in %1$s</string>
+    <string name="server_test_delay_value">%1$d ms</string>
+    <string name="server_test_delay_detailed_value">%1$s %2$d ms · %3$d/%4$d · ±%5$d ms</string>
+    <string name="server_test_no_response">No response</string>
+    <string name="connection_test_untested">Not measurable in the current state</string>
+    <string name="server_test_no_response_samples">No response · %1$d/%2$d successful samples</string>
+    <string name="connection_test_error">Connection test failed: %s</string>
+    <string name="connection_test_fail">Internet unavailable</string>
+    <string name="connection_test_error_status_code">Error code: #%d</string>
+    <string name="connection_connected">Connected. Tap to check connection.</string>
+    <string name="connection_not_connected">Not connected</string>
+    <string name="connection_running_task_left">Tests running: %s</string>
+
+    <string name="import_subscription_success">Subscription imported successfully</string>
+    <string name="import_subscription_failure">Import subscription failed</string>
+    <string name="title_observatory_settings">Observatory Settings</string>
+    <string name="title_pref_observatory_least_ping_interval">leastPing Interval</string>
+    <string name="title_pref_observatory_least_load_interval">leastLoad Interval</string>
+    <string name="title_pref_observatory_least_load_method">leastLoad HTTP method</string>
+    <string name="title_pref_observatory_least_load_sampling">leastLoad Sampling</string>
+    <string name="title_pref_observatory_least_load_timeout">leastLoad Timeout</string>
+    <string name="toast_invalid_observatory_duration">Invalid duration. Use a value like 3m or 30s.</string>
+    <string name="toast_invalid_observatory_sampling">Invalid sampling. Use a positive number.</string>
+    <string name="toast_invalid_aether_listen_port">Use a port from 1024 to 65532 for the Aether listen port</string>
+    <string name="toast_aether_listen_port_local_proxy">The Aether listen port and the three ports after it cannot include the local proxy port</string>
+
+    <string name="update_check_for_update">Check for update</string>
+    <string name="update_already_latest_version">Already on the latest version</string>
+    <string name="update_new_version_found">New version found: %s</string>
+    <string name="update_now">Update now</string>
+    <string name="update_check_pre_release">Check pre-release versions</string>
+    <string name="update_checking_for_update">Checking for update…</string>
+
+    <string name="title_policy_group_type">Policy group type</string>
+    <string name="title_policy_group_subscription_id">From subscription group</string>
+    <string name="title_policy_group_subscription_filter">Remarks regex filter</string>
+    <string name="title_policy_group_test_outbounds">Test outbounds</string>
+    <string name="title_policy_group_fallback">Fallback outbound (optional)</string>
+
+    <string name="server_proxy_chain_members">Proxy chain members</string>
+    <string name="server_proxy_chain_pick_members">Tap here to pick a member</string>
+    <string name="server_proxy_chain_member_unselected">Select a member</string>
+    <string name="server_proxy_chain_members_unselected">Please select a member for each chain row</string>
+    <string name="server_proxy_chain_members_insufficient">Insufficient members</string>
+
+    <!-- BackupActivity -->
+    <string name="title_configuration_backup_restore">Backup &amp; Restore</string>
+    <string name="title_configuration_backup">Backup config</string>
+    <string name="title_configuration_restore">Restore config</string>
+    <string name="title_profile_storage_cleanup">Repair profile storage</string>
+    <string name="summary_profile_storage_cleanup">Remove unused profile data</string>
+    <string name="message_profile_storage_cleanup">Delete profile data that is no longer used by any group? Selected profiles and data that cannot be safely classified will be kept.</string>
+    <string name="toast_profile_storage_cleanup">Unused profiles removed: %1$d</string>
+    <string name="toast_profile_storage_cleanup_skipped">Profile storage could not be safely classified. Nothing was removed.</string>
+    <string name="title_configuration_share">Share config</string>
+    <string name="title_webdav_config_setting">WebDAV Settings</string>
+    <string name="title_webdav_config_setting_unknown">Please configure WebDAV first.</string>
+    <string name="title_webdav_url">WebDAV server URL</string>
+    <string name="title_webdav_user">Username</string>
+    <string name="title_webdav_pass">Password</string>
+    <string name="title_webdav_remote_path">Remote directory (optional)</string>
+
+    <string name="share_method_qrcode">QR code</string>
+    <string name="share_method_clipboard">Copy profile link</string>
+    <string name="share_method_full_content">Copy full configuration</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_close">Close</string>
+
+    <string name="share_subscription_qrcode">QR code</string>
+    <string name="share_subscription_clipboard">Export to clipboard</string>
+
+    <string-array name="mode_entries">
+        <item>VPN</item>
+        <item>Proxy only</item>
+    </string-array>
+
+    <string-array name="browser_dialer_mode">
+        <item>Disable</item>
+        <item>OkHttp</item>
+        <item>WebView</item>
+    </string-array>
+
+    <string-array name="ui_mode_night">
+        <item>Follow system</item>
+        <item>Light</item>
+        <item>Dark</item>
+    </string-array>
+
+    <string name="routing_preset_china_whitelist">China Whitelist</string>
+    <string name="routing_preset_china_blacklist">China Blacklist</string>
+    <string name="routing_preset_global">Global</string>
+    <string name="routing_preset_iran_whitelist">Iran Whitelist</string>
+    <string name="routing_preset_russia_whitelist">Russia Whitelist</string>
+
+    <string-array name="vpn_bypass_lan">
+        <item>Follow config</item>
+        <item>Bypass</item>
+        <item>Not Bypass</item>
+    </string-array>
+
+    <string-array name="outbound_domain_resolve_method">
+        <item>Do not resolve</item>
+        <item>Resolve and add to DNS Hosts</item>
+        <item>Resolve and replace domain</item>
+    </string-array>
+
+    <string-array name="policy_group_type">
+        <item>Least Ping</item>
+        <item>Least Load</item>
+        <item>Random</item>
+        <item>Round Robin</item>
+    </string-array>
+
+    <string name="backup_location_local">Local</string>
+    <string name="backup_location_webdav" translatable="false">WebDAV</string>
+
+    <string name="acc_refresh">Refresh log</string>
+    <string name="toast_permission_denied_for">%1$s permission denied</string>
+    <string name="acc_add_subscription">Add subscription</string>
+    <string name="toast_malformed_json_detail">Invalid configuration: %1$s</string>
+    <string name="acc_add_asset">Add asset source</string>
+    <string name="acc_download_file">Download asset files</string>
+    <string name="acc_qr_code">QR code</string>
+    <string name="acc_copy_log">Copy log</string>
+    <string name="acc_clear_log">Clear log</string>
+    <string name="acc_add_rule">Add routing rule</string>
+    <string name="acc_start">Start service</string>
+    <string name="acc_stop">Stop service</string>
+    <string name="acc_back">Back</string>
+    <string name="acc_search">Search</string>
+    <string name="acc_add">Add configuration</string>
+    <string name="acc_more">More options</string>
+    <string name="acc_selected_server">Selected</string>
+    <string name="acc_share_subscription">Share subscription link</string>
+    <string name="acc_share_log">Share log</string>
+    <string name="acc_remove">Remove proxy chain member</string>
+    <string name="acc_add_member">Add proxy chain member</string>
+    <string name="acc_start_scanner">Start QR scanner</string>
+    <string name="acc_stop_scanner">Stop QR scanner</string>
+    <string name="acc_turn_torch_on">Turn flashlight on</string>
+    <string name="acc_turn_torch_off">Turn flashlight off</string>
+    <string name="acc_select_image">Select image to scan</string>
+    <string name="acc_locked">This rule is kept when importing presets</string>
+    <string name="acc_open_menu">Open navigation menu</string>
+    <string name="acc_edit">Edit</string>
+    <string name="acc_delete">Delete</string>
+    <string name="acc_save">Save</string>
+    <string name="acc_update_subscriptions">Update subscriptions</string>
+    <string name="acc_per_app_proxy_information">Per-app proxy information</string>
+    <string name="permission_camera">Camera</string>
+    <string name="permission_notification">Notification</string>
+    <string name="permission_local_network">Local network</string>
+    <string name="subscription_update_updating">Updating subscription: %1$s</string>
+    <string name="subscription_update_progress">Testing %2$s: %1$s</string>
+    <string name="tasker_blurb_start">Start %1$s</string>
+    <string name="tasker_blurb_stop">Stop %1$s</string>
+    <string name="connection_test_empty_message">no details available</string>
+    <string name="value_unknown">unknown</string>
+    <string name="aether_lab_protocol">Protocol</string>
+    <string name="aether_lab_transport">Transport</string>
+    <string name="aether_lab_masque_sni">MASQUE SNI</string>
+    <string name="aether_lab_scan_mode">Scan mode</string>
+    <string name="aether_lab_obfuscation">Obfuscation</string>
+    <string name="aether_lab_ip_version">IP version</string>
+    <string name="aether_lab_exit_final_mask">exit-node finalMask raw JSON, format: { FinalMaskObject }</string>
+    <string name="aether_lab_exit_dial_mode" translatable="false">exit-node dialMode</string>
+    <string name="aether_lab_exit_node" translatable="false">exit-node</string>
+    <string name="aether_exit_node_freedom">freedom (default)</string>
+    <string name="label_numbered">%1$s (%2$d)</string>
+    <string name="aether_hint_exit_node">The core dials out through this profile\'s outbound, as through a hop of a proxy chain; finalMask and dialMode below are for freedom only</string>
+    <string name="aether_exit_node_unusable">The exit-node profile \"%1$s\" gives no outbound; choose another one, or freedom</string>
+    <string name="aether_exit_node_ech_unusable">The echOutbound of the exit-node profile \"%1$s\" cannot be used; fix it in that profile, or choose another one, or freedom</string>
+    <string name="toast_profile_name_not_found">No profile named \"%1$s\" was found</string>
+    <string name="toast_profile_name_duplicate">Two profiles named \"%1$s\" were found; please rename one</string>
+    <string name="toast_profile_no_server">Profile \"%1$s\" has no server address, so a proxy chain cannot go through it</string>
+    <string name="toast_profile_group_not_fallback">\"%1$s\" is a policy group, and a policy group cannot be a fallback outbound; choose another profile</string>
+    <string name="toast_profile_group_not_hop">\"%1$s\" is a policy group, so a proxy chain cannot go through it; choose another profile</string>
+    <string name="toast_profile_chain_not_hop">\"%1$s\" is a proxy chain, so another proxy chain cannot go through it; choose another profile</string>
+    <string name="toast_profile_custom_not_hop">\"%1$s\" is a custom configuration, so a proxy chain cannot go through it; choose another profile</string>
+    <string name="toast_profile_custom_not_fallback">\"%1$s\" is a custom configuration, and a custom configuration cannot be a fallback outbound; choose another profile</string>
+    <string name="aether_keys_hint_fragment">Sends the ClientHello of the calls to the WARP API in pieces, for networks that filter the name of the API</string>
+    <string name="aether_lab_fragment">Fragment ClientHello</string>
+    <string name="aether_lab_fragment_size">Fragment size (bytes)</string>
+    <string name="aether_lab_fragment_delay">Fragment delay (ms)</string>
+    <string name="aether_hint_fragment_size" translatable="false">8-16</string>
+    <string name="aether_hint_fragment_delay" translatable="false">2-10</string>
+    <string name="aether_lab_wiw_outer">Outer hop</string>
+    <string name="aether_lab_wiw_inner">Inner hop</string>
+    <string name="aether_hint_endpoint">Leave blank to scan</string>
+    <string name="aether_hint_gool_peer">Leave blank for the endpoint WARP assigns</string>
+    <string name="aether_action_scan">Scan for an endpoint</string>
+    <string name="aether_action_scanning">Scanning…</string>
+    <string name="aether_scan_success">Endpoint found</string>
+    <string name="aether_scan_failed">No endpoint found</string>
+    <string name="aether_invalid_endpoint">Use an IP address and a port, or leave the address empty to scan</string>
+    <string name="aether_invalid_hop">Write an address and a port, such as 162.159.192.1:2408</string>
+    <string name="aether_same_hop">The two hops must be different addresses</string>
+    <string name="aether_invalid_fragment">Use a number or a range such as 16-32: size 1–4096 bytes, delay 0–1000 ms</string>
+    <string name="aether_listen_port_taken">Port %1$d, which the Aether core listens on, is taken by an inbound of the configuration, such as the local proxy or the port three above the Aether listen port; change the Aether listen port in the settings, or the ports of the command</string>
+    <string name="aether_secondary_port_taken">An inbound of this configuration already listens on %1$d, the port three above the Aether listen port, which the Aether core dials out through; change the Aether listen port in the settings</string>
+    <string name="aether_listen_port_in_use">Port %1$d, which the Aether core listens on, is in use by another app; change the Aether listen port in the settings, or the ports of the command</string>
+    <string name="aether_secondary_port_in_use">Port %1$d, three above the Aether listen port, which Xray opens for the Aether core to dial out through, is in use by another app; change the Aether listen port in the settings</string>
+    <string name="aether_listen_port_invalid">The Aether command tells the core to listen on %1$d, which is no port (1 to 65535); change the ports of the command</string>
+    <string name="aether_listen_address_invalid">The Aether command gives %1$s an address the core does not take; write an IP address and a port after it, such as 127.0.0.1:20808</string>
+    <string name="aether_listen_address_unreachable">The Aether command gives %1$s an address the app does not connect to: the app connects to the core on 127.0.0.1, so write 127.0.0.1, or 0.0.0.0 for every address, and a port after it</string>
+    <string name="aether_listen_port_shared">The Aether command tells the core to listen on %1$d with two of its listeners (a listener the command leaves out still listens: the one the app dials on the Aether listen port, any other on the core\'s default, 1819, 1820 or 1821); give each listener a port of its own</string>
+    <string name="aether_lab_psiphon">Psiphon</string>
+    <string name="aether_lab_psiphon_mode">Psiphon connection</string>
+    <string name="aether_lab_psiphon_cdn_ips">CDN fronting IPs</string>
+    <string name="aether_lab_psiphon_cdn_sni">CDN fronting server names</string>
+    <string name="aether_hint_psiphon_list">Comma-separated; leave blank for the built-in list</string>
+    <string name="aether_lab_psiphon_region">Exit country</string>
+    <string name="aether_psiphon_region_any">Any country</string>
+    <string name="aether_lab_psiphon_bundled_list">Start from the bundled server list</string>
+    <string name="aether_hint_psiphon_bundled_list">On: Psiphon dials the servers in psiphon_servers.dat at once and fetches a fresh list only when they fail. Off: it fetches a fresh list before its first connection, so the list must be reachable, as it is behind WARP</string>
+    <string name="aether_action_clear_psiphon">Clear Psiphon data</string>
+    <string name="aether_hint_clear_psiphon">Forgets the servers Psiphon has learned and the lists it fetched. Its next start begins from the bundled list again, or from a fresh download when the switch above is off</string>
+    <string name="aether_log_psiphon_cleared">Psiphon data cleared</string>
+    <string name="aether_log_psiphon_clear_failed">Psiphon data could not be cleared</string>
+    <string name="aether_psiphon_clear_blocked">Disconnect the Aether profile before clearing Psiphon data; the running connection uses it</string>
+    <string name="aether_psiphon_unavailable">This build does not include the Psiphon client, so a profile with Psiphon cannot connect</string>
+    <string name="aether_psiphon_needs_masque">Psiphon → WARP works with the MASQUE protocol only</string>
+    <string name="aether_next_port_taken">With Tor or Psiphon in the path the core also uses the ports after the Aether listen port, and none of them can be the local proxy port of the app; change the Aether listen port in the settings</string>
+    <string name="aether_lab_tor">Tor</string>
+    <string name="aether_lab_tor_bridges">Bridges</string>
+    <string name="aether_lab_tor_bridge_lines">Bridge lines</string>
+    <string name="aether_hint_tor_bridge_lines">One per line, as in torrc: obfs4 1.2.3.4:443 FINGERPRINT cert=… iat-mode=0</string>
+    <string name="aether_tor_transports_unavailable">This build has no pluggable transports, so Tor bridges cannot be used; Tor connects only where it is not blocked</string>
+    <string name="aether_tor_needs_masque">Tor → WARP works with the MASQUE protocol only</string>
+    <string name="aether_tor_psiphon_conflict">Tor and Psiphon go together only with one inside the tunnel and the other around it</string>
+    <string name="aether_tor_bridges_missing">Write at least one bridge line, or choose another bridge setting</string>
+    <string name="aether_lab_ech">Encrypted Client Hello</string>
+    <string name="aether_hint_ech">Hides the server name of the MASQUE handshake; without a usable key, Aether does not connect</string>
+    <string name="aether_lab_ech_dns">ECH DNS</string>
+    <string name="aether_lab_ech_domain">ECH domain</string>
+    <string name="aether_invalid_ech_dns">The ECH DNS must be udp://IP, tcp://IP or the https:// address of a DNS-over-HTTPS server</string>
+    <string name="aether_invalid_ech_domain">The ECH domain must be a domain name, such as cloudflare-ech.com</string>
+    <string name="aether_invalid_masque_sni">The MASQUE SNI must be a domain name, such as www.cloudflare.com</string>
+    <string name="aether_lab_dns">DNS inside the tunnel</string>
+    <string name="aether_hint_dns">Comma-separated; leave blank for 1.1.1.1 and 1.0.0.1</string>
+    <string name="aether_invalid_dns">Write resolver addresses such as 1.1.1.1 or 10.0.0.1:5353, separated by commas</string>
+    <string name="aether_lab_exit_loc">Exit location</string>
+    <string name="aether_hint_exit_loc">DE,SE allows only those; !IR,RU refuses those; blank accepts any</string>
+    <string name="aether_invalid_exit_loc">Write two-letter country codes separated by commas, with a leading ! to refuse them</string>
+    <string name="aether_lab_tor_relays">Bridge sources</string>
+    <string name="aether_lab_other_settings">Other settings</string>
+    <string name="aether_lab_command">Aether command</string>
+    <string name="aether_command_custom">Edited by hand: this command runs as written, and the settings above are not applied, except for Xray-core settings</string>
+    <string name="aether_action_use_settings">Use the settings</string>
+    <string name="aether_invalid_command">The command has to name arguments for the Aether core, with the port it listens on after --bind</string>
+    <string name="aether_unsupported_abi">The Aether core is not available for this device</string>
+    <string name="aether_core_stopped">The Aether core stopped running</string>
+    <string name="aether_core_stopped_no_ech_key">The Aether core stopped: ECH is on, but no usable ECH key was found. Without one, the server name would have gone out in the clear.</string>
+    <string name="aether_core_stopped_chain_ended">Tor or Psiphon inside the Aether tunnel ended, so the connection was stopped: %1$s</string>
+    <string name="aether_core_connecting">The Aether core is still connecting</string>
+    <string name="menu_item_import_config_manually_aether">Add Aether config manually</string>
+    <string name="aether_action_renew_key">Get new WARP keys…</string>
+    <string name="aether_action_renewing_key">Getting new WARP keys…</string>
+    <string name="aether_log_title">Log</string>
+    <string name="aether_log_empty">Scan results and the WARP key status appear here</string>
+    <string name="aether_log_scan_started">Scanning for an endpoint…</string>
+    <string name="aether_log_scan_found">Found %1$s</string>
+    <string name="aether_log_scan_found_hops">Found outer hop %1$s and inner hop %2$s</string>
+    <string name="aether_log_scan_cancelled">Scan cancelled</string>
+    <string name="aether_log_key_renewing">Registering new WARP keys; the keys in use stay in place until all the new ones are ready…</string>
+    <string name="aether_log_key_renewed">The new WARP keys are in place and are used from the next connection</string>
+    <string name="aether_log_key_renew_failed">Registering the new WARP keys failed; the current keys were kept</string>
+    <string name="aether_log_key_renew_cancelled">Getting new WARP keys cancelled</string>
+    <string name="aether_log_masque_key_ready">MASQUE key: device %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_masque_key_missing">MASQUE key: none yet; one is registered on the first scan or connection</string>
+    <string name="aether_log_wireguard_key_ready">WireGuard key: device %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_wireguard_key_missing">WireGuard key: none yet; one is registered on the first scan or connection</string>
+    <string name="aether_log_outer_key_ready">Outer hop key: device %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_outer_key_missing">Outer hop key: none yet; one is registered on the first scan or connection</string>
+    <string name="aether_log_inner_key_ready">Inner hop key: device %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_inner_key_missing">Inner hop key: none yet; one is registered on the first scan or connection</string>
+    <string name="aether_log_wireguard_inner_key_ready">WireGuard inner hop key: device %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_wireguard_inner_key_missing">WireGuard inner hop key: none yet; one is registered on the first scan or connection</string>
+    <string name="aether_log_masque_inner_key_ready">MASQUE inner hop key: device %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_masque_inner_key_missing">MASQUE inner hop key: none yet; one is registered on the first scan or connection</string>
+    <string name="aether_log_gool_key_ready">WireGuard over MASQUE key: device %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_gool_key_missing">WireGuard over MASQUE key: none yet; one is registered on the first scan or connection</string>
+    <string name="aether_renew_blocked">Disconnect the Aether profile before getting these keys; the running connection uses them</string>
+    <string name="aether_action_get_keys">Get new WARP keys</string>
+    <string name="aether_keys_lab_kind">Get new keys for</string>
+    <string name="aether_keys_kind_all">All</string>
+    <string name="aether_keys_lab_enroll_address">API address</string>
+    <string name="aether_keys_hint_ech">Hides the server name of the calls to the WARP API; without a usable ECH key, no WARP key is requested</string>
+    <string name="aether_lab_fingerprint">Fingerprint</string>
+    <string name="aether_keys_invalid_enroll_address">The API address must be an IP address or a domain name, with or without a port, such as 188.114.97.6:443 or [2606:4700::1]:8443</string>
+    <string name="aether_keys_lab_api_sni">API server name (SNI)</string>
+    <string name="aether_keys_lab_api_host">API host</string>
+    <string name="aether_keys_hint_enroll_address">Leave blank for the address of the API server name</string>
+    <string name="aether_keys_hint_api_sni">Leave blank for the API host</string>
+    <string name="aether_keys_hint_api_host">Leave blank for api.devices.cloudflare.com, then api.cloudflareclient.com if it gets no answer and the server name is blank too. Cloudflare refuses a server name that differs from the host</string>
+    <string name="aether_keys_invalid_api_sni">The API server name must be a domain name, such as api.devices.cloudflare.com</string>
+    <string name="aether_keys_invalid_api_host">The API host must be a domain name, such as api.devices.cloudflare.com</string>
+    <string name="aether_keys_invalid_command">The command has to register keys: --register followed by all, wg, masque, mim, gool-classic (WARP-in-WARP) or gool (WireGuard over MASQUE)</string>
+    <string name="aether_keys_log_empty">The core\'s output and the WARP keys appear here</string>
+    <string name="aether_scan_blocked">Disconnect the Aether profile before scanning; a scan would open a second tunnel on the running connection\'s key</string>
+    <string name="aether_keys_missing">You don\'t have the required WARP key; please get it first</string>
+    <string name="aether_action_save_anyway">Save anyway</string>
+    <string name="aether_action_scan_anyway">Scan anyway</string>
+    <string name="aether_chain_one_profile">A proxy chain can have only one Aether profile</string>
+    <string name="aether_exit_node_name_taken">A profile named exit-node is used by routing here, and exit-node is the name of the outbound the Aether core dials out by; rename that profile</string>
+    <string name="aether_chain_hop_missing">The hop the Aether profile of this proxy chain dials out through could not be built, and the Aether core would reach the internet without it</string>
+    <string name="config_main_outbound_missing">The selected profile could not be built, and all traffic would reach the internet directly without it; check its settings</string>
+    <string name="config_routing_target_unbuilt">The profile \"%1$s\", which a routing rule sends traffic to, could not be built; fix it, or turn off the rules that use it</string>
+    <string name="config_group_fallback_unbuilt">The profile \"%1$s\", which a policy group falls back to, could not be built; fix it, or choose another fallback outbound for the group</string>
+    <string name="aether_config_single_profile">A configuration can use only one Aether profile</string>
+    <string name="aether_config_two_exits">One Aether core would have to dial out two ways here: the same tunnel is used on its own and behind a proxy chain\'s hop, behind two different hops, or with two different exit-node settings</string>
+    <string name="aether_custom_no_outbound">No SOCKS outbound of the configuration dials %1$s:%2$d, where the Aether command listens</string>
+    <string name="aether_custom_exit_node_selected">A balancer or an observatory of this configuration picks the outbounds whose tags start with %1$s, which would include exit-node, the outbound the Aether core dials out by; change that selector</string>
+    <string name="aether_custom_invalid_command">aetherCommand has to be the command line of the Aether core, as text, with the address it listens on after --bind: %1$s</string>
+    <string name="title_aether_core">Aether core</string>
+    <string name="summary_aether_core">WARP client by CluvexStudio, bundled under the AGPL-3.0 license. Tap to open its source code.</string>
+    <string-array name="aether_scan_entries">
+        <item>Turbo</item>
+        <item>Balanced</item>
+        <item>Thorough</item>
+        <item>Verified</item>
+        <item>Ironclad</item>
+    </string-array>
+    <string-array name="aether_psiphon_entries">
+        <item>Off</item>
+        <item>WARP → Psiphon</item>
+        <item>Psiphon → WARP</item>
+        <item>Psiphon only</item>
+    </string-array>
+    <string name="aether_lab_psiphon_cdn_sets">CDN edge lists to scan</string>
+    <string name="aether_hint_psiphon_cdn_sets">Which of the edge lists built into Psiphon the fronting scan tries. None checked means all of them; beside IPs of your own they are tried after those</string>
+    <string name="aether_psiphon_cdn_sets_all">All lists built into Psiphon</string>
+    <string-array name="aether_psiphon_cdn_set_entries">
+        <item>Cloudflare</item>
+        <item>Fastly</item>
+        <item>CloudFront</item>
+        <item>Akamai (Psiphon list)</item>
+        <item>Bunny (Psiphon list)</item>
+        <item>Vercel</item>
+        <item>GitHub</item>
+        <item>Curated fronting edges</item>
+        <item>Legacy Android overrides</item>
+    </string-array>
+    <string-array name="aether_psiphon_mode_entries">
+        <item>Automatic</item>
+        <item>CDN fronting only</item>
+        <item>Direct only</item>
+    </string-array>
+    <string-array name="aether_tor_entries">
+        <item>Off</item>
+        <item>WARP → Tor</item>
+        <item>Tor → WARP</item>
+        <item>Tor only</item>
+    </string-array>
+    <string-array name="aether_tor_bridges_entries">
+        <item>When Tor is blocked</item>
+        <item>From the start</item>
+        <item>Never</item>
+        <item>Direct → obfs4 → meek → Snowflake</item>
+        <item>My own bridge lines</item>
+    </string-array>
+    <string-array name="aether_tor_relays_entries">
+        <item>bridgedb and public relays</item>
+        <item>Public relays only</item>
+        <item>bridgedb only</item>
+    </string-array>
+    <string-array name="aether_obfuscation_entries">
+        <item>Automatic</item>
+        <item>Off</item>
+        <item>Light</item>
+        <item>Firewall</item>
+        <item>Balanced</item>
+        <item>GFW</item>
+        <item>Aggressive</item>
+    </string-array>
+    <string name="sub_info_open_support">Open support link</string>
+    <string name="sub_info_open_page">Open subscription page</string>
+    <string name="sub_info_traffic" translatable="false">%1$s / %2$s</string>
+    <string name="sub_info_unlimited">Unlimited</string>
+
+    <string name="title_omni_panel">Omni Hub</string>
+    <string name="masterdns_title">MasterDNS</string>
+    <string name="menu_item_import_config_manually_masterdns">MasterDNS</string>
+    <string name="masterdns_lab_config">Official client configuration (JSON or TOML)</string>
+    <string name="masterdns_hint_config">Paste client_config.json or client_config.toml</string>
+    <string name="masterdns_config_support">Omni passes this document to the official engine and supplies only the local listener and VPN socket protection.</string>
+    <string name="masterdns_lab_resolvers">DNS resolvers (one per line)</string>
+    <string name="masterdns_hint_resolvers">8.8.8.8\n1.1.1.1:5353</string>
+    <string name="masterdns_resolvers_support">IPv4, IPv6 or CIDR ranges, with an optional port.</string>
+    <string name="masterdns_engine_notice">Uses the official MIT-licensed MasterDnsVPN engine. WhiteDNS proprietary files and formats are not reused.</string>
+    <string name="masterdns_error_config_empty">Paste the MasterDNS client configuration.</string>
+    <string name="masterdns_error_config_large">The MasterDNS configuration is too large.</string>
+    <string name="masterdns_error_config">Enter a valid MasterDNS JSON or TOML configuration.</string>
+    <string name="masterdns_error_domains">DOMAINS must contain at least one tunnel domain.</string>
+    <string name="masterdns_error_key">ENCRYPTION_KEY is required unless DATA_ENCRYPTION_METHOD is 0.</string>
+    <string name="masterdns_error_resolvers">Enter valid resolver IP addresses or CIDR ranges, one per line.</string>
+    <string name="masterdns_unsupported_abi">This build has no MasterDNS core for this device.</string>
+    <string name="masterdns_core_connecting">MasterDNS is connecting…</string>
+    <string name="masterdns_core_stopped">The MasterDNS core stopped.</string>
+    <string name="masterdns_port_taken">MasterDNS cannot use local port %1$d because it is already in use.</string>
+    <string name="masterdns_unsupported_combination">MasterDNS currently works only as a standalone primary profile, not inside a chain or policy group.</string>
+    <string name="guts_title">GUTS</string>
+    <string name="guts_engine_notice">GUTS carries the phone’s traffic through a Google Apps Script door to an exit node, and only needs Google to be reachable. It is a TCP tunnel: UDP, QUIC, calls and games stay off, and the door’s daily Apps Script quota is shared by everything that uses it.</string>
+    <string name="guts_fetch_notice">Certificate mode needs no exit node and no /g URL. Omni ends HTTPS on this phone with your own local CA, sends ordinary web requests to your Apps Script, and Apps Script fetches the site. Google and YouTube HTTPS bypass Apps Script through the selected Google edge, because YouTube treats Apps Script fetches as automated traffic. Install the certificate below once. This carries HTTP/HTTPS for browsers and apps that trust a user-installed CA; it is not raw TCP, UDP, calls or games.</string>
+    <string name="guts_fetch_mode">Certificate mode (Apps Script fetch)</string>
+    <string name="guts_fetch_mode_support">On: the door fetches websites itself and HTTPS ends at your local certificate. Off: the old raw-TCP exit-node mode.</string>
+    <string name="guts_fetch_install_ca">Create / install my certificate</string>
+    <string name="guts_fetch_install_running">Creating the certificate…</string>
+    <string name="guts_fetch_ca_ready">Certificate ready. SHA-256: %1$s</string>
+    <string name="guts_fetch_ca_missing">No local certificate has been created yet.</string>
+    <string name="guts_fetch_ca_saved">Saved %1$s in Downloads and opened the certificate installer or Settings. Install it as a CA certificate, then save this profile and connect.</string>
+    <string name="guts_fetch_ca_failed">The certificate could not be prepared: %1$s</string>
+    <string name="guts_unsupported_abi">This build has no GUTS client for this device.</string>
+    <string name="guts_core_connecting">GUTS is connecting…</string>
+    <string name="guts_core_stopped">The GUTS client stopped.</string>
+    <string name="guts_port_taken">GUTS cannot use local port %1$d because it is already in use.</string>
+    <string name="guts_unsupported_combination">GUTS works as the profile itself, or as the last step of a proxy chain — the tunnel the chain is dialled through. It cannot sit in the middle of a chain, inside a policy group, or beside another native core.</string>
+    <string name="guts_error_door_missing">Add at least one GUTS door: the web app URL the client posts to.</string>
+    <string name="guts_error_door">A GUTS door must be an http or https web app URL, one per line.</string>
+    <string name="guts_error_key_missing">Enter the shared key the door and the exit node check.</string>
+    <string name="guts_error_key">The GUTS key must be one line of text without spaces, up to 512 characters.</string>
+    <string name="guts_error_mode">The GUTS mode must be exit or fetch.</string>
+    <string name="guts_error_edge">Enter auto, one Google edge IP address or host name, or a list of edge addresses (one per line).</string>
+    <string name="guts_error_sni">The SNI must be a Google host name, such as www.google.com.</string>
+    <string name="menu_item_import_config_manually_guts">GUTS</string>
+    <string name="menu_item_import_config_manually_tuic">Add [TUIC v5]</string>
+    <string name="menu_item_import_config_manually_shadowquic">Add [ShadowQUIC]</string>
+    <string name="menu_item_import_config_manually_naive">Add [NaiveProxy]</string>
+    <string name="server_lab_tuic_uuid">UUID</string>
+    <string name="server_lab_username">username</string>
+    <string name="server_lab_alpn" translatable="false">ALPN</string>
+    <string name="server_lab_tuic_parameters">TUIC parameters (JSON, optional)</string>
+    <string name="server_lab_shadowquic_server_name">server-name (must match the server JLS domain)</string>
+    <string name="server_lab_shadowquic_parameters">ShadowQUIC parameters (JSON, optional — gaming defaults)</string>
+    <string name="quic_unsupported_abi">This build has no Native proxy client (sing-box / shadowquic) for this device.</string>
+    <string name="quic_core_connecting">Native proxy client is connecting…</string>
+    <string name="quic_core_stopped">The Native proxy client stopped.</string>
+    <string name="quic_port_taken">The Native proxy client cannot use local port %1$d because it is already in use.</string>
+    <string name="quic_unsupported_combination">TUIC, ShadowQUIC and NaiveProxy work as the profile itself, or as the last step of a proxy chain. They cannot sit in the middle of a chain, inside a policy group, or beside another native core.</string>
+    <string name="quic_error_server">Enter the server address.</string>
+    <string name="quic_error_port">Enter a valid server port (1–65535).</string>
+    <string name="quic_error_credentials">Enter the username/UUID and password.</string>
+    <string name="quic_error_keys">Enter the private key and the peer public key.</string>
+    <string name="quic_error_address">Enter the local address (IPv4/IPv6).</string>
+    <string name="quic_error_params">The advanced parameters must be a valid JSON object.</string>
+    <string name="guts_lab_doors">Doors (Apps Script web apps)</string>
+    <string name="guts_hint_doors">https://script.google.com/macros/s/AKfy…/exec</string>
+    <string name="guts_doors_support">One door per line: the /exec URL of a deployed Apps Script web app. Several doors share the daily quota and survive one deployment going down; the client tries them fastest first.</string>
+    <string name="guts_doors_support_fetch">One door per line: the /exec URL of your deployed certificate/fetch Apps Script. No exit-node or /g URL belongs here or in that script.</string>
+    <string name="guts_lab_key">Shared key</string>
+    <string name="guts_hint_key">The AUTH_KEY of your Apps Script</string>
+    <string name="guts_key_support">The same secret the door and the exit node check. It travels to the client in its environment, never on a command line.</string>
+    <string name="guts_key_support_fetch">The same secret as AUTH_KEY in your fetch Apps Script. It travels to the client in its environment, never on a command line.</string>
+    <string name="guts_lab_google_ip">Google edge address(es)</string>
+    <string name="guts_google_ip_support">Empty or auto scans the Google frontend addresses. One literal address pins it. Several addresses, one per line, form a manual national-network list: only those addresses are fronting-tested, and the client starts on the fastest one that carries a fronted call.</string>
+    <string name="guts_lab_sni">Edge SNI</string>
+    <string name="guts_sni_support">The certificate name presented to that edge. It must be a Google host, so the connection looks like one to Google.</string>
+
+    <string name="dnstt_title">DNSTT</string>
+    <string name="dnstt_lab_engine">Engine</string>
+    <string name="dnstt_engine_support">Official DNSTT, DNSTT compatibility, NoizDNS, VayDNS, or Slipstream; SSH is a separate layer.</string>
+    <string name="dnstt_lab_noiz">NoizDNS mode</string>
+    <string name="dnstt_noiz_support">Enable the NoizDNS wire format, polling, and cover-traffic behavior.</string>
+    <string name="dnstt_lab_stealth">Stealth mode</string>
+    <string name="dnstt_stealth_support">Use variable labels and more cover traffic; requires NoizDNS mode.</string>
+    <string name="dnstt_lab_authoritative">Authoritative resolver</string>
+    <string name="dnstt_authoritative_support">Use the authoritative-server tuning expected by your DNSTT deployment.</string>
+    <string name="dnstt_lab_resolver_mode">Resolver distribution</string>
+    <string name="dnstt_lab_rr_spread">Round-robin spread</string>
+    <string name="dnstt_rr_spread_support">Number of resolvers per query, from 1 to 5.</string>
+    <string name="dnstt_lab_max_payload">DNS payload cap</string>
+    <string name="dnstt_max_payload_support">Zero uses the engine default; otherwise enter the per-query byte cap.</string>
+    <string name="dnstt_lab_socks_username">Remote SOCKS username</string>
+    <string name="dnstt_lab_socks_password">Remote SOCKS password</string>
+    <string name="dnstt_lab_ssh">SSH over DNS tunnel</string>
+    <string name="dnstt_ssh_support">Run a real SSH session through the raw DNS tunnel and expose its direct-tcpip channels as local SOCKS5.</string>
+    <string name="dnstt_lab_ssh_username">SSH username</string>
+    <string name="dnstt_lab_ssh_password">SSH password</string>
+    <string name="dnstt_lab_ssh_auth_type">SSH authentication</string>
+    <string name="dnstt_lab_ssh_private_key">SSH private key</string>
+    <string name="dnstt_lab_ssh_key_passphrase">SSH key passphrase (optional)</string>
+    <string name="dnstt_lab_ssh_host">SSH host (server-side metadata)</string>
+    <string name="dnstt_lab_ssh_port">SSH port</string>
+    <string name="dnstt_ssh_host_support">The DNSTT server forwards raw TCP to its configured SSH destination; this host is not dialed directly by Android.</string>
+    <string name="dnstt_ssh_engine_notice">Uses the real DNSTT transport followed by an authenticated SSH session and direct-tcpip forwarding. The DNSTT server must forward its raw tunnel to the SSH server; it must not point to a SOCKS5 service for this mode.</string>
+    <string name="dnstt_error_ssh">Enter valid SSH credentials, host, port, and authentication material.</string>
+    <string name="dnstt_noiz_engine_notice">Uses the pinned SlipNet-compatible NoizDNS engine. The remote tunnel endpoint must provide a compatible SOCKS5 service; Android VPN connectivity still depends on the server and network.</string>
+    <string name="menu_item_import_config_manually_dnstt">DNSTT</string>
+    <string name="dnstt_lab_transport">Transport</string>
+    <string name="dnstt_transport_support">Official DNSTT supports DoH, DoT, and UDP; the NoizDNS engine also supports plain TCP DNS.</string>
+    <string name="dnstt_lab_resolver">Resolver or DoH URL</string>
+    <string name="dnstt_hint_resolver">https://cloudflare-dns.com/dns-query or 1.1.1.1:53</string>
+    <string name="dnstt_resolver_support">Use an HTTPS URL for DoH; use host:port for DoT or UDP.</string>
+    <string name="dnstt_lab_domain">Tunnel domain</string>
+    <string name="dnstt_hint_domain">t.example.com</string>
+    <string name="dnstt_domain_support">The domain delegated to your DNSTT server.</string>
+    <string name="dnstt_lab_public_key">Server public key</string>
+    <string name="dnstt_hint_public_key">64 hexadecimal characters</string>
+    <string name="dnstt_public_key_support">The DNSTT server’s 32-byte public key, written as 64 hexadecimal characters.</string>
+    <string name="dnstt_lab_utls">uTLS fingerprint distribution</string>
+    <string name="dnstt_utls_support">Passed to the official client; leave the default unless your server requires another value.</string>
+    <string name="slipstream_engine_notice">Uses the real Apache-2.0 Slipstream QUIC engine. The local bridge performs remote SOCKS5 negotiation; SSH mode uses the raw stream.</string>
+    <string name="slipstream_lab_keepalive">QUIC keepalive interval (ms)</string>
+    <string name="slipstream_lab_congestion_control">Congestion control</string>
+    <string name="slipstream_lab_gso">Generic Segmentation Offload (GSO)</string>
+    <string name="slipstream_gso_support">Passes the original GSO preference to the Slipstream engine.</string>
+    <string name="vaydns_engine_notice">Uses the real CC0 VayDNS engine with managed reconnection. Standalone mode reaches the remote SOCKS5 service; SSH mode authenticates through the raw tunnel. Resolver requests stay recursive (RD=1); SlipNet authoritative markers are not applied by this engine.</string>
+    <string name="vaydns_lab_dnstt_compat">DNSTT wire compatibility</string>
+    <string name="vaydns_dnstt_compat_support">Uses 8-byte ClientID and DNSTT padding instead of the native VayDNS wire format.</string>
+    <string name="vaydns_lab_record_type">Downstream DNS record type</string>
+    <string name="vaydns_lab_max_qname">Maximum QNAME wire length</string>
+    <string name="vaydns_lab_rps">DNS query rate limit (requests/second, 0 = unlimited)</string>
+    <string name="vaydns_lab_idle_timeout">Session idle timeout (seconds, 0 = default)</string>
+    <string name="vaydns_lab_keepalive">Session keepalive (seconds, 0 = default)</string>
+    <string name="vaydns_lab_udp_timeout">UDP response timeout (ms, 0 = default)</string>
+    <string name="vaydns_lab_max_labels">Maximum data labels (0 = unlimited)</string>
+    <string name="vaydns_lab_client_id_size">Client ID size in bytes (0 = default)</string>
+    <string name="dnstt_compat_engine_notice">Uses DNSTT compatibility mode with the NoizDNS core. The remote tunnel must terminate at a SOCKS5 service or the configured SSH server; no direct connection is substituted.</string>
+    <string name="dnstt_engine_notice">Uses the official public-domain dnstt-client. The DNSTT server must forward its tunnel to a no-auth SOCKS5 service; this app does not turn DNSTT into a TUN or invent a remote proxy.</string>
+    <string name="dnstt_error_domain_missing">Enter the DNSTT tunnel domain.</string>
+    <string name="dnstt_error_domain">Enter a valid DNSTT tunnel domain.</string>
+    <string name="dnstt_error_transport">Choose DoH, DoT, or UDP.</string>
+    <string name="dnstt_error_resolver_missing">Enter a resolver or DoH URL.</string>
+    <string name="dnstt_error_resolver">Enter a valid resolver for the selected transport.</string>
+    <string name="dnstt_error_key_missing">Enter the DNSTT server public key.</string>
+    <string name="dnstt_error_key">The public key must contain exactly 64 hexadecimal characters.</string>
+    <string name="dnstt_error_utls">Enter a valid single-line uTLS value.</string>
+    <string name="dnstt_unsupported_abi">This build has no DNSTT core for this device.</string>
+    <string name="dnstt_core_connecting">DNSTT is connecting…</string>
+    <string name="dnstt_core_stopped">The DNSTT core stopped.</string>
+    <string name="dnstt_port_taken">DNSTT cannot use local port %1$d because it is already in use.</string>
+    <string name="dnstt_unsupported_combination">DNSTT currently works only as a standalone primary profile, not inside a chain or policy group.</string>
+    <string name="title_guts_settings">GUTS</string>
+    <string name="title_pref_guts_auto_switch">Keep the tunnel off when Google is unreachable</string>
+    <string name="summary_pref_guts_auto_switch">On a national network the Google edge that carries every GUTS call is not there. Before opening a GUTS tunnel, ask the edge — one handshake, no Apps Script quota — and stay on the plain network when the answer is no, looking again every minute instead of failing a connect.</string>
+    <string name="title_pref_guts_door_budget">Calls per door per day</string>
+    <string name="guts_scan_edge">Scan this network for a working edge</string>
+    <string name="guts_scan_running">Scanning…</string>
+    <string name="guts_scan_none">No Google edge answered from this network: nothing was changed.</string>
+    <string name="guts_scan_unchanged">unchanged</string>
+    <string name="guts_scan_done">Edge %1$s, name %2$s. Save the profile to use them.</string>
+    <string name="guts_scan_routes_found">Working pairs on this network, fastest first — the first is filled in above:</string>
+    <string name="guts_scan_routes_none">What this network answered (nothing carried a fronted call):</string>
+    <string name="guts_checking_network">Checking whether this network can reach Google…</string>
+    <string name="guts_network_national">Google is unreachable from this network, so the GUTS tunnel cannot carry a byte. The phone stays on the plain network and checks again every minute.</string>
+    <string name="guts_network_none">This phone has no network right now, so there is nothing for the GUTS tunnel to ride on.</string>
+    <string name="guts_network_coming_back">Google answers again: opening the GUTS tunnel.</string>
+    <string name="warp_scan_button">Scan for a WARP endpoint</string>
+    <string name="warp_scan_notice">Cloudflare WARP peers only. Stop the VPN before scanning. Uses AETHER WireGuard probes, not HTTPS ping. Finding an endpoint does not validate your imported keys.</string>
+    <string name="warp_scan_stop_vpn">Stop the active VPN before scanning.</string>
+    <string name="quic_core_timeout">Tunnel traffic test timed out. Check the endpoint, UDP availability and credentials; socket protection details are in the app log.</string>
+    <string name="naive_protocol_notice">Official NaiveProxy over HTTPS / HTTP2. A real NaiveProxy server and valid TLS certificate are required. QUIC mode and certificate bypass are not supported.</string>
+
+    <!-- Native Omni appearance -->
+    <string name="omni_appearance_title">Appearance</string>
+    <string name="omni_effects_title">Effects</string>
+    <string name="omni_effects_off">Off</string>
+    <string name="omni_effects_light">Light</string>
+    <string name="omni_effects_full">Full</string>
+    <string name="omni_appearance_notice">Dynamic color overrides the selected theme colors when enabled.</string>
+    <string name="omni_skin_violet">Violet</string>
+    <string name="omni_skin_blue">Blue</string>
+    <string name="omni_skin_teal">Teal</string>
+    <string name="omni_skin_pink">Pink</string>
+    <string name="omni_skin_orange">Orange</string>
+    <string name="omni_skin_green">Green</string>
+    <string name="omni_skin_yellow">Yellow</string>
+    <string name="omni_skin_omni" translatable="false">Omni</string>
+    <string name="omni_skin_spotify" translatable="false">Spotify</string>
+    <string name="omni_skin_apple" translatable="false">Apple</string>
+    <string name="omni_skin_claude" translatable="false">Claude</string>
+    <string name="omni_skin_ferrari" translatable="false">Ferrari</string>
+    <string name="omni_skin_lamborghini" translatable="false">Lamborghini</string>
+    <string name="omni_skin_renault" translatable="false">Renault</string>
+    <string name="omni_skin_pinterest" translatable="false">Pinterest</string>
+    <string name="omni_skin_webflow" translatable="false">Webflow</string>
+    <string name="omni_skin_lovable" translatable="false">Lovable</string>
+    <string name="omni_skin_nintendo" translatable="false">Nintendo 2001</string>
+    <string name="omni_skin_dell" translatable="false">Dell 1996</string>
+
+    <string name="omni_connect_hint">Tap the power button</string>
+    <string name="omni_service_uptime">Foreground service uptime</string>
+    <string name="omni_app_traffic_speed">Actual application UID traffic, including proxy and direct traffic; not tunnel-only throughput</string>
+    <string name="omni_app_traffic_short">Application traffic</string>
+    <string name="omni_hub_working">Working…</string>
+    <string name="omni_scanner_home_hint">WARP endpoint discovery and DNS tunnel resolver tools.</string>
+    <string name="omni_scanner_open_warp">WARP / Aether scanner</string>
+    <string name="omni_log_live">LIVE</string>
+    <string name="omni_log_paused">PAUSED</string>
+    <string name="omni_log_lines">%1$d lines</string>
+    <string name="omni_hub_panel_count">%1$d panels</string>
+</resources>

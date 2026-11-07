@@ -1,0 +1,826 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Omni</string>
+    <string name="app_widget_name">Kết nối ngay</string>
+    <string name="app_tile_name">Kết nối ngay</string>
+    <string name="app_tile_first_use">Vui lòng thêm một cấu hình vào Omni để sử dụng!</string>
+    <string name="navigation_drawer_open">Mở Menu ứng dụng</string>
+    <string name="navigation_drawer_close">Đóng Menu ứng dụng</string>
+    <string name="migration_success">Đã chuyển dữ liệu!</string>
+    <string name="action_stop_service">Dừng dịch vụ</string>
+    <string name="action_ok">OK</string>
+    <string name="action_cancel">Hủy</string>
+    <string name="migration_fail">Không thể chuyển dữ liệu!</string>
+    <string name="pull_down_to_refresh">Kéo xuống để làm mới!</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_service">Dịch vụ Omni</string>
+    <string name="notification_channel_subscription_updates">Cập nhật gói đăng ký</string>
+    <string name="notification_channel_connection_checks">Kiểm tra kết nối</string>
+    <string name="notification_action_stop_v2ray">Ngắt kết nối Omni</string>
+    <string name="toast_permission_denied">Vui lòng cấp các quyền cần thiết cho Omni. Bạn có thể đã từ chối quyền truy cập máy ảnh hoặc bộ nhớ.</string>
+    <string name="toast_permission_denied_notification">Không thể nhận quyền thông báo</string>
+    <string name="notification_action_more">Nhấn để biết thêm…</string>
+    <string name="toast_services_start">Đang khởi động Omni…</string>
+    <string name="toast_services_stop">Đã dừng Omni!</string>
+    <string name="toast_services_success">Đã khởi động Omni!</string>
+    <string name="toast_services_failure">Không thể khởi động Omni, kiểm tra lại cấu hình!</string>
+
+    <!--ServerActivity-->
+    <string name="title_server">Omni</string>
+    <string name="menu_item_add_config">Thêm cấu hình</string>
+    <string name="menu_item_save_config">Lưu cấu hình</string>
+    <string name="menu_item_edit_config">Chỉnh sửa cấu hình</string>
+    <string name="menu_item_del_config">Xoá cấu hình</string>
+    <string name="menu_item_import_config_qrcode">Nhập cấu hình từ mã QR</string>
+    <string name="menu_item_import_config_clipboard">Nhập cấu hình từ bảng tạm</string>
+    <string name="menu_item_import_config_local">Nhập cấu hình từ thiết bị</string>
+    <string name="menu_item_import_config_policy_group">Thêm [Nhóm chính sách]</string>
+    <string name="menu_item_import_config_proxy_chain">Thêm [Chuỗi proxy]</string>
+    <string name="menu_item_import_config_manually_vmess">Thêm [VMess]</string>
+    <string name="menu_item_import_config_manually_vless">Thêm [VLESS]</string>
+    <string name="menu_item_import_config_manually_ss">Thêm [Shadowsocks]</string>
+    <string name="menu_item_import_config_manually_socks">Thêm [SOCKS]</string>
+    <string name="menu_item_import_config_manually_http">Thêm [HTTP]</string>
+    <string name="menu_item_import_config_manually_trojan">Thêm [Trojan]</string>
+    <string name="menu_item_import_config_manually_wireguard">Thêm [WireGuard]</string>
+    <string name="menu_item_import_config_manually_hysteria2">Thêm [Hysteria2]</string>
+    <string name="confirm_delete_visible_profiles">Bạn có chắc muốn xóa tất cả cấu hình đang hiển thị không?</string>
+    <string name="confirm_delete_duplicate_profiles">Bạn có chắc muốn xóa tất cả cấu hình trùng lặp đang hiển thị không?</string>
+    <string name="confirm_delete_invalid_profiles">Vui lòng kiểm tra các cấu hình trước. Bạn có chắc muốn xóa tất cả cấu hình không hợp lệ đang hiển thị không?</string>
+    <string name="confirm_delete_profile">Bạn có chắc muốn xóa cấu hình này không?</string>
+    <string name="confirm_delete_policy_group">Bạn có chắc muốn xóa nhóm chính sách này không?</string>
+    <string name="confirm_delete_proxy_chain_member">Bạn có chắc muốn xóa thành viên này khỏi chuỗi proxy không?</string>
+    <string name="confirm_delete_routing_rule">Bạn có chắc muốn xóa quy tắc định tuyến này không?</string>
+    <string name="confirm_delete_subscription_group">Bạn có chắc muốn xóa nhóm đăng ký này không?</string>
+    <string name="confirm_delete_asset_file">Bạn có chắc muốn xóa tệp tài nguyên này không?</string>
+    <string name="confirm_delete_asset_source">Bạn có chắc muốn xóa nguồn tài nguyên này không?</string>
+    <string name="server_lab_remarks">Tên cấu hình</string>
+    <string name="server_lab_address">Địa chỉ</string>
+    <string name="server_lab_port">Cổng</string>
+    <string name="server_lab_id">ID</string>
+    <string name="server_lab_alterid">ID bổ sung (AlterID)</string>
+    <string name="server_lab_security">Thuật toán mã hóa</string>
+    <string name="server_lab_network">Giao thức truyền tải (Network)</string>
+    <string name="server_lab_more_function">Truyền tải</string>
+    <string name="server_lab_head_type">Kiểu ngụy trang (Type)</string>
+    <string name="server_lab_mode_type">Chế độ gRPC</string>
+    <string name="server_lab_request_host">host</string>
+    <string name="server_lab_request_host_http">http host</string>
+    <string name="server_lab_request_host_ws">ws host</string>
+    <string name="server_lab_request_host_httpupgrade">httpupgrade host</string>
+    <string name="server_lab_request_host_xhttp">xhttp host</string>
+    <string name="server_lab_request_host_h2">h2 host</string>
+    <string name="server_lab_request_host_quic">QUIC security</string>
+    <string name="server_lab_request_host_grpc">gRPC Authority</string>
+    <string name="server_lab_path">path</string>
+    <string name="server_lab_path_ws">ws path</string>
+    <string name="server_lab_path_httpupgrade">httpupgrade path</string>
+    <string name="server_lab_path_xhttp">xhttp path</string>
+    <string name="server_lab_path_h2">h2 path</string>
+    <string name="server_lab_path_quic">QUIC key</string>
+    <string name="server_lab_path_kcp">kcp seed</string>
+    <string name="server_lab_path_grpc">gRPC serviceName</string>
+    <string name="server_lab_stream_security" translatable="false">TLS</string>
+    <string name="server_lab_stream_fingerprint">Fingerprint</string>
+    <string name="server_lab_stream_alpn" translatable="false">ALPN</string>
+    <string name="server_lab_cipher_suites">Cipher Suites</string>
+    <string name="toast_cipher_suites_need_unsafe">cipherSuites chỉ có hiệu lực với fingerprint unsafe. Hãy chọn unsafe hoặc xóa cipherSuites.</string>
+    <string name="toast_websocket_alpn_http1_only">WebSocket và HTTPUpgrade chỉ kết nối được với alpn http/1.1 hoặc không có alpn. Hãy chọn http/1.1 hoặc để trống alpn.</string>
+    <string name="server_lab_allow_insecure">Bỏ qua xác minh chứng chỉ (allowInsecure)</string>
+    <string name="server_lab_sni" translatable="false">SNI</string>
+    <string name="server_lab_address3">Địa chỉ</string>
+    <string name="server_lab_port3">Cổng</string>
+    <string name="server_lab_id3">Mật khẩu</string>
+    <string name="server_lab_security3">Thuật toán mã hóa</string>
+    <string name="server_lab_id4">Mật khẩu (Không bắt buộc)</string>
+    <string name="server_lab_security4">Tên người dùng (Không bắt buộc)</string>
+    <string name="server_lab_encryption">Mã hóa</string>
+    <string name="server_lab_flow">Kiểm soát lưu lượng (flow)</string>
+    <string name="server_lab_public_key">PublicKey</string>
+    <string name="server_lab_preshared_key">PreSharedKey (không bắt buộc)</string>
+    <string name="server_lab_short_id">ShortId</string>
+    <string name="server_lab_spider_x" translatable="false">SpiderX</string>
+    <string name="server_lab_mldsa65_verify" translatable="false">mldsa65Verify</string>
+    <string name="server_lab_secret_key">SecretKey</string>
+    <string name="server_lab_reserved">Reserved (không bắt buộc, phân cách bằng dấu phẩy)</string>
+    <string name="server_lab_local_address">Địa chỉ cục bộ (IPv4/IPv6 không bắt buộc, phân cách bằng dấu phẩy)</string>
+    <string name="server_lab_local_mtu">MTU (không bắt buộc, mặc định 1420)</string>
+    <string name="server_lab_remote_dns">remoteDNS (tùy chọn, các địa chỉ IPv4/IPv6 cách nhau bằng dấu phẩy)</string>
+    <string name="server_lab_kcp_mtu">mKCP MTU (không bắt buộc, mặc định 1350)</string>
+    <string name="server_lab_kcp_tti">mKCP TTI (không bắt buộc, mặc định 50 ms)</string>
+    <string name="toast_success">Thành công!</string>
+    <string name="toast_failure">Đã xảy ra lỗi, vui lòng thử lại!</string>
+    <string name="toast_none_data">Không có gì ở đây!</string>
+    <string name="toast_incorrect_protocol">Giao thức không hợp lệ.</string>
+    <string name="toast_decoding_failed">Không thể giải mã!</string>
+    <string name="title_file_chooser">Vui lòng chọn tệp cấu hình!</string>
+    <string name="toast_require_file_manager">Vui lòng cài đặt trình quản lý tệp để tiếp tục!</string>
+    <string name="server_customize_config">Cấu hình tùy chỉnh</string>
+    <string name="toast_config_file_invalid">Cấu hình không hợp lệ!</string>
+    <string name="server_lab_content">Nội dung</string>
+    <string name="toast_none_data_clipboard">Không có dữ liệu trong bảng tạm!</string>
+    <string name="toast_invalid_url">URL không hợp lệ hoặc trống!</string>
+    <string name="toast_insecure_url_protocol">Vui lòng không dùng địa chỉ đăng ký với giao thức HTTP không an toàn</string>
+    <string name="server_lab_need_inbound">Đảm bảo cổng inbound khớp với cài đặt</string>
+    <string name="toast_malformed_json">Cấu hình không hợp lệ.</string>
+    <string name="server_lab_request_host6">Host (SNI) (không bắt buộc)</string>
+    <string name="toast_action_not_allowed">Hành động này bị cấm!</string>
+    <string name="server_obfs_password">Mật khẩu Obfs</string>
+    <string name="server_lab_port_hop">Nhảy cổng (sẽ ghi đè cổng)</string>
+    <string name="server_lab_port_hop_interval">Khoảng thời gian đổi cổng (giây)</string>
+    <string name="server_lab_bandwidth_down">Băng thông tải xuống (đơn vị hỗ trợ: k/m/g/t)</string>
+    <string name="server_lab_bandwidth_up">Băng thông tải lên (đơn vị hỗ trợ: k/m/g/t)</string>
+    <string name="server_lab_xhttp_mode">Chế độ XHTTP</string>
+    <string name="server_lab_xhttp_extra">JSON thô của XHTTP Extra, định dạng: { XHTTPObject }</string>
+    <string name="server_lab_final_mask">JSON thô của finalMask, định dạng: { FinalMaskObject }</string>
+    <string name="preset_replace_title">Thay %1$s?</string>
+    <string name="preset_replace_message">%1$s hiện tại không có trong danh sách và sẽ bị mất. Thay bằng %2$s?</string>
+    <string name="preset_action_replace">Thay</string>
+    <string name="preset_default">mặc định</string>
+    <string name="acc_choose_preset">Chọn một %1$s có sẵn</string>
+    <string name="server_lab_dial_mode" translatable="false">dialMode</string>
+    <string name="server_lab_ech_config_list" translatable="false">echConfigList</string>
+    <string name="server_lab_ech_outbound">JSON thô của echOutbound, định dạng: { OutboundObject }</string>
+    <string name="toast_ech_outbound_needs_ech_config_list">echOutbound cần có echConfigList</string>
+    <string name="toast_ech_outbound_invalid_tag">echOutbound cần có \"tag\" không trống, không phải direct hay block và không bắt đầu bằng proxy</string>
+    <string name="toast_ech_outbound_tag_conflict">Tag \"%1$s\" của echOutbound đã được một outbound khác sử dụng</string>
+    <string name="server_lab_verify_peer_cert_by_name">Xác minh chứng chỉ ngang hàng theo tên</string>
+    <string name="server_lab_pinned_ca256">Dấu vân tay chứng chỉ (SHA-256)</string>
+    <string name="server_lab_browser_dialer">Bật Browser Dialer</string>
+    <string name="server_lab_browser_dialer_tip">Chỉ hỗ trợ đầu ra xhttp (packet-up) và ws; các cài đặt liên quan đến TLS có thể bị bỏ qua hoặc xung đột</string>
+    <string name="toast_allow_insecure_deprecated">Nút hiện tại sử dụng kết nối không mã hóa. Hạ tầng trung gian mạng do các chính phủ độc tài kiểm soát có thể xem trực tiếp nội dung liên lạc của bạn.\nVì lý do bảo mật, không thể kết nối đến các nút như vậy bằng Xray core phiên bản 26.2.6 trở lên.\nNếu đây là nút do bạn tự dựng, hãy bật mã hóa an toàn như TLS hoặc ghim dấu vân tay chứng chỉ pinnedCA256.\nNếu đây là nút của nhà cung cấp dịch vụ, hãy liên hệ với họ để hoàn tất nâng cấp kỹ thuật. Nếu nhà cung cấp từ chối hợp tác, bạn nên chuyển sang nhà cung cấp coi trọng bảo mật người dùng hơn.\nĐể biết thêm thông tin, hãy truy cập https://github.com/2dust/v2rayN/discussions/9460</string>
+    <string name="pinned_ca256_action_fetch">Lấy dấu vân tay chứng chỉ</string>
+    <string name="toast_fetch_cert_sha256_success">Đã lấy dấu vân tay chứng chỉ thành công</string>
+    <string name="toast_fetch_cert_sha256_failed">Không thể lấy dấu vân tay chứng chỉ</string>
+
+    <!-- UserAssetActivity -->
+    <string name="toast_asset_copy_failed">Không thể sao chép tệp tin, hãy dùng trình quản lý tệp!</string>
+    <string name="menu_item_add_asset">Thêm tài nguyên</string>
+    <string name="menu_item_add_file">Thêm tệp</string>
+    <string name="menu_item_add_url">Thêm URL</string>
+    <string name="menu_item_scan_qrcode">Quét mã QR</string>
+    <string name="title_url" translatable="false">URL</string>
+    <string name="menu_item_download_file">Tải xuống tệp tin</string>
+    <string name="title_user_asset_add_url">Thêm URL tài nguyên</string>
+    <string name="msg_file_not_found">Không tìm thấy tập tin!</string>
+    <string name="msg_remark_is_duplicate">Tên này đã tồn tại!</string>
+    <string name="asset_geo_files_sources">Nguồn tệp Geo (tùy chọn)</string>
+
+    <!-- PerAppProxyActivity -->
+    <string name="msg_dialog_progress">Đang tải…</string>
+    <string name="menu_item_search">Tìm kiếm</string>
+    <string name="menu_item_select_all">Chọn tất cả</string>
+    <string name="menu_item_invert_selection">Đảo chọn</string>
+    <string name="msg_enter_keywords">Nhập từ khoá</string>
+    <string name="switch_bypass_apps_mode">Chế độ bỏ qua</string>
+    <string name="menu_item_select_proxy_app">Tự động chọn ứng dụng cần dùng proxy</string>
+    <string name="msg_downloading_content">Đang tải xuống nội dung…</string>
+    <string name="menu_item_export_proxy_app">Xuất và Sao chép</string>
+    <string name="menu_item_import_proxy_app">Nhập từ bảng tạm</string>
+    <string name="per_app_proxy_settings">Cài đặt theo ứng dụng</string>
+    <string name="per_app_proxy_settings_enable">Bật cài đặt theo ứng dụng</string>
+    <string name="app_picker_unknown_app">Ứng dụng không xác định (không nhận dạng được UID)</string>
+
+    <!-- Preferences -->
+    <string name="title_settings">Cài đặt</string>
+    <string name="title_advanced">Cài đặt nâng cao</string>
+    <string name="title_core_settings">Cài đặt lõi</string>
+    <string name="title_vpn_settings">Cài đặt VPN</string>
+    <string name="title_pref_per_app_proxy">Proxy theo từng ứng dụng</string>
+    <string name="summary_pref_per_app_proxy">Thông thường: ứng dụng đã chọn dùng proxy, ứng dụng chưa chọn kết nối trực tiếp;\nChế độ bỏ qua: ứng dụng đã chọn kết nối trực tiếp, ứng dụng chưa chọn dùng proxy.\nTrong trình đơn có tùy chọn tự động chọn các ứng dụng sẽ dùng proxy.</string>
+    <string name="title_pref_is_booted">Kết nối sau khi thiết bị khởi động</string>
+    <string name="summary_pref_is_booted">Tự động kết nối với máy chủ đã chọn sau khi thiết bị khởi động. Android có thể hạn chế khởi chạy trong nền.</string>
+    <string name="title_system_vpn_settings">Cài đặt VPN hệ thống</string>
+    <string name="summary_system_vpn_settings">Mở cài đặt VPN của Android để cấu hình VPN luôn bật, nếu thiết bị này hỗ trợ.</string>
+    <string name="toast_system_vpn_settings_unavailable">Không có cài đặt VPN hệ thống.</string>
+
+
+    <string name="subscription_updater_job_tips">Tác vụ sẽ chạy trong nền và thông tin tiến độ sẽ hiển thị trong thông báo.</string>
+    <string name="title_pref_auto_test_after_update_subscription">Tự động kiểm tra sau khi cập nhật đăng ký</string>
+    <string name="summary_pref_auto_test_after_update_subscription">Quá trình kiểm tra tự động mất nhiều thời gian. Nếu bật, tác vụ sẽ chạy trong nền; nếu không, tác vụ sẽ chạy trên trang hiện tại.</string>
+    <string name="title_pref_auto_remove_invalid_after_test">Tự động xóa cấu hình không hợp lệ sau khi kiểm tra</string>
+    <string name="summary_pref_auto_remove_invalid_after_test">Kết quả kiểm tra có thể không chính xác; cấu hình đã xóa không thể khôi phục.</string>
+    <string name="title_pref_auto_sort_after_test">Tự động sắp xếp sau khi kiểm tra</string>
+    <string name="summary_pref_auto_sort_after_test">Kết quả kiểm tra có thể không chính xác;</string>
+
+    <string name="title_mux_settings">Cài đặt Mux</string>
+    <string name="title_pref_mux_enabled">Bật Mux</string>
+    <string name="summary_pref_mux_enabled">Nhanh hơn nhưng có thể làm kết nối không ổn định.\nTùy chỉnh cách xử lý TCP, UDP và QUIC bên dưới.</string>
+    <string name="title_pref_mux_concurrency">Số kết nối con TCP được ghép kênh (-1 đến 1024)</string>
+    <string name="title_pref_mux_xudp_concurrency">Số kết nối con XUDP được ghép kênh (-1 đến 1024)</string>
+    <string name="title_pref_mux_xudp_quic">Phương pháp xử lý lưu lượng QUIC</string>
+    <string-array name="mux_xudp_quic_entries">
+        <item>Từ chối</item>
+        <item>Cho phép</item>
+        <item>Bỏ qua</item>
+    </string-array>
+
+    <string name="title_pref_speed_enabled">Hiển thị tốc độ mạng</string>
+    <string name="summary_pref_speed_enabled">Hiển thị tốc độ hiện tại trong thông báo.\nBiểu tượng cho biết lưu lượng proxy hay trực tiếp đang chiếm ưu thế.</string>
+
+    <string name="title_pref_sniffing_enabled">Bật Sniffing</string>
+    <string name="summary_pref_sniffing_enabled">Phát hiện tên miền đích từ lưu lượng truy cập (bật theo mặc định).</string>
+    <string name="title_pref_route_only_enabled">Bật routeOnly</string>
+    <string name="summary_pref_route_only_enabled">Chỉ dùng tên miền phát hiện được để định tuyến và giữ địa chỉ đích ở dạng địa chỉ IP.</string>
+
+    <string name="title_pref_local_dns_enabled">Bật DNS cục bộ</string>
+    <string name="summary_pref_local_dns_enabled">DNS được xử lý bởi mô-đun DNS của Xray-core (khuyên dùng nếu cần định tuyến bỏ qua mạng LAN và địa chỉ ở Trung Quốc đại lục).</string>
+
+    <string name="title_pref_fake_dns_enabled">Bật DNS ảo (FakeDNS)</string>
+    <string name="summary_pref_fake_dns_enabled">FakeDNS trả về địa chỉ IP ảo khi phân giải tên miền (nhanh hơn nhưng có thể không hoạt động với một số ứng dụng).</string>
+
+    <string name="title_pref_ipv6_enabled">Bật IPv6</string>
+    <string name="summary_pref_ipv6_enabled">Thêm địa chỉ và tuyến IPv6 vào giao diện VPN</string>
+
+    <string name="title_pref_prefer_ipv6">Ưu tiên IPv6</string>
+    <string name="summary_pref_prefer_ipv6">Ưu tiên địa chỉ IPv6 khi phân giải tên miền</string>
+
+    <string name="title_pref_remote_dns">DNS từ xa (UDP/TCP/HTTPS/QUIC) (không bắt buộc)</string>
+    <string name="summary_pref_remote_dns" translatable="false">DNS</string>
+
+    <string name="title_pref_vpn_dns">VPN DNS (chỉ IPv4/IPv6)</string>
+    <string name="title_pref_vpn_bypass_lan">VPN có bỏ qua LAN không</string>
+
+    <string name="title_pref_vpn_interface_address">Địa chỉ giao diện VPN</string>
+
+    <string name="title_pref_vpn_mtu">VPN MTU (mặc định 1500)</string>
+
+
+    <string name="title_pref_domestic_dns">DNS cho kết nối trực tiếp (không bắt buộc)</string>
+    <string name="summary_pref_domestic_dns" translatable="false">DNS</string>
+
+    <string name="title_pref_dns_hosts">Ánh xạ máy chủ DNS (định dạng: domain:address,…)</string>
+    <string name="summary_pref_dns_hosts">domain:address,…</string>
+
+    <string name="title_pref_delay_test_url">URL kiểm tra độ trễ thực</string>
+    <string name="summary_pref_delay_test_url" translatable="false">URL</string>
+    <string name="title_pref_real_ping_concurrency">Số lượt kiểm tra độ trễ thực đồng thời</string>
+
+    <string name="title_pref_ip_api_url">URL kiểm tra thông tin kết nối hiện tại</string>
+    <string name="summary_pref_ip_api_url" translatable="false">URL</string>
+
+    <string name="title_pref_proxy_sharing_enabled">Cho phép kết nối từ mạng LAN</string>
+    <string name="summary_pref_proxy_sharing_enabled">Các thiết bị khác có thể kết nối với proxy SOCKS/HTTP trên thiết bị của bạn qua mạng LAN.\nChỉ bật tính năng này trong các mạng đáng tin cậy để tránh kết nối trái phép.</string>
+    <string name="toast_warning_pref_proxysharing_short">Đã cho phép kết nối từ mạng LAN. Hãy đảm bảo bạn đang dùng mạng đáng tin cậy.</string>
+
+    <string name="title_pref_socks_port">Cổng proxy cục bộ</string>
+    <string name="title_pref_aether_listen_port">Cổng lắng nghe của Aether</string>
+    <string name="title_pref_enable_local_proxy">Bật proxy cục bộ</string>
+    <string name="summary_pref_enable_local_proxy">Khi tắt, proxy SOCKS sẽ không khả dụng nên việc cập nhật đăng ký và các thao tác tương tự không thể dùng proxy</string>
+    <string name="title_pref_socks_enable_udp" translatable="false">SOCKS5 UDP</string>
+    <string name="summary_pref_socks_enable_udp">Xác thực SOCKS5 không hoàn toàn an toàn khi sử dụng UDP.</string>
+    <string name="summary_pref_socks_port">Cổng proxy cục bộ</string>
+    <string name="title_pref_dynamic_socks_port">Bật cổng proxy cục bộ động</string>
+    <string name="summary_pref_dynamic_socks_port">Tạo một cổng proxy cục bộ ngẫu nhiên mỗi khi inbound được tạo</string>
+    <string name="title_pref_socks_username">Tên người dùng proxy cục bộ (Không bắt buộc)</string>
+    <string name="summary_pref_socks_username">Tên người dùng</string>
+    <string name="title_pref_socks_password">Mật khẩu proxy cục bộ (Không bắt buộc)</string>
+    <string name="summary_pref_socks_password">Mật khẩu</string>
+
+    <string name="title_pref_local_dns_port">Cổng DNS cục bộ</string>
+    <string name="summary_pref_local_dns_port">Cổng DNS cục bộ</string>
+
+    <string name="title_pref_confirm_remove">Xác nhận xóa tệp cấu hình</string>
+    <string name="summary_pref_confirm_remove">Yêu cầu xác nhận từ người dùng khi thực hiện xóa tệp cấu hình.</string>
+
+
+    <string name="title_pref_append_http_proxy">Thêm proxy HTTP vào VPN</string>
+    <string name="summary_pref_append_http_proxy">Proxy HTTP sẽ được trình duyệt hoặc một số ứng dụng hỗ trợ dùng trực tiếp mà không đi qua thiết bị NIC ảo (Android 10+)</string>
+
+    <string name="title_pref_double_column_display">Bật hiển thị hai cột</string>
+    <string name="summary_pref_double_column_display">Danh sách hồ sơ được hiển thị thành hai cột để màn hình chứa được nhiều nội dung hơn.</string>
+
+    <string name="title_pref_group_all_display">Hiển thị thẻ nhóm “Tất cả”</string>
+    <string name="summary_pref_group_all_display">Gộp cấu hình từ mọi nhóm đăng ký vào một thẻ.</string>
+
+    <!-- AboutActivity -->
+    <string name="title_pref_feedback">Phản hồi lỗi</string>
+    <string name="summary_pref_feedback">Phản hồi cải tiến hoặc lỗi lên GitHub</string>
+    <string name="summary_pref_tg_group">Tham gia nhóm Telegram</string>
+    <string name="toast_tg_app_not_found">Không tìm thấy ứng dụng Telegram!</string>
+    <string name="title_privacy_policy">Chính sách bảo mật</string>
+    <string name="title_qr_code">Mã QR</string>
+    <string name="title_about">Giới thiệu</string>
+    <string name="title_source_code">Mã nguồn</string>
+    <string name="title_oss_license">Giấy phép mã nguồn mở</string>
+    <string name="title_translators">Người dịch</string>
+    <string name="title_tg_channel">Kênh Telegram</string>
+
+    <string name="title_pref_promotion">Ưu đãi</string>
+
+    <string name="title_pref_auto_update_subscription">Tự động cập nhật các gói đăng ký</string>
+    <string name="summary_pref_auto_update_subscription">Tự động cập nhật các gói đăng ký của bạn ở trong nền với khoảng thời gian cố định. Tùy thiết bị, tính năng này có thể không luôn hoạt động đúng như mong đợi.</string>
+    <string name="title_pref_auto_update_interval">Khoảng thời gian cập nhật tự động (phút; tối thiểu 15)</string>
+
+    <string name="title_core_loglevel">Cấp độ nhật ký</string>
+    <string name="title_outbound_domain_resolve_method">Phân giải tên miền cho kết nối đi (outbound)</string>
+    <string name="title_mode">Chế độ kết nối</string>
+    <string name="title_mode_help">Nhấn vào đây nếu bạn cần trợ giúp!</string>
+    <string name="title_language">Ngôn ngữ</string>
+    <string name="title_ui_settings">Cài đặt UI</string>
+    <string name="title_pref_ui_mode_night">Cài đặt chế độ UI</string>
+    <string name="title_pref_dynamic_color">Bật màu động</string>
+    <string name="summary_pref_dynamic_color">Chỉ hoạt động trên Android 12+</string>
+    <string name="title_pref_use_hev_tunnel">Dùng Hev TUN</string>
+    <string name="summary_pref_use_hev_tunnel">Khi bật, TUN sẽ dùng hev-socks5-tunnel; nếu không, TUN sẽ dùng xray-core.</string>
+    <string name="title_pref_hev_tunnel_loglevel">Mức nhật ký Hev TUN</string>
+    <string name="title_pref_hev_tunnel_rw_timeout">Thời gian chờ đọc/ghi của Hev TUN (giây; mặc định TCP/UDP: 300/60)</string>
+    <string name="title_mode_settings">Cài đặt chế độ</string>
+    <string name="title_root_mode_enabled">Bật chế độ Root (dành cho người dùng Root)</string>
+    <string name="summary_root_mode_enabled">Dùng quyền Root cho proxy trong suốt cấp thấp. Chế độ Root xử lý trực tiếp lưu lượng mạng thay vì dùng dịch vụ VPN của Android. Khi chế độ này bật, chế độ thông thường, định tuyến theo ứng dụng và các cài đặt VPN liên quan sẽ không được áp dụng.</string>
+    <string name="toast_root_required">Tính năng này yêu cầu quyền truy cập Root</string>
+    <string name="title_root_lan_sharing">Chia sẻ VPN với thiết bị LAN / chia sẻ kết nối (dành cho người dùng Root)</string>
+    <string name="summary_root_lan_sharing">Định tuyến lưu lượng từ thiết bị dùng điểm phát Wi-Fi và chia sẻ kết nối USB qua VPN.</string>
+
+    <string name="title_logcat" translatable="false">Logcat</string>
+    <string name="logcat_copy">Sao chép</string>
+    <string name="logcat_clear">Xoá</string>
+    <string name="logcat_share">Chia sẻ nhật ký</string>
+    <string name="title_service_restart">Khởi động lại dịch vụ lõi</string>
+    <string name="title_del_all_config">Xoá tất cả cấu hình</string>
+    <string name="title_del_duplicate_config">Xoá cấu hình trùng lặp</string>
+    <string name="title_del_invalid_config">Xoá cấu hình lỗi</string>
+    <string name="title_export_all">Xuất cấu hình vào bảng tạm</string>
+    <string name="title_sub_setting">Gói đăng ký</string>
+    <string name="sub_setting_remarks">Tên gói đăng ký</string>
+    <string name="sub_setting_url">URL gói đăng ký (không bắt buộc)</string>
+    <string name="sub_setting_user_agent" translatable="false">User Agent</string>
+    <string name="sub_setting_request_headers">Tiêu đề yêu cầu (định dạng JSON)</string>
+    <string name="sub_setting_filter">Bộ lọc biểu thức chính quy cho tên ghi chú</string>
+    <string name="sub_setting_override_address">Ghi đè địa chỉ</string>
+    <string name="sub_setting_override_port">Ghi đè cổng</string>
+    <string name="sub_setting_override_tip">Để trống để giữ giá trị từ gói đăng ký</string>
+    <string name="sub_setting_enable">Bật cập nhật</string>
+    <string name="sub_auto_update">Bật tự động cập nhật</string>
+    <string name="sub_allow_insecure_url">Cho phép địa chỉ HTTP không an toàn</string>
+    <string name="sub_setting_pre_profile">Proxy đầu vào</string>
+    <string name="sub_setting_next_profile">Proxy đầu ra</string>
+    <string name="sub_setting_pre_profile_tip">Tên ghi chú của cấu hình phải tồn tại và là duy nhất</string>
+    <string name="sub_setting_entry_proxy_tip">Proxy đã chọn được thêm trước mỗi cấu hình trong gói đăng ký, làm mắt xích đầu vào của chuỗi proxy cho cấu hình đó.</string>
+    <string name="sub_setting_exit_proxy_tip">Proxy đã chọn được thêm sau mỗi cấu hình trong gói đăng ký, làm mắt xích đầu ra của chuỗi proxy cho cấu hình đó.</string>
+    <string name="toast_invalid_update_interval">Khoảng thời gian cập nhật không hợp lệ. Giá trị tối thiểu là 15 phút.</string>
+    <string name="toast_invalid_override_port">Cổng ghi đè không hợp lệ. Hãy dùng giá trị từ 1 đến 65535.</string>
+    <string name="title_sub_update">Cập nhật gói đăng ký</string>
+    <string name="title_ping_all_server">Kiểm tra độ trễ TCP (TCPing)</string>
+    <string name="title_real_ping_all_server">Kiểm tra độ trễ thực</string>
+    <string name="title_user_asset_setting">Tệp tài nguyên</string>
+    <string name="title_sort_by_test_results">Sắp xếp theo kết quả kiểm tra</string>
+    <string name="title_filter_config">Lọc cấu hình</string>
+    <string name="filter_config_all">Tất cả</string>
+    <string name="summary_scan_qrcode">Chạm vào màn hình để mở camera và quét</string>
+    <string name="title_del_duplicate_config_count">Xoá %d cấu hình trùng lặp</string>
+    <string name="title_del_config_count">Xóa %d cấu hình</string>
+    <string name="title_import_config_count">Nhập %d cấu hình</string>
+    <string name="title_export_config_count">Xuất %d cấu hình</string>
+    <plurals name="title_update_config_count">
+        <item quantity="other">Đã cập nhật %1$d cấu hình</item>
+    </plurals>
+    <plurals name="title_update_asset_count">
+        <item quantity="other">Đã cập nhật %1$d tệp tài nguyên</item>
+    </plurals>
+    <string name="title_update_subscription_result">Đã cập nhật %1$d cấu hình (%2$d thành công, %3$d thất bại, %4$d bỏ qua)</string>
+    <string name="title_update_subscription_no_subscription">Không có đăng ký</string>
+    <string name="toast_server_not_found_in_group">Không tìm thấy máy chủ đã chọn trong nhóm hiện tại</string>
+    <string name="title_locate_selected_config">Tìm cấu hình đã chọn</string>
+
+    <string name="tasker_start_service">Khởi động Omni</string>
+    <string name="tasker_setting_confirm">Xác nhận</string>
+
+    <!-- RoutingSettingActivity -->
+    <string name="routing_settings_domain_strategy">Chiến lược tên miền (DomainStrategy)</string>
+    <string name="routing_settings_title">Cài đặt định tuyến</string>
+    <string name="routing_settings_tips">Quy tắc chỉ được áp dụng khi tất cả điều kiện đối sánh đã đặt đều được thỏa mãn cùng lúc (AND). Các quy tắc được kiểm tra từ trên xuống; quy tắc khớp đầu tiên sẽ được áp dụng.</string>
+    <string name="routing_settings_comma_tip">Phân cách nhiều mục bằng dấu phẩy (,).</string>
+    <string name="routing_settings_save">Lưu lại</string>
+    <string name="routing_settings_delete">Xoá</string>
+    <string name="routing_settings_rule_title">Cài đặt quy tắc định tuyến</string>
+    <string name="routing_settings_add_rule">Thêm quy tắc</string>
+    <string name="routing_settings_import_predefined_rulesets">Nhập các bộ quy tắc được xác định trước</string>
+    <string name="routing_settings_import_rulesets_tip">Các bộ quy tắc hiện có sẽ bị xóa. Bạn có chắc muốn tiếp tục không?</string>
+    <string name="routing_settings_import_rulesets_from_clipboard">Nhập bộ quy tắc từ bảng tạm</string>
+    <string name="routing_settings_import_rulesets_from_qrcode">Nhập bộ quy tắc từ mã QR</string>
+    <string name="routing_settings_export_rulesets_to_clipboard">Xuất bộ quy tắc vào bảng tạm</string>
+    <string name="routing_settings_locked">Đã khóa; giữ quy tắc này khi nhập cài đặt sẵn</string>
+    <string name="routing_settings_domain" translatable="false">domain</string>
+    <string name="routing_settings_ip" translatable="false">ip</string>
+    <string name="routing_settings_process">process (tên gói — chỉ được hỗ trợ khi dùng Xray TUN, bật routeOnly và chạy Android 10+)</string>
+    <string name="routing_settings_process_select">Chọn tên gói</string>
+    <string name="routing_settings_port" translatable="false">port</string>
+    <string name="routing_settings_protocol" translatable="false">protocol</string>
+    <string name="routing_settings_protocol_tip" translatable="false">[http,tls,bittorrent]</string>
+    <string name="routing_settings_network" translatable="false">network</string>
+    <string name="routing_settings_outbound_tag_hint">proxy / direct / block / &lt;%1$s&gt;</string>
+    <string name="routing_settings_outbound_tag" translatable="false">outboundTag</string>
+
+    <string name="connection_test_pending">Kiểm tra kết nối</string>
+    <string name="connection_test_testing">Đang kiểm tra kết nối mạng…</string>
+    <string name="connection_test_testing_count">Đang kiểm tra %d cấu hình…</string>
+    <string name="connection_test_available">Kết nối thành công sau %1$s</string>
+    <string name="server_test_delay_value">%1$d mili giây</string>
+    <string name="connection_test_error">Kiểm tra kết nối thất bại: %s</string>
+    <string name="connection_test_fail">Không thể truy cập Internet</string>
+    <string name="connection_test_error_status_code">Mã lỗi: #%d</string>
+    <string name="connection_connected">Đã kết nối.\nNhấn để kiểm tra kết nối.</string>
+    <string name="connection_not_connected">Chưa kết nối</string>
+    <string name="connection_running_task_left">Số lượt kiểm tra đang chạy: %s</string>
+
+    <string name="import_subscription_success">Nhập gói đăng ký thành công!</string>
+    <string name="import_subscription_failure">Nhập gói đăng ký không thành công!</string>
+    <string name="title_observatory_settings">Cài đặt giám sát kết nối (Observatory)</string>
+    <string name="title_pref_observatory_least_ping_interval">Khoảng thời gian leastPing</string>
+    <string name="title_pref_observatory_least_load_interval">Khoảng thời gian leastLoad</string>
+    <string name="title_pref_observatory_least_load_method">Phương thức HTTP leastLoad</string>
+    <string name="title_pref_observatory_least_load_sampling">Lấy mẫu leastLoad</string>
+    <string name="title_pref_observatory_least_load_timeout">Thời gian chờ leastLoad</string>
+    <string name="toast_invalid_observatory_duration">Khoảng thời gian không hợp lệ. Dùng giá trị như 3m hoặc 30s.</string>
+    <string name="toast_invalid_observatory_sampling">Lấy mẫu không hợp lệ. Dùng một số dương.</string>
+    <string name="toast_invalid_aether_listen_port">Hãy dùng một cổng từ 1024 đến 65532 cho cổng lắng nghe của Aether</string>
+    <string name="toast_aether_listen_port_local_proxy">Cổng lắng nghe của Aether và ba cổng ngay sau nó không được trùng với cổng proxy cục bộ</string>
+
+    <string name="update_check_for_update">Kiểm tra bản cập nhật</string>
+    <string name="update_already_latest_version">Đã dùng phiên bản mới nhất</string>
+    <string name="update_new_version_found">Đã tìm thấy phiên bản mới: %s</string>
+    <string name="update_now">Cập nhật ngay</string>
+    <string name="update_check_pre_release">Kiểm tra bản phát hành thử</string>
+    <string name="update_checking_for_update">Đang kiểm tra bản cập nhật…</string>
+
+    <string name="title_policy_group_type">Loại nhóm chính sách</string>
+    <string name="title_policy_group_subscription_id">Từ nhóm đăng ký</string>
+    <string name="title_policy_group_subscription_filter">Bộ lọc biểu thức chính quy cho tên ghi chú</string>
+    <string name="title_policy_group_test_outbounds">Kiểm tra các kết nối đi (outbounds)</string>
+    <string name="title_policy_group_fallback">Kết nối dự phòng (outbound, tùy chọn)</string>
+
+    <string name="server_proxy_chain_members">Thành viên chuỗi proxy</string>
+    <string name="server_proxy_chain_pick_members">Chạm vào đây để chọn thành viên</string>
+    <string name="server_proxy_chain_member_unselected">Chọn một thành viên</string>
+    <string name="server_proxy_chain_members_unselected">Vui lòng chọn thành viên cho từng hàng trong chuỗi</string>
+    <string name="server_proxy_chain_members_insufficient">Không đủ thành viên</string>
+
+    <!-- BackupActivity -->
+    <string name="title_configuration_backup_restore">Sao lưu &amp; khôi phục</string>
+    <string name="title_configuration_backup">Sao lưu cấu hình</string>
+    <string name="title_configuration_restore">Khôi phục cấu hình</string>
+    <string name="title_profile_storage_cleanup">Sửa dữ liệu cấu hình</string>
+    <string name="summary_profile_storage_cleanup">Xóa dữ liệu cấu hình không còn được sử dụng</string>
+    <string name="message_profile_storage_cleanup">Xóa dữ liệu cấu hình không còn được nhóm nào sử dụng? Cấu hình đang chọn và dữ liệu không thể xác định chắc chắn là không còn được sử dụng sẽ được giữ lại.</string>
+    <string name="toast_profile_storage_cleanup">Đã xóa cấu hình không dùng: %1$d</string>
+    <string name="toast_profile_storage_cleanup_skipped">Không thể xác định chắc chắn dữ liệu cấu hình không còn được sử dụng. Không có dữ liệu nào bị xóa.</string>
+    <string name="title_configuration_share">Chia sẻ cấu hình</string>
+    <string name="title_webdav_config_setting">Cài đặt WebDAV</string>
+    <string name="title_webdav_config_setting_unknown">Vui lòng cấu hình WebDAV trước.</string>
+    <string name="title_webdav_url">URL máy chủ WebDAV</string>
+    <string name="title_webdav_user">Tên người dùng</string>
+    <string name="title_webdav_pass">Mật khẩu</string>
+    <string name="title_webdav_remote_path">Thư mục từ xa (không bắt buộc)</string>
+
+    <string name="share_method_qrcode">Mã QR</string>
+    <string name="share_method_clipboard">Sao chép liên kết cấu hình</string>
+    <string name="share_method_full_content">Sao chép toàn bộ cấu hình</string>
+    <string name="action_edit">Chỉnh sửa</string>
+    <string name="action_delete">Xoá</string>
+    <string name="action_close">Đóng</string>
+
+    <string name="share_subscription_qrcode">Xuất gói ra mã QR (Chụp màn hình để lưu)</string>
+    <string name="share_subscription_clipboard">Xuất gói vào bảng tạm</string>
+
+    <string-array name="mode_entries">
+        <item>Chế độ VPN</item>
+        <item>Chế độ Proxy</item>
+    </string-array>
+
+    <string-array name="browser_dialer_mode">
+        <item>Tắt</item>
+        <item>OkHttp</item>
+        <item>WebView</item>
+    </string-array>
+
+    <string-array name="ui_mode_night">
+        <item>Theo hệ thống</item>
+        <item>Sáng</item>
+        <item>Tối</item>
+    </string-array>
+
+    <string name="routing_preset_china_whitelist">Danh sách trắng Trung Quốc</string>
+    <string name="routing_preset_china_blacklist">Danh sách đen Trung Quốc</string>
+    <string name="routing_preset_global">Toàn cầu</string>
+    <string name="routing_preset_iran_whitelist">Danh sách trắng Iran</string>
+    <string name="routing_preset_russia_whitelist">Danh sách trắng Nga</string>
+
+    <string-array name="vpn_bypass_lan">
+        <item>Theo cấu hình</item>
+        <item>Bỏ qua</item>
+        <item>Không bỏ qua</item>
+    </string-array>
+
+    <string-array name="outbound_domain_resolve_method">
+        <item>Không phân giải</item>
+        <item>Phân giải và thêm vào DNS Hosts</item>
+        <item>Phân giải và thay thế tên miền</item>
+    </string-array>
+
+    <string-array name="policy_group_type">
+        <item>Ping thấp nhất (leastPing)</item>
+        <item>Tải thấp nhất (leastLoad)</item>
+        <item>Ngẫu nhiên (random)</item>
+        <item>Luân phiên (roundRobin)</item>
+    </string-array>
+
+    <string name="backup_location_local">Cục bộ</string>
+    <string name="backup_location_webdav" translatable="false">WebDAV</string>
+
+    <string name="acc_refresh">Làm mới nhật ký</string>
+    <string name="toast_permission_denied_for">Chưa cấp quyền: %1$s</string>
+    <string name="acc_add_subscription">Thêm gói đăng ký</string>
+    <string name="toast_malformed_json_detail">Cấu hình không hợp lệ: %1$s</string>
+    <string name="acc_add_asset">Thêm nguồn tệp tài nguyên</string>
+    <string name="acc_download_file">Tải xuống tệp tài nguyên</string>
+    <string name="acc_qr_code">Mã QR</string>
+    <string name="acc_copy_log">Sao chép nhật ký</string>
+    <string name="acc_clear_log">Xóa nhật ký</string>
+    <string name="acc_add_rule">Thêm quy tắc định tuyến</string>
+    <string name="acc_start">Khởi động dịch vụ</string>
+    <string name="acc_stop">Dừng dịch vụ</string>
+    <string name="acc_back">Quay lại</string>
+    <string name="acc_search">Tìm kiếm</string>
+    <string name="acc_add">Thêm cấu hình</string>
+    <string name="acc_more">Tùy chọn khác</string>
+    <string name="acc_selected_server">Selected</string>
+    <string name="acc_share_subscription">Chia sẻ liên kết đăng ký</string>
+    <string name="acc_share_log">Chia sẻ nhật ký</string>
+    <string name="acc_remove">Xóa thành viên khỏi chuỗi proxy</string>
+    <string name="acc_add_member">Thêm thành viên vào chuỗi proxy</string>
+    <string name="acc_start_scanner">Khởi động trình quét mã QR</string>
+    <string name="acc_stop_scanner">Dừng trình quét mã QR</string>
+    <string name="acc_turn_torch_on">Bật đèn pin</string>
+    <string name="acc_turn_torch_off">Tắt đèn pin</string>
+    <string name="acc_select_image">Chọn ảnh để quét</string>
+    <string name="acc_locked">Giữ quy tắc khi nhập cài đặt sẵn</string>
+    <string name="acc_open_menu">Mở trình đơn điều hướng</string>
+    <string name="acc_edit">Chỉnh sửa</string>
+    <string name="acc_delete">Xóa</string>
+    <string name="acc_save">Lưu</string>
+    <string name="acc_update_subscriptions">Cập nhật các gói đăng ký</string>
+    <string name="acc_per_app_proxy_information">Thông tin proxy theo ứng dụng</string>
+    <string name="permission_camera">Máy ảnh</string>
+    <string name="permission_notification">Thông báo</string>
+    <string name="permission_local_network">Mạng cục bộ</string>
+    <string name="subscription_update_updating">Đang cập nhật gói đăng ký: %1$s</string>
+    <string name="subscription_update_progress">Đang kiểm tra %2$s: %1$s</string>
+    <string name="tasker_blurb_start">Khởi động %1$s</string>
+    <string name="tasker_blurb_stop">Dừng %1$s</string>
+    <string name="connection_test_empty_message">không có thông tin chi tiết</string>
+    <string name="value_unknown">không xác định</string>
+    <string name="aether_lab_protocol">Giao thức</string>
+    <string name="aether_lab_transport">Truyền tải</string>
+    <string name="aether_lab_masque_sni">Tên máy chủ MASQUE (SNI)</string>
+    <string name="aether_lab_scan_mode">Chế độ quét</string>
+    <string name="aether_lab_obfuscation">Làm rối</string>
+    <string name="aether_lab_ip_version">Phiên bản IP</string>
+    <string name="aether_lab_exit_final_mask">JSON thô của finalMask cho exit-node, định dạng: { FinalMaskObject }</string>
+    <string name="aether_exit_node_freedom">freedom (mặc định)</string>
+    <string name="label_numbered">%1$s (%2$d)</string>
+    <string name="aether_hint_exit_node">Lõi kết nối ra ngoài qua outbound của hồ sơ này, như qua một chặng của chuỗi proxy; finalMask và dialMode bên dưới chỉ dùng cho freedom</string>
+    <string name="aether_exit_node_unusable">Hồ sơ exit-node \"%1$s\" không tạo được outbound; hãy chọn hồ sơ khác, hoặc freedom</string>
+    <string name="aether_exit_node_ech_unusable">Không dùng được echOutbound của hồ sơ exit-node \"%1$s\"; hãy sửa nó trong hồ sơ đó, hoặc chọn hồ sơ khác, hoặc freedom</string>
+    <string name="toast_profile_name_not_found">Không tìm thấy hồ sơ nào tên \"%1$s\"</string>
+    <string name="toast_profile_name_duplicate">Tìm thấy hai hồ sơ cùng tên \"%1$s\"; hãy đổi tên một hồ sơ</string>
+    <string name="toast_profile_no_server">Hồ sơ \"%1$s\" không có địa chỉ máy chủ, nên chuỗi proxy không thể đi qua nó</string>
+    <string name="toast_profile_group_not_fallback">\"%1$s\" là một nhóm chính sách, và nhóm chính sách không thể làm kết nối dự phòng; hãy chọn hồ sơ khác</string>
+    <string name="toast_profile_group_not_hop">\"%1$s\" là một nhóm chính sách, nên chuỗi proxy không thể đi qua nó; hãy chọn hồ sơ khác</string>
+    <string name="toast_profile_chain_not_hop">\"%1$s\" là một chuỗi proxy, nên chuỗi proxy khác không thể đi qua nó; hãy chọn hồ sơ khác</string>
+    <string name="toast_profile_custom_not_hop">\"%1$s\" là một cấu hình tùy chỉnh, nên chuỗi proxy không thể đi qua nó; hãy chọn hồ sơ khác</string>
+    <string name="toast_profile_custom_not_fallback">\"%1$s\" là một cấu hình tùy chỉnh, và cấu hình tùy chỉnh không thể làm kết nối dự phòng; hãy chọn hồ sơ khác</string>
+    <string name="aether_keys_hint_fragment">Gửi ClientHello của các yêu cầu tới WARP API thành từng mảnh, cho các mạng lọc tên của API</string>
+    <string name="aether_lab_fragment">Phân mảnh ClientHello</string>
+    <string name="aether_lab_fragment_size">Kích thước mảnh (byte)</string>
+    <string name="aether_lab_fragment_delay">Độ trễ giữa các mảnh (ms)</string>
+    <string name="aether_lab_wiw_outer">Chặng ngoài</string>
+    <string name="aether_lab_wiw_inner">Chặng trong</string>
+    <string name="aether_hint_endpoint">Để trống để quét</string>
+    <string name="aether_hint_gool_peer">Để trống để dùng endpoint do WARP cấp</string>
+    <string name="aether_action_scan">Tìm máy chủ</string>
+    <string name="aether_action_scanning">Đang quét…</string>
+    <string name="aether_scan_success">Đã tìm thấy máy chủ</string>
+    <string name="aether_scan_failed">Không tìm thấy máy chủ</string>
+    <string name="aether_invalid_endpoint">Nhập địa chỉ IP và cổng, hoặc để trống địa chỉ để quét</string>
+    <string name="aether_invalid_hop">Nhập địa chỉ và cổng, ví dụ 162.159.192.1:2408</string>
+    <string name="aether_same_hop">Hai chặng phải có địa chỉ khác nhau</string>
+    <string name="aether_invalid_fragment">Nhập một số hoặc khoảng như 16-32: kích thước 1–4096 byte, độ trễ 0–1000 ms</string>
+    <string name="aether_listen_port_taken">Cổng %1$d, nơi lõi Aether lắng nghe, đã bị một inbound của cấu hình chiếm, như cổng proxy cục bộ hoặc cổng lớn hơn cổng lắng nghe của Aether ba đơn vị; hãy đổi cổng lắng nghe của Aether trong phần cài đặt, hoặc các cổng của lệnh</string>
+    <string name="aether_secondary_port_taken">Một inbound của cấu hình này đã lắng nghe trên %1$d, là cổng lớn hơn cổng lắng nghe của Aether ba đơn vị, qua đó lõi Aether kết nối ra ngoài; hãy đổi cổng lắng nghe của Aether trong phần cài đặt</string>
+    <string name="aether_listen_port_in_use">Cổng %1$d, nơi lõi Aether lắng nghe, đang được một ứng dụng khác sử dụng; hãy đổi cổng lắng nghe của Aether trong phần cài đặt, hoặc các cổng của lệnh</string>
+    <string name="aether_secondary_port_in_use">Cổng %1$d, lớn hơn cổng lắng nghe của Aether ba đơn vị, là cổng Xray mở để lõi Aether kết nối ra ngoài, đang được một ứng dụng khác sử dụng; hãy đổi cổng lắng nghe của Aether trong phần cài đặt</string>
+    <string name="aether_listen_port_invalid">Lệnh Aether bảo lõi lắng nghe trên %1$d, nhưng đó không phải là cổng (từ 1 đến 65535); hãy đổi các cổng của lệnh</string>
+    <string name="aether_listen_address_invalid">Lệnh Aether cho %1$s một địa chỉ mà lõi không nhận; hãy viết sau nó một địa chỉ IP và một cổng, chẳng hạn 127.0.0.1:20808</string>
+    <string name="aether_listen_address_unreachable">Lệnh Aether cho %1$s một địa chỉ mà ứng dụng không kết nối tới: ứng dụng kết nối với lõi qua 127.0.0.1, vì vậy hãy viết sau nó 127.0.0.1 (hoặc 0.0.0.0 cho mọi địa chỉ) và một cổng</string>
+    <string name="aether_listen_port_shared">Lệnh Aether bảo lõi lắng nghe trên %1$d bằng hai trình lắng nghe của nó (trình lắng nghe mà lệnh bỏ qua vẫn lắng nghe: trình mà ứng dụng kết nối tới nằm trên cổng lắng nghe của Aether, các trình khác nằm trên cổng mặc định của lõi: 1819, 1820 hoặc 1821); hãy cho mỗi trình lắng nghe một cổng riêng</string>
+    <string name="aether_lab_psiphon">Psiphon</string>
+    <string name="aether_lab_psiphon_mode">Kết nối Psiphon</string>
+    <string name="aether_lab_psiphon_cdn_ips">IP CDN fronting</string>
+    <string name="aether_lab_psiphon_cdn_sni">Tên máy chủ CDN fronting (SNI)</string>
+    <string name="aether_hint_psiphon_list">Cách nhau bằng dấu phẩy; để trống để dùng danh sách có sẵn</string>
+    <string name="aether_lab_psiphon_region">Quốc gia đầu ra</string>
+    <string name="aether_psiphon_region_any">Bất kỳ quốc gia nào</string>
+    <string name="aether_lab_psiphon_bundled_list">Bắt đầu từ danh sách máy chủ kèm theo ứng dụng</string>
+    <string name="aether_hint_psiphon_bundled_list">Bật: Psiphon thử ngay các máy chủ trong psiphon_servers.dat và chỉ tải danh sách mới khi chúng thất bại. Tắt: tải danh sách mới trước lần kết nối đầu tiên, nên danh sách phải truy cập được, chẳng hạn qua WARP</string>
+    <string name="aether_action_clear_psiphon">Xóa dữ liệu Psiphon</string>
+    <string name="aether_hint_clear_psiphon">Quên các máy chủ Psiphon đã học và các danh sách đã tải. Lần khởi động sau bắt đầu lại từ danh sách kèm theo, hoặc từ một bản tải mới nếu công tắc bên trên tắt</string>
+    <string name="aether_log_psiphon_cleared">Đã xóa dữ liệu Psiphon</string>
+    <string name="aether_log_psiphon_clear_failed">Không xóa được dữ liệu Psiphon</string>
+    <string name="aether_psiphon_clear_blocked">Ngắt kết nối hồ sơ Aether trước khi xóa dữ liệu Psiphon; kết nối đang chạy đang dùng nó</string>
+    <string name="aether_psiphon_unavailable">Bản dựng này không có ứng dụng Psiphon, nên cấu hình dùng Psiphon không thể kết nối</string>
+    <string name="aether_psiphon_needs_masque">Psiphon → WARP chỉ hoạt động với giao thức MASQUE</string>
+    <string name="aether_next_port_taken">Khi có Tor hoặc Psiphon trên đường đi, lõi còn dùng các cổng ngay sau cổng lắng nghe của Aether, và không cổng nào trong số đó được là cổng proxy cục bộ của ứng dụng; hãy đổi cổng lắng nghe của Aether trong phần cài đặt</string>
+    <string name="aether_lab_tor">Tor</string>
+    <string name="aether_lab_tor_bridges">Cầu nối (bridge)</string>
+    <string name="aether_lab_tor_bridge_lines">Các dòng bridge</string>
+    <string name="aether_hint_tor_bridge_lines">Mỗi dòng một bridge, như trong torrc: obfs4 1.2.3.4:443 FINGERPRINT cert=… iat-mode=0</string>
+    <string name="aether_tor_transports_unavailable">Bản dựng này không có pluggable transport, nên không dùng được bridge của Tor; Tor chỉ kết nối được ở nơi không bị chặn</string>
+    <string name="aether_tor_needs_masque">Tor → WARP chỉ hoạt động với giao thức MASQUE</string>
+    <string name="aether_tor_psiphon_conflict">Tor và Psiphon chỉ kết hợp được khi một cái nằm trong đường hầm và cái kia bao quanh nó</string>
+    <string name="aether_tor_bridges_missing">Hãy nhập ít nhất một dòng bridge, hoặc chọn thiết lập bridge khác</string>
+    <string name="aether_lab_ech">Encrypted Client Hello (ECH)</string>
+    <string name="aether_hint_ech">Ẩn tên máy chủ trong bắt tay MASQUE; không có khóa dùng được thì Aether không kết nối</string>
+    <string name="aether_lab_ech_dns">DNS cho ECH</string>
+    <string name="aether_lab_ech_domain">Tên miền ECH</string>
+    <string name="aether_invalid_ech_dns">DNS cho ECH phải là udp://IP, tcp://IP hoặc địa chỉ https:// của máy chủ DNS-over-HTTPS</string>
+    <string name="aether_invalid_ech_domain">Tên miền ECH phải là một tên miền, ví dụ cloudflare-ech.com</string>
+    <string name="aether_invalid_masque_sni">Tên máy chủ MASQUE (SNI) phải là một tên miền, ví dụ www.cloudflare.com</string>
+    <string name="aether_lab_dns">DNS trong đường hầm</string>
+    <string name="aether_hint_dns">Phân cách bằng dấu phẩy; để trống để dùng 1.1.1.1 và 1.0.0.1</string>
+    <string name="aether_invalid_dns">Hãy nhập địa chỉ máy phân giải như 1.1.1.1 hoặc 10.0.0.1:5353, phân cách bằng dấu phẩy</string>
+    <string name="aether_lab_exit_loc">Vị trí đầu ra</string>
+    <string name="aether_hint_exit_loc">DE,SE chỉ cho phép các nước đó; !IR,RU từ chối các nước đó; để trống chấp nhận mọi nơi</string>
+    <string name="aether_invalid_exit_loc">Hãy nhập mã quốc gia hai chữ cái, phân cách bằng dấu phẩy, thêm ! ở đầu để từ chối</string>
+    <string name="aether_lab_tor_relays">Nguồn bridge</string>
+    <string name="aether_lab_other_settings">Cài đặt khác</string>
+    <string name="aether_lab_command">Lệnh Aether</string>
+    <string name="aether_command_custom">Đã sửa tay: lệnh này chạy đúng như đã viết, các thiết lập bên trên không được áp dụng, trừ các thiết lập của Xray-core</string>
+    <string name="aether_action_use_settings">Dùng thiết lập</string>
+    <string name="aether_invalid_command">Lệnh phải có các tham số cho lõi Aether, với cổng lắng nghe đặt sau --bind</string>
+    <string name="aether_unsupported_abi">Lõi Aether không khả dụng cho thiết bị này</string>
+    <string name="aether_core_stopped">Lõi Aether đã dừng chạy</string>
+    <string name="aether_core_stopped_no_ech_key">Lõi Aether đã dừng: ECH đang bật nhưng không tìm thấy khóa ECH dùng được. Không có khóa, tên máy chủ sẽ bị gửi đi ở dạng rõ.</string>
+    <string name="aether_core_stopped_chain_ended">Tor hoặc Psiphon bên trong đường hầm Aether đã dừng, nên kết nối đã bị dừng: %1$s</string>
+    <string name="aether_core_connecting">Lõi Aether vẫn đang kết nối</string>
+    <string name="menu_item_import_config_manually_aether">Thêm cấu hình Aether thủ công</string>
+    <string name="aether_action_renew_key">Lấy khóa WARP mới…</string>
+    <string name="aether_action_renewing_key">Đang lấy khóa WARP mới…</string>
+    <string name="aether_log_title">Nhật ký</string>
+    <string name="aether_log_empty">Kết quả quét và trạng thái khóa WARP sẽ hiển thị ở đây</string>
+    <string name="aether_log_scan_started">Đang quét tìm máy chủ…</string>
+    <string name="aether_log_scan_found">Đã tìm thấy %1$s</string>
+    <string name="aether_log_scan_found_hops">Đã tìm thấy chặng ngoài %1$s và chặng trong %2$s</string>
+    <string name="aether_log_scan_cancelled">Đã hủy quét</string>
+    <string name="aether_log_key_renewing">Đang đăng ký khóa WARP mới; các khóa đang dùng được giữ nguyên cho đến khi tất cả khóa mới sẵn sàng…</string>
+    <string name="aether_log_key_renewed">Khóa WARP mới đã được thay vào và sẽ được dùng từ lần kết nối tiếp theo</string>
+    <string name="aether_log_key_renew_failed">Đăng ký khóa WARP mới thất bại; các khóa hiện tại được giữ lại</string>
+    <string name="aether_log_key_renew_cancelled">Đã hủy lấy khóa WARP mới</string>
+    <string name="aether_log_masque_key_ready">Khóa MASQUE: thiết bị %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_masque_key_missing">Khóa MASQUE: chưa đăng ký; sẽ được đăng ký ở lần quét hoặc kết nối đầu tiên</string>
+    <string name="aether_log_wireguard_key_ready">Khóa WireGuard: thiết bị %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_wireguard_key_missing">Khóa WireGuard: chưa đăng ký; sẽ được đăng ký ở lần quét hoặc kết nối đầu tiên</string>
+    <string name="aether_log_outer_key_ready">Khóa chặng ngoài: thiết bị %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_outer_key_missing">Khóa chặng ngoài: chưa đăng ký; sẽ được đăng ký ở lần quét hoặc kết nối đầu tiên</string>
+    <string name="aether_log_inner_key_ready">Khóa chặng trong: thiết bị %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_inner_key_missing">Khóa chặng trong: chưa đăng ký; sẽ được đăng ký ở lần quét hoặc kết nối đầu tiên</string>
+    <string name="aether_log_wireguard_inner_key_ready">Khóa chặng trong WireGuard: thiết bị %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_wireguard_inner_key_missing">Khóa chặng trong WireGuard: chưa đăng ký; sẽ được đăng ký ở lần quét hoặc kết nối đầu tiên</string>
+    <string name="aether_log_masque_inner_key_ready">Khóa chặng trong MASQUE: thiết bị %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_masque_inner_key_missing">Khóa chặng trong MASQUE: chưa đăng ký; sẽ được đăng ký ở lần quét hoặc kết nối đầu tiên</string>
+    <string name="aether_log_gool_key_ready">Khóa WireGuard over MASQUE: thiết bị %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_gool_key_missing">Khóa WireGuard over MASQUE: chưa đăng ký; sẽ được đăng ký ở lần quét hoặc kết nối đầu tiên</string>
+    <string name="aether_renew_blocked">Hãy ngắt kết nối Aether trước khi lấy các khóa này; kết nối hiện tại đang dùng chúng</string>
+    <string name="aether_action_get_keys">Lấy khóa WARP mới</string>
+    <string name="aether_keys_lab_kind">Lấy khóa mới cho</string>
+    <string name="aether_keys_kind_all">Tất cả</string>
+    <string name="aether_keys_lab_enroll_address">Địa chỉ API</string>
+    <string name="aether_keys_hint_ech">Ẩn tên máy chủ trong các yêu cầu tới WARP API; không có khóa ECH dùng được thì không yêu cầu khóa WARP nào</string>
+    <string name="aether_lab_fingerprint">Fingerprint</string>
+    <string name="aether_keys_invalid_enroll_address">Địa chỉ API phải là địa chỉ IP hoặc tên miền, có hoặc không có cổng, ví dụ 188.114.97.6:443 hoặc [2606:4700::1]:8443</string>
+    <string name="aether_keys_lab_api_sni">Tên máy chủ API (SNI)</string>
+    <string name="aether_keys_lab_api_host">Host API</string>
+    <string name="aether_keys_hint_enroll_address">Để trống để dùng địa chỉ của tên máy chủ API</string>
+    <string name="aether_keys_hint_api_sni">Để trống để dùng host API</string>
+    <string name="aether_keys_hint_api_host">Để trống để dùng api.devices.cloudflare.com, rồi api.cloudflareclient.com nếu không có phản hồi và tên máy chủ cũng để trống. Cloudflare từ chối tên máy chủ khác với host</string>
+    <string name="aether_keys_invalid_api_sni">Tên máy chủ API phải là một tên miền, ví dụ api.devices.cloudflare.com</string>
+    <string name="aether_keys_invalid_api_host">Host API phải là một tên miền, ví dụ api.devices.cloudflare.com</string>
+    <string name="aether_keys_invalid_command">Lệnh phải đăng ký khóa: --register theo sau là all, wg, masque, mim, gool-classic (WARP-in-WARP) hoặc gool (WireGuard over MASQUE)</string>
+    <string name="aether_keys_log_empty">Đầu ra của lõi và các khóa WARP sẽ hiển thị ở đây</string>
+    <string name="aether_scan_blocked">Hãy ngắt kết nối Aether trước khi quét; việc quét sẽ mở một đường hầm thứ hai bằng khóa của kết nối hiện tại</string>
+    <string name="aether_keys_missing">Bạn chưa có khóa WARP cần thiết; hãy lấy khóa trước</string>
+    <string name="aether_action_save_anyway">Vẫn lưu</string>
+    <string name="aether_action_scan_anyway">Vẫn quét</string>
+    <string name="aether_chain_one_profile">Một chuỗi proxy chỉ có thể có một hồ sơ Aether</string>
+    <string name="aether_exit_node_name_taken">Định tuyến ở đây dùng một hồ sơ tên exit-node, mà exit-node là tên outbound qua đó lõi Aether kết nối ra ngoài; hãy đổi tên hồ sơ đó</string>
+    <string name="aether_chain_hop_missing">Không thể dựng chặng mà hồ sơ Aether trong chuỗi proxy này dùng để kết nối ra ngoài, và lõi Aether sẽ ra Internet mà không qua nó</string>
+    <string name="config_main_outbound_missing">Không thể dựng hồ sơ đã chọn, và mọi lưu lượng sẽ ra Internet trực tiếp mà không qua nó; hãy kiểm tra cài đặt của nó</string>
+    <string name="config_routing_target_unbuilt">Không thể dựng hồ sơ \"%1$s\" mà một quy tắc định tuyến gửi lưu lượng tới; hãy sửa nó, hoặc tắt các quy tắc dùng nó</string>
+    <string name="config_group_fallback_unbuilt">Không thể dựng hồ sơ \"%1$s\", kết nối dự phòng của một nhóm chính sách; hãy sửa nó, hoặc chọn kết nối dự phòng khác cho nhóm</string>
+    <string name="aether_config_single_profile">Một cấu hình chỉ có thể dùng một hồ sơ Aether</string>
+    <string name="aether_config_two_exits">Ở đây một lõi Aether sẽ phải kết nối ra ngoài theo hai cách: cùng một đường hầm được dùng riêng lẻ và sau một chặng của chuỗi proxy, sau hai chặng khác nhau, hoặc với hai thiết lập exit-node khác nhau</string>
+    <string name="aether_custom_no_outbound">Không có outbound SOCKS nào của cấu hình kết nối tới %1$s:%2$d, nơi lệnh Aether lắng nghe</string>
+    <string name="aether_custom_exit_node_selected">Một balancer hoặc observatory của cấu hình này chọn các outbound có thẻ bắt đầu bằng %1$s, trong đó có cả exit-node, outbound mà lõi Aether dùng để kết nối ra ngoài; hãy đổi selector đó</string>
+    <string name="aether_custom_invalid_command">aetherCommand phải là dòng lệnh của lõi Aether ở dạng văn bản, với địa chỉ lắng nghe đặt sau --bind: %1$s</string>
+    <string name="title_aether_core">Lõi Aether</string>
+    <string name="summary_aether_core">Trình khách WARP của CluvexStudio, đi kèm theo giấy phép AGPL-3.0. Nhấn để mở mã nguồn.</string>
+    <string-array name="aether_scan_entries">
+        <item>Siêu tốc</item>
+        <item>Cân bằng</item>
+        <item>Kỹ lưỡng</item>
+        <item>Đã xác minh</item>
+        <item>Chắc chắn</item>
+    </string-array>
+    <string-array name="aether_psiphon_entries">
+        <item>Tắt</item>
+        <item>WARP → Psiphon</item>
+        <item>Psiphon → WARP</item>
+        <item>Chỉ Psiphon</item>
+    </string-array>
+    <string name="aether_lab_psiphon_cdn_sets">Danh sách biên CDN để quét</string>
+    <string name="aether_hint_psiphon_cdn_sets">Quét fronting thử những danh sách biên tích hợp nào của Psiphon. Không chọn gì nghĩa là tất cả; cùng với IP của bạn, chúng được thử sau các IP đó</string>
+    <string name="aether_psiphon_cdn_sets_all">Tất cả danh sách tích hợp của Psiphon</string>
+    <string-array name="aether_psiphon_cdn_set_entries">
+        <item>Cloudflare</item>
+        <item>Fastly</item>
+        <item>CloudFront</item>
+        <item>Akamai (danh sách Psiphon)</item>
+        <item>Bunny (danh sách Psiphon)</item>
+        <item>Vercel</item>
+        <item>GitHub</item>
+        <item>Các biên fronting tuyển chọn</item>
+        <item>Ghi đè Android cũ</item>
+    </string-array>
+    <string-array name="aether_psiphon_mode_entries">
+        <item>Tự động</item>
+        <item>Chỉ qua CDN</item>
+        <item>Chỉ trực tiếp</item>
+    </string-array>
+    <string-array name="aether_tor_entries">
+        <item>Tắt</item>
+        <item>WARP → Tor</item>
+        <item>Tor → WARP</item>
+        <item>Chỉ Tor</item>
+    </string-array>
+    <string-array name="aether_tor_bridges_entries">
+        <item>Khi Tor bị chặn</item>
+        <item>Ngay từ đầu</item>
+        <item>Không bao giờ</item>
+                <item>Smart Connect</item>
+        <item>Dòng bridge của riêng tôi</item>
+    </string-array>
+    <string-array name="aether_tor_relays_entries">
+        <item>bridgedb và relay công khai</item>
+        <item>Chỉ relay công khai</item>
+        <item>Chỉ bridgedb</item>
+    </string-array>
+    <string-array name="aether_obfuscation_entries">
+        <item>Tự động</item>
+        <item>Tắt</item>
+        <item>Nhẹ</item>
+        <item>Firewall</item>
+        <item>Cân bằng</item>
+        <item>GFW</item>
+        <item>Mạnh</item>
+    </string-array>
+    <string name="sub_info_open_support">Mở liên kết hỗ trợ</string>
+    <string name="sub_info_open_page">Mở trang thông tin đăng ký</string>
+    <string name="sub_info_unlimited">Không giới hạn</string>
+
+    <string name="masterdns_title">MasterDNS</string>
+    <string name="menu_item_import_config_manually_masterdns">MasterDNS</string>
+    <string name="masterdns_lab_config">Official client configuration (JSON or TOML)</string>
+    <string name="masterdns_hint_config">Paste client_config.json or client_config.toml</string>
+    <string name="masterdns_config_support">Omni passes this document to the official engine and supplies only the local listener and VPN socket protection.</string>
+    <string name="masterdns_lab_resolvers">DNS resolvers (one per line)</string>
+    <string name="masterdns_hint_resolvers">8.8.8.8\n1.1.1.1:5353</string>
+    <string name="masterdns_resolvers_support">IPv4, IPv6 or CIDR ranges, with an optional port.</string>
+    <string name="masterdns_engine_notice">Uses the official MIT-licensed MasterDnsVPN engine. WhiteDNS proprietary files and formats are not reused.</string>
+    <string name="masterdns_error_config_empty">Paste the MasterDNS client configuration.</string>
+    <string name="masterdns_error_config_large">The MasterDNS configuration is too large.</string>
+    <string name="masterdns_error_config">Enter a valid MasterDNS JSON or TOML configuration.</string>
+    <string name="masterdns_error_domains">DOMAINS must contain at least one tunnel domain.</string>
+    <string name="masterdns_error_key">ENCRYPTION_KEY is required unless DATA_ENCRYPTION_METHOD is 0.</string>
+    <string name="masterdns_error_resolvers">Enter valid resolver IP addresses or CIDR ranges, one per line.</string>
+    <string name="masterdns_unsupported_abi">This build has no MasterDNS core for this device.</string>
+    <string name="masterdns_core_connecting">MasterDNS is connecting…</string>
+    <string name="masterdns_core_stopped">The MasterDNS core stopped.</string>
+    <string name="masterdns_port_taken">MasterDNS cannot use local port %1$d because it is already in use.</string>
+    <string name="masterdns_unsupported_combination">MasterDNS currently works only as a standalone primary profile, not inside a chain or policy group.</string>
+
+    <!-- Native Omni appearance -->
+    <string name="omni_appearance_title">Giao diện</string>
+    <string name="omni_effects_title">Hiệu ứng</string>
+    <string name="omni_effects_off">Tắt</string>
+    <string name="omni_effects_light">Nhẹ</string>
+    <string name="omni_effects_full">Đầy đủ</string>
+    <string name="omni_appearance_notice">Màu động sẽ thay thế màu giao diện đã chọn khi được bật.</string>
+    <string name="omni_skin_violet">Tím</string>
+    <string name="omni_skin_blue">Xanh dương</string>
+    <string name="omni_skin_teal">Xanh ngọc</string>
+    <string name="omni_skin_pink">Hồng</string>
+    <string name="omni_skin_orange">Cam</string>
+    <string name="omni_skin_green">Xanh lá</string>
+    <string name="omni_skin_yellow">Vàng</string>
+</resources>
