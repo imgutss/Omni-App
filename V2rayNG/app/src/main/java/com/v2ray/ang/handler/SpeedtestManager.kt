@@ -88,8 +88,8 @@ object SpeedtestManager {
             Thread {
                 // Stagger the families instead of starting them all at once: the delay is what makes this
                 // Happy Eyeballs rather than a flood of parallel connects.
-                val wait = index * HAPPY_EYEBALLS_DELAY_MS
-                if (wait > 0 && latch.await(wait, TimeUnit.MILLISECONDS)) return@Thread
+                val wait = index * HAPPY_EYEBALLS_DELAY_MS.toLong()
+                if (wait > 0L && latch.await(wait, TimeUnit.MILLISECONDS)) return@Thread
                 if (winner.get() != null) return@Thread
                 val left = deadline - SystemClock.elapsedRealtime()
                 if (left <= 0L) return@Thread
@@ -110,7 +110,7 @@ object SpeedtestManager {
             }.apply { isDaemon = true; name = "omni-happy-eyeballs-$index"; start() }
         }
 
-        latch.await(timeoutMs, TimeUnit.MILLISECONDS)
+        latch.await(timeoutMs.toLong(), TimeUnit.MILLISECONDS)
         threads.forEach { it.interrupt() }
         sockets.forEach { closeQuietly(it) }
         return winner.get() ?: -1L

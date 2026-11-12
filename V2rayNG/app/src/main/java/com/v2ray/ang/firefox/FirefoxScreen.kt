@@ -87,7 +87,7 @@ fun FirefoxScreen(
     ) {
         value = withContext(Dispatchers.IO) {
             runCatching { FirefoxBridge.ensureGroup() }
-            FirefoxBridge.engine(context) to FirefoxBridge.port()
+            (FirefoxBridge.engine(context) == FirefoxBridge.Engine.AVAILABLE) to FirefoxBridge.port()
         }
     }
 
