@@ -56,6 +56,9 @@ private fun applyTestDelayResults(
         testSuccessfulSamples = result.successfulSamples,
         testJitterMillis = result.jitterMillis,
         testKind = result.kind,
+        testMedianMillis = result.medianMillis,
+        testMaxMillis = result.maxMillis,
+        testPartial = result.partial,
     )
 }
 
@@ -70,6 +73,9 @@ private fun applyTestDelayResultsToRows(
         testSuccessfulSamples = result.successfulSamples,
         testJitterMillis = result.jitterMillis,
         testKind = result.kind,
+        testMedianMillis = result.medianMillis,
+        testMaxMillis = result.maxMillis,
+        testPartial = result.partial,
     )
 }
 
@@ -436,6 +442,9 @@ class MainViewModel(
                 testSuccessfulSamples = affiliation?.testSuccessfulSamples ?: 0,
                 testJitterMillis = affiliation?.testJitterMillis ?: 0L,
                 testKind = affiliation?.testKind.orEmpty(),
+                testMedianMillis = affiliation?.testMedianMillis ?: 0L,
+                testMaxMillis = affiliation?.testMaxMillis ?: 0L,
+                testPartial = affiliation?.testPartial ?: false,
             )
         }
 
@@ -1036,12 +1045,26 @@ class MainViewModel(
         mutableServerGroupState(groupId).update { current ->
             current.copy(
                 servers = current.servers.map { server ->
-                    if (server.testDelayMillis == 0L) server
-                    else server.copy(testDelayMillis = 0L)
+                    if (server.testDelayMillis == 0L) server else server.copy(
+                        testDelayMillis = 0L,
+                        testSampleCount = 0,
+                        testSuccessfulSamples = 0,
+                        testJitterMillis = 0L,
+                        testMedianMillis = 0L,
+                        testMaxMillis = 0L,
+                        testPartial = false,
+                    )
                 },
                 rows = current.rows.map { row ->
-                    if (row.testDelayMillis == 0L) row
-                    else row.copy(testDelayMillis = 0L)
+                    if (row.testDelayMillis == 0L) row else row.copy(
+                        testDelayMillis = 0L,
+                        testSampleCount = 0,
+                        testSuccessfulSamples = 0,
+                        testJitterMillis = 0L,
+                        testMedianMillis = 0L,
+                        testMaxMillis = 0L,
+                        testPartial = false,
+                    )
                 }
             )
         }
@@ -1066,7 +1089,15 @@ class MainViewModel(
                     groupDataCache[groupId]?.let { cached ->
                         groupDataCache[groupId] = cached.map { server ->
                             if (server.guid !in resetGuids || server.testDelayMillis == 0L) server
-                            else server.copy(testDelayMillis = 0L)
+                            else server.copy(
+                                testDelayMillis = 0L,
+                                testSampleCount = 0,
+                                testSuccessfulSamples = 0,
+                                testJitterMillis = 0L,
+                                testMedianMillis = 0L,
+                                testMaxMillis = 0L,
+                                testPartial = false,
+                            )
                         }
                     }
                 }

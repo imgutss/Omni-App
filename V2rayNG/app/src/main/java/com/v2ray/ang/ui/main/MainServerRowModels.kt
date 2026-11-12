@@ -20,6 +20,9 @@ internal data class ServerRowUiModel(
     val testSuccessfulSamples: Int = 0,
     val testJitterMillis: Long = 0L,
     val testKind: String = "",
+    val testMedianMillis: Long = 0L,
+    val testMaxMillis: Long = 0L,
+    val testPartial: Boolean = false,
     val subscriptionBadge: String,
 )
 
@@ -46,6 +49,9 @@ internal fun buildServerRowUiModel(
         testSuccessfulSamples = server.testSuccessfulSamples,
         testJitterMillis = server.testJitterMillis,
         testKind = server.testKind,
+        testMedianMillis = server.testMedianMillis,
+        testMaxMillis = server.testMaxMillis,
+        testPartial = server.testPartial,
         subscriptionBadge = subscriptionRemarks.firstOrNull()?.toString().orEmpty(),
     )
 }

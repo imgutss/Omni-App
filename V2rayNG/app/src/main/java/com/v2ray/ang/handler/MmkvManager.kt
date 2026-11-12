@@ -577,6 +577,9 @@ object MmkvManager {
         successfulSamples: Int,
         jitterMillis: Long,
         kind: String,
+        medianMillis: Long = 0L,
+        maxMillis: Long = 0L,
+        partial: Boolean = false,
     ) {
         if (guid.isBlank()) {
             return
@@ -589,6 +592,9 @@ object MmkvManager {
             aff.testSuccessfulSamples = successfulSamples
             aff.testJitterMillis = jitterMillis
             aff.testKind = kind
+            aff.testMedianMillis = medianMillis
+            aff.testMaxMillis = maxMillis
+            aff.testPartial = partial
             if (!serverAffStorage.encode(guid, JsonUtil.toJson(aff))) {
                 LogUtil.e(TAG, "MmkvManager: the storage refused the test result of profile $guid")
             }
@@ -610,6 +616,9 @@ object MmkvManager {
                     aff.testSuccessfulSamples = 0
                     aff.testJitterMillis = 0
                     aff.testKind = ""
+                    aff.testMedianMillis = 0
+                    aff.testMaxMillis = 0
+                    aff.testPartial = false
                     if (!serverAffStorage.encode(key, JsonUtil.toJson(aff))) {
                         LogUtil.e(TAG, "MmkvManager: the storage refused the cleared test result of profile $key")
                     }

@@ -39,10 +39,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancelChildren
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -1185,13 +1182,15 @@ object CoreServiceManager {
                 return value
             }
 
-            // Every sample runs at the same time: a native probe blocks for as long as its own HTTP
-            // client takes, so overlapping the samples removes their connect and TLS time from the wall
-            // clock instead of adding it up. Each one is a real response; the median keeps them honest.
-            val samples = coroutineScope {
-                List(RealPingBatchPlan.samples(SettingsManager.getRealPingSamples())) {
-                    async { measureOnce() }
-                }.awaitAll()
+            // The samples of one profile run one after the other, on the one tunnel that carries them:
+            // that is the connection the user has, and overlapping them made each one queue behind the
+            // last and report that queue as latency. Each sample is a real response, and the summary
+            // reports the fastest one next to the typical and the slowest.
+            val sampleCount = RealPingBatchPlan.samples(SettingsManager.getRealPingSamples())
+            val samples = ArrayList<Long>(sampleCount)
+            repeat(sampleCount) {
+                ensureActive()
+                samples += measureOnce()
             }
             val errorStr = errorRef.get()
             val stats = OmniPingStatistics.summarize(samples, OmniPingStatistics.KIND_HTTP)
@@ -1206,6 +1205,9 @@ object CoreServiceManager {
                 successfulSamples = stats.successfulSamples,
                 jitterMillis = stats.jitterMillis,
                 kind = stats.kind,
+                medianMillis = stats.medianMillis,
+                maxMillis = stats.maxMillis,
+                partial = stats.partial,
             )
             withContext(Dispatchers.Main.immediate) {
                 if (isRunning()) {

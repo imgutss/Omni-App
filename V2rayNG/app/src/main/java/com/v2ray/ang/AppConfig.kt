@@ -117,6 +117,17 @@ object AppConfig {
     const val PREF_REAL_PING_CONCURRENCY = "pref_real_ping_concurrency"
     const val PREF_REAL_PING_SAMPLES = "pref_real_ping_samples"
 
+    /**
+     * The local SOCKS port of the Firefox core, kept apart from every other port this app uses so that the
+     * two engines can never fight over one inbound.
+     *
+     * The Firefox account screen turns the core on; the selected "Firefox" row then dials through it.
+     */
+    const val PREF_FIREFOX_CORE_PORT = "pref_firefox_core_port"
+
+    /** Whether the person asked for the Firefox account path at all. */
+    const val PREF_FIREFOX_ENABLED = "pref_firefox_enabled"
+
     /** Cache keys. */
     const val CACHE_SUBSCRIPTION_ID = "cache_subscription_id"
 

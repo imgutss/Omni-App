@@ -1,6 +1,7 @@
 package com.v2ray.ang.service
 
 import android.content.Context
+import android.os.SystemClock
 import com.v2ray.ang.core.AetherDelayTester
 import com.v2ray.ang.core.CoreConfigContextBuilder
 import com.v2ray.ang.core.CoreConfigManager
@@ -24,14 +25,13 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
@@ -52,25 +52,46 @@ internal object RealPingExecutionLimiter {
     }
 }
 
-/** The shape of one batch: how many samples each profile runs and how many threads the batch holds. */
+/**
+ * The shape of one batch: how many samples each profile runs and how many threads the batch holds.
+ *
+ * Every sample of a profile runs **one after the other on the same thread**, never several at once: samples
+ * that overlap share one uplink and report each other's queueing as latency, and the old code launched
+ * `concurrency × samples` native probes at once (2988 threads at the defaults) which is what made a test of
+ * a few hundred profiles take minutes. The samples of *different* profiles still run in parallel, which is
+ * where the wall-clock win is.
+ */
 internal object RealPingBatchPlan {
     /** A native probe blocks its thread and cannot be cancelled from Kotlin, so the threads are bounded. */
-    const val MAX_THREADS = 64
+    const val MAX_THREADS = 16
 
-    /** The samples launched for one profile: the requested count, never padded and never hidden. */
-    fun samples(requested: Int): Int = requested.coerceIn(1, 5)
+    /** The most concurrent real-ping tests a batch may run, whatever the settings ask for. */
+    const val MAX_CONCURRENCY = 16
 
     /**
-     * Every sample of every profile runs at the same time in its own thread until it answers, so the
-     * pool has to hold them all: a smaller pool would queue the samples that run together again.
-     * TCP ping connects one socket per profile and needs no room for samples.
+     * The samples launched for one profile: the requested count, never padded and never hidden.
+     *
+     * The cap is three and not five because one native sample is already the **best of two** requests
+     * (libv2ray's `measureInstDelay` runs two attempts and keeps the smaller one), so five samples meant ten
+     * round trips for one row. Three samples still give a minimum, a median and a maximum to report.
      */
-    fun threads(concurrency: Int, samples: Int, onlyTcp: Boolean): Int =
-        if (onlyTcp) {
-            (concurrency * 2).coerceIn(1, MAX_THREADS)
-        } else {
-            (concurrency * samples).coerceIn(1, MAX_THREADS)
-        }
+    fun samples(requested: Int): Int = requested.coerceIn(1, 3)
+
+    /** How many concurrent tests a batch runs, clamped to what the device and the core can carry. */
+    fun concurrency(requested: Int): Int = requested.coerceIn(1, MAX_CONCURRENCY)
+
+    /** Threads a batch needs: one per concurrent test. */
+    fun threads(concurrency: Int): Int = concurrency.coerceIn(1, MAX_THREADS)
+
+    /**
+     * How long one profile may spend answering before its result is given up as "no response".
+     *
+     * A native probe can block for up to twelve seconds on its own; a whole test must not.
+     */
+    const val PROFILE_BUDGET_MS = 8_000L
+
+    /** How long a whole batch may run before the profiles left are reported as not measured, not as failed. */
+    const val BATCH_BUDGET_MS = 75_000L
 }
 
 /**
@@ -84,53 +105,59 @@ class RealPingWorkerService(
     private val onEvent: (RealPingEvent) -> Unit = {}
 ) {
     private val job = SupervisorJob()
-    private val concurrency = SettingsManager.getRealPingConcurrency()
+    private val concurrency = RealPingBatchPlan.concurrency(SettingsManager.getRealPingConcurrency())
     private val samples = RealPingBatchPlan.samples(SettingsManager.getRealPingSamples())
     private val dispatcher = Executors.newFixedThreadPool(
-        RealPingBatchPlan.threads(concurrency, samples, onlyTcp)
+        RealPingBatchPlan.threads(concurrency)
     ).asCoroutineDispatcher()
     private val scope = CoroutineScope(job + dispatcher + CoroutineName("RealPingBatchWorker"))
 
     // Names the measurements of this batch in the native core, so that cancel() ends them and no other batch's
     private val batch = UUID.randomUUID().toString()
 
-    private val runningCount = AtomicInteger(0)
-    private val totalCount = AtomicInteger(0)
+    private val startedAt = SystemClock.elapsedRealtime()
+    private val doneCount = AtomicInteger(0)
+    private val totalCount = AtomicInteger(guids.size)
 
     fun start() {
-        val jobs = guids.map { guid ->
-            totalCount.incrementAndGet()
+        // A queue of the profiles left, drained by a fixed number of workers: no profile waits for a
+        // thread of its own and no worker sits idle while the rest of the batch is still queued.
+        val queue = ArrayDeque(guids)
+
+        val workers = List(concurrency.coerceAtMost(totalCount.get().coerceAtLeast(1))) {
             scope.launch {
-                runningCount.incrementAndGet()
-                try {
-                    val result = if (onlyTcp) startTcping(guid) else startRealPing(guid)
-                    if (scope.isActive) {
-                        onEvent(
-                            RealPingEvent.Result(
-                                guid = guid,
-                                delayMillis = result.delayMillis,
-                                sampleCount = result.sampleCount,
-                                successfulSamples = result.successfulSamples,
-                                jitterMillis = result.jitterMillis,
-                                kind = result.kind,
-                            )
+                while (scope.isActive) {
+                    val guid = synchronized(queue) { queue.removeFirstOrNull() } ?: break
+                    val measurement = try {
+                        if (onlyTcp) startTcping(guid) else startRealPing(guid)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Throwable) {
+                        untested(onlyTcp)
+                    }
+                    if (!scope.isActive) break
+                    onEvent(
+                        RealPingEvent.Result(
+                            guid = guid,
+                            delayMillis = measurement.delayMillis,
+                            sampleCount = measurement.sampleCount,
+                            successfulSamples = measurement.successfulSamples,
+                            jitterMillis = measurement.jitterMillis,
+                            kind = measurement.kind,
+                            medianMillis = measurement.medianMillis,
+                            maxMillis = measurement.maxMillis,
+                            partial = measurement.partial,
                         )
-                    }
-                } catch (_: Throwable) {
-                    // ignore
-                } finally {
-                    val count = totalCount.decrementAndGet()
-                    val left = runningCount.decrementAndGet()
-                    if (scope.isActive) {
-                        onEvent(RealPingEvent.Progress("$left / $count"))
-                    }
+                    )
+                    val done = doneCount.incrementAndGet()
+                    onEvent(RealPingEvent.Progress("$done / ${totalCount.get()}"))
                 }
             }
         }
 
         scope.launch {
             try {
-                joinAll(*jobs.toTypedArray())
+                joinAll(*workers.toTypedArray())
                 if (isActive) {
                     onEvent(RealPingEvent.Finish("0"))
                 }
@@ -157,8 +184,24 @@ class RealPingWorkerService(
         }
     }
 
+    /** True while this batch may still start measuring a profile. */
+    private fun withinBatchBudget(): Boolean =
+        SystemClock.elapsedRealtime() - startedAt < RealPingBatchPlan.BATCH_BUDGET_MS
+
+    private fun untested(onlyTcp: Boolean) = OmniPingStats(
+        delayMillis = OmniPingStatistics.UNTESTED_SAMPLE,
+        sampleCount = RealPingBatchPlan.samples(samples),
+        successfulSamples = 0,
+        jitterMillis = 0L,
+        kind = if (onlyTcp) OmniPingStatistics.KIND_TCP else OmniPingStatistics.KIND_HTTP,
+        partial = true,
+    )
+
     private suspend fun startRealPing(guid: String): OmniPingStats {
         val retFailure = OmniPingStats(-1L, 0, 0, 0L, OmniPingStatistics.KIND_HTTP)
+
+        // Out of time for the batch: say so plainly instead of reporting a failure the profile did not have.
+        if (!withinBatchBudget()) return untested(onlyTcp = false)
 
         val config = MmkvManager.decodeServerConfig(guid) ?: return retFailure
         // An Aether profile is measured through its core alone, unless its subscription chains it with
@@ -242,7 +285,10 @@ class RealPingWorkerService(
         ) {
             val url = config.server.orEmpty()
             val port = config.serverPort.orEmpty().toInt()
-            val tcpTime = SpeedtestManager.socketConnectTime(url, port, 1000)
+            // The gate only skips a dead endpoint quickly; it is not the measurement and it is not the
+            // report either. It now runs with the same dual-stack connect the rest of the app uses, so a
+            // profile whose IPv6 route is broken is not thrown away before its IPv4 path is tried.
+            val tcpTime = SpeedtestManager.socketConnectTime(url, port, GATE_TIMEOUT_MS)
             if (tcpTime <= -1L) {
                 return retFailure
             }
@@ -256,16 +302,25 @@ class RealPingWorkerService(
     }
 
     /**
-     * Launches every sample of one profile at the same time. A native probe blocks its thread for as
-     * long as its own HTTP client takes, so overlapping the samples overlaps their connect and TLS
-     * time instead of adding it up; the batch is still cancellable, which ends them in the native core.
-     * No sample is a hidden warm-up any more: every reported number is a real response.
+     * Runs the samples of one profile one after the other, on this profile's own thread.
+     *
+     * Sequential and not overlapping: overlapping samples of one profile queue behind each other on the same
+     * uplink and report that waiting as latency, and they used to need `samples` extra threads per profile.
+     * Each sample still has a deadline, so a probe that never answers costs one budget instead of the batch.
      */
-    private suspend fun measureRealSamples(samples: Int, block: suspend () -> Long): OmniPingStats =
-        coroutineScope {
-            val results = List(samples) { async { sampleOf(block) } }.awaitAll()
-            summarizeHttp(results)
+    private suspend fun measureRealSamples(samples: Int, block: suspend () -> Long): OmniPingStats {
+        val results = ArrayList<Long>(samples)
+        repeat(samples) {
+            if (!withinBatchBudget()) {
+                results += OmniPingStatistics.UNTESTED_SAMPLE
+                return@repeat
+            }
+            val sample = withTimeoutOrNull(RealPingBatchPlan.PROFILE_BUDGET_MS) { sampleOf(block) }
+            // A sample the deadline took away is not a -1 the core reported: keep the two apart.
+            results += sample ?: OmniPingStatistics.UNTESTED_SAMPLE
         }
+        return summarizeHttp(results)
+    }
 
     /** One real sample: a response in milliseconds, or -1 when this attempt got none. */
     private suspend fun sampleOf(block: suspend () -> Long): Long = try {
@@ -282,6 +337,8 @@ class RealPingWorkerService(
     private fun startTcping(guid: String): OmniPingStats {
         val retFailure = OmniPingStats(-1L, 0, 0, 0L, OmniPingStatistics.KIND_TCP)
 
+        if (!withinBatchBudget()) return untested(onlyTcp = true)
+
         val config = MmkvManager.decodeServerConfig(guid) ?: return retFailure
         if (config.configType == EConfigType.AETHER) {
             return tcpStats(AetherDelayTester.reachability(config))
@@ -297,7 +354,7 @@ class RealPingWorkerService(
         ) {
             val url = config.server.orEmpty()
             val port = config.serverPort.orEmpty().toInt()
-            val tcpTime = SpeedtestManager.socketConnectTime(url, port, 1000)
+            val tcpTime = SpeedtestManager.socketConnectTime(url, port, GATE_TIMEOUT_MS)
 
             return tcpStats(tcpTime)
         }
@@ -307,4 +364,9 @@ class RealPingWorkerService(
 
     private fun tcpStats(value: Long): OmniPingStats =
         OmniPingStatistics.summarize(listOf(value), OmniPingStatistics.KIND_TCP)
+
+    private companion object {
+        /** The reachability gate before a real test: long enough for a slow handshake, short enough to skip. */
+        const val GATE_TIMEOUT_MS = 2_500
+    }
 }

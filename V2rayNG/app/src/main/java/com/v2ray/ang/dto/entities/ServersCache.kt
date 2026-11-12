@@ -8,4 +8,10 @@ data class ServersCache(
     val testSuccessfulSamples: Int = 0,
     val testJitterMillis: Long = 0L,
     val testKind: String = "",
+    /** Typical response of the successful samples. */
+    val testMedianMillis: Long = 0L,
+    /** Slowest response of the successful samples. */
+    val testMaxMillis: Long = 0L,
+    /** True when some sample got no answer. */
+    val testPartial: Boolean = false,
 )

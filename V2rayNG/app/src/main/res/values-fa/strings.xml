@@ -256,7 +256,9 @@
     <string name="title_pref_delay_test_url">URL آزمایش تأخیر واقعی</string>
     <string name="summary_pref_delay_test_url" translatable="false">URL</string>
     <string name="title_pref_real_ping_concurrency">آزمایش‌های هم‌زمان تأخیر واقعی</string>
-    <string name="title_pref_real_ping_samples">تعداد نمونه‌های HTTP واقعی (۱ تا ۵، پس از warm-up)</string>
+    <string name="title_pref_real_ping_samples">تعداد نمونه‌های HTTP واقعی (۱ تا ۳)</string>
+    <string name="title_pref_real_ping_concurrency_summary">هم‌زمان چند سرور تست شود. سقف ۱۶ است؛ بیشتر از آن فقط صف می‌شود.</string>
+    <string name="title_pref_real_ping_samples_summary">پینگی که نشان داده می‌شود سریع‌ترین نمونهٔ واقعی است و کنارش نمونهٔ معمول و کندترین هم می‌آید. هر نمونه خودش بهترینِ دو درخواست در کور است.</string>
 
     <string name="title_pref_ip_api_url">URL آزمایش اطلاعات اتصال فعلی</string>
     <string name="summary_pref_ip_api_url" translatable="false">URL</string>
@@ -421,7 +423,11 @@
     <string name="connection_test_testing_count">تست کردن %d کانفیگ…</string>
     <string name="connection_test_available">اتصال در %1$s با موفقیت برقرار شد</string>
     <string name="server_test_delay_value">%1$d میلی‌ثانیه</string>
-    <string name="server_test_delay_detailed_value">%1$s %2$d میلی‌ثانیه · %3$d/%4$d · ±%5$d میلی‌ثانیه</string>
+    <string name="server_test_delay_detailed_value">%1$s %2$d میلی‌ثانیه · ~%5$d · ≤%6$d میلی‌ثانیه</string>
+    <string name="server_test_delay_detailed_partial">%1$s %2$d میلی‌ثانیه · ~%5$d · ≤%6$d میلی‌ثانیه · %3$d/%4$d</string>
+    <string name="server_test_delay_detailed_partial_no_spread">%1$s %2$d میلی‌ثانیه · %3$d/%4$d</string>
+    <string name="firefox_title">فایرفاکس</string>
+    <string name="firefox_subtitle">حساب خودت، ماهی ۵۰ گیگ</string>
     <string name="server_test_no_response">بدون پاسخ</string>
     <string name="connection_test_untested">در وضعیت فعلی قابل سنجش نیست</string>
     <string name="server_test_no_response_samples">بدون پاسخ · %1$d/%2$d نمونهٔ موفق</string>

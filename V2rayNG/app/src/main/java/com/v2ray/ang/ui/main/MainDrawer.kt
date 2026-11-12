@@ -60,6 +60,7 @@ enum class MainDestination(@DrawableRes val iconRes: Int, @StringRes val labelRe
     OmniRoutingStudio(R.drawable.ic_routing_24dp, R.string.omni_routing_title),
     OmniSync(R.drawable.ic_check_update_24dp, R.string.omni_sync_title),
     OmniSpeed(R.drawable.ic_scan_24dp, R.string.omni_speed_title),
+    Firefox(R.drawable.ic_shield_24dp, R.string.firefox_title),
     Logcat(R.drawable.ic_logcat_24dp, R.string.title_logcat),
     CheckUpdate(R.drawable.ic_check_update_24dp, R.string.update_check_for_update),
     BackupRestore(R.drawable.ic_restore_24dp, R.string.title_configuration_backup_restore),
@@ -75,6 +76,8 @@ private val primaryDrawerItems = listOf(
 )
 
 internal val drawerItems = primaryDrawerItems + listOf(
+    // First of the Omni entries: a person who came for the free Firefox allowance should not have to hunt.
+    MainDestination.Firefox,
     MainDestination.OmniPanel,
     MainDestination.OmniDoctor,
     MainDestination.OmniScanner,
@@ -100,6 +103,7 @@ internal fun MainDestination.referenceArtwork(): String = when (this) {
     MainDestination.OmniRoutingStudio -> "backup"
     MainDestination.OmniSync -> "about"
     MainDestination.OmniSpeed -> "effects"
+    MainDestination.Firefox -> "shield"
     MainDestination.Logcat -> "logs"
     MainDestination.CheckUpdate -> "update"
     MainDestination.BackupRestore -> "backup"

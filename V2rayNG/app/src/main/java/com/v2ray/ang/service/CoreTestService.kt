@@ -158,6 +158,9 @@ class CoreTestService : Service() {
                     successfulSamples = event.successfulSamples,
                     jitterMillis = event.jitterMillis,
                     kind = event.kind,
+                    medianMillis = event.medianMillis,
+                    maxMillis = event.maxMillis,
+                    partial = event.partial,
                 )
                 MessageHelper.sendMsg2UI(
                     this,
@@ -169,6 +172,9 @@ class CoreTestService : Service() {
                         successfulSamples = event.successfulSamples,
                         jitterMillis = event.jitterMillis,
                         kind = event.kind,
+                        medianMillis = event.medianMillis,
+                        maxMillis = event.maxMillis,
+                        partial = event.partial,
                     ),
                     requestId,
                 )

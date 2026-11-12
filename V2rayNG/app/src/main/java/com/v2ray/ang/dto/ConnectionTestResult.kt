@@ -12,4 +12,7 @@ data class ConnectionTestResult(
     val successfulSamples: Int = 0,
     val jitterMillis: Long = 0L,
     val kind: String = "",
+    val medianMillis: Long = 0L,
+    val maxMillis: Long = 0L,
+    val partial: Boolean = false,
 ) : Serializable

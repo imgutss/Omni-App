@@ -178,6 +178,10 @@
             android:windowSoftInputMode="stateUnchanged|adjustResize"
             android:exported="false" />
         <activity
+            android:name=".firefox.FirefoxActivity"
+            android:windowSoftInputMode="stateUnchanged|adjustResize"
+            android:exported="false" />
+        <activity
             android:name=".omni.dns.OmniDnsScannerActivity"
             android:windowSoftInputMode="stateUnchanged|adjustResize"
             android:exported="false" />

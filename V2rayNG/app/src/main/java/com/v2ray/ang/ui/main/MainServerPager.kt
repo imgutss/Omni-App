@@ -378,13 +378,28 @@ private fun ServerListItem(
             row.testSampleCount,
         )
         row.testDelayMillis < 0L -> stringResource(R.string.server_test_no_response)
-        row.testSampleCount > 0 && row.testKind.isNotBlank() -> stringResource(
-            R.string.server_test_delay_detailed_value,
+        // Every row says the same three facts about the same measurement: the fastest real response
+        // (the number a user calls "my ping"), the typical one, and the slowest one. A lossy test also
+        // says how many samples answered, so a best-of-two is never presented as if all three had.
+        row.testSampleCount > 0 && row.testKind.isNotBlank() && row.testMaxMillis > 0L -> stringResource(
+            if (row.testPartial) {
+                R.string.server_test_delay_detailed_partial
+            } else {
+                R.string.server_test_delay_detailed_value
+            },
             row.testKind,
             row.testDelayMillis,
             row.testSuccessfulSamples,
             row.testSampleCount,
-            row.testJitterMillis,
+            row.testMedianMillis,
+            row.testMaxMillis,
+        )
+        row.testSampleCount > 0 && row.testKind.isNotBlank() -> stringResource(
+            R.string.server_test_delay_detailed_partial_no_spread,
+            row.testKind,
+            row.testDelayMillis,
+            row.testSuccessfulSamples,
+            row.testSampleCount,
         )
         else -> stringResource(R.string.server_test_delay_value, row.testDelayMillis)
     }

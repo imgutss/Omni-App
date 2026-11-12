@@ -184,6 +184,7 @@ class MainActivity : HelperBaseComponentActivity() {
             MainDestination.OmniRoutingStudio -> Intent(this, com.v2ray.ang.omni.OmniRoutingStudioActivity::class.java)
             MainDestination.OmniSync -> Intent(this, com.v2ray.ang.omni.OmniSyncCenterActivity::class.java)
             MainDestination.OmniSpeed -> Intent(this, com.v2ray.ang.omni.OmniSpeedLabActivity::class.java)
+            MainDestination.Firefox -> Intent(this, com.v2ray.ang.firefox.FirefoxActivity::class.java)
         }
         settingsActivityLauncher.launch(intent)
     }
