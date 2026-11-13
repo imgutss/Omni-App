@@ -1,9 +1,9 @@
 package com.v2ray.ang.firefox
 
 import android.content.Context
+import com.v2ray.ang.AppConfig
 import com.v2ray.ang.core.FirefoxCoreManager
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -11,6 +11,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 
@@ -30,10 +31,6 @@ object FirefoxEngineApi {
     private const val CONNECT_TIMEOUT_SECONDS = 10L
     private const val CALL_TIMEOUT_SECONDS = 90L
 
-    /** How long a start may take before the engine is treated as not there. */
-    private const val START_BUDGET_MS = 15_000L
-    private const val START_POLL_MS = 250L
-
     private val json = "application/json; charset=utf-8".toMediaType()
 
     private val client: OkHttpClient = OkHttpClient.Builder()
@@ -51,7 +48,7 @@ object FirefoxEngineApi {
         val enabled: Boolean,
         val status: String,
         val reason: String,
-        val usedPercent: Double,
+        private val reportedUsedPercent: Double,
         val limitBytes: Long,
         val remainingBytes: Long,
         val unlimited: Boolean,
@@ -59,6 +56,14 @@ object FirefoxEngineApi {
     ) {
         val usedBytes: Long
             get() = if (unlimited || limitBytes <= 0 || remainingBytes < 0) 0L else (limitBytes - remainingBytes).coerceAtLeast(0L)
+
+        /** How much of the allowance is spent, worked out here when the engine does not report it. */
+        val usedPercent: Double
+            get() = when {
+                unlimited || limitBytes <= 0 -> 0.0
+                reportedUsedPercent > 0.0 -> reportedUsedPercent
+                else -> (usedBytes * 100.0 / limitBytes).coerceIn(0.0, 100.0)
+            }
     }
 
     /**
@@ -96,19 +101,16 @@ object FirefoxEngineApi {
      * engine; the wait is bounded, and a start that never answers is reported as one.
      */
     suspend fun ensureEngine(context: Context): Boolean = withContext(Dispatchers.IO) {
-        if (FirefoxCoreManager.isRunning && token(context) != null && status(context) != null) return@withContext true
-        if (!FirefoxCoreManager.isSupported(context)) return@withContext false
-        FirefoxCoreManager.start(
+        if (FirefoxCoreManager.isSupported(context) && FirefoxCoreManager.isAlive(context) &&
+            token(context) != null && status(context) != null
+        ) {
+            return@withContext true
+        }
+        FirefoxCoreManager.ensureStarted(
             context,
             socksPort = FirefoxBridge.port(),
             apiPort = FirefoxBridge.DEFAULT_API_PORT,
-        )
-        val deadline = System.currentTimeMillis() + START_BUDGET_MS
-        while (System.currentTimeMillis() < deadline) {
-            if (token(context) != null && status(context) != null) return@withContext true
-            delay(START_POLL_MS)
-        }
-        false
+        ) && token(context) != null && status(context) != null
     }
 
     suspend fun status(context: Context): Status? = withContext(Dispatchers.IO) {
@@ -137,7 +139,7 @@ object FirefoxEngineApi {
                         enabled = item.optBoolean("enabled", true),
                         status = item.optString("status"),
                         reason = item.optString("reason").ifBlank { item.optString("reason_detail") },
-                        usedPercent = item.optDouble("used_percent", 0.0),
+                        reportedUsedPercent = item.optDouble("used_percent", 0.0),
                         limitBytes = usage?.optLong("limit_bytes", -1L) ?: -1L,
                         remainingBytes = usage?.optLong("remaining_bytes", -1L) ?: -1L,
                         unlimited = usage?.optBoolean("unlimited") ?: false,
@@ -207,9 +209,9 @@ object FirefoxEngineApi {
      */
     private fun call(context: Context, method: String, path: String, body: String?): String? {
         val token = token(context) ?: return null
-        val port = FirefoxCoreManager.currentApiPort ?: FirefoxBridge.DEFAULT_API_PORT
+        val origin = FirefoxCoreManager.baseUrl(context) ?: return null
         val request = Request.Builder()
-            .url("http://${com.v2ray.ang.AppConfig.LOOPBACK}:$port$path")
+            .url("$origin$path")
             .header("X-Local-Token", token)
             .header("Accept", "application/json")
             .apply {
@@ -240,7 +242,18 @@ object FirefoxEngineApi {
         }
     }
 
-    private fun token(context: Context): String? = FirefoxCoreManager.token(context)
+    /**
+     * The engine's token, read from the file inside this app's private storage, paired against the
+     * token the engine is currently using so a stale file cannot send the app to an engine that would
+     * only refuse it.
+     */
+    private fun token(context: Context): String? {
+        val token = runCatching {
+            File(FirefoxCoreManager.dataDir(context), AppConfig.FIREFOX_ENGINE_TOKEN).readText().trim()
+        }.getOrNull()
+        if (token.isNullOrEmpty() || token.length > 8_192) return null
+        return token
+    }
 
     /** "2026-01-31T00:00:00Z" and friends, as milliseconds; 0 when it is missing or unreadable. */
     private fun parseTime(raw: String): Long = try {

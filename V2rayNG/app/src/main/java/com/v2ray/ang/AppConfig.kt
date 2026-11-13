@@ -238,6 +238,15 @@ object AppConfig {
     const val WIREGUARD_LOCAL_REMOTE_DNS = "1.1.1.1,1.0.0.1,2606:4700:4700::1111,2606:4700:4700::1001"
     const val LOOPBACK = "127.0.0.1"
 
+    /** The Firefox account engine's binary, as the installer lays it beside the other native libraries. */
+    const val FIREFOX_ENGINE_LIBRARY = "firefox"
+
+    /** Where the engine keeps its store and its token, inside this app's private files. */
+    const val FIREFOX_ENGINE_DIRECTORY = "firefox-core"
+
+    /** The name of the file the engine writes its loopback token into. */
+    const val FIREFOX_ENGINE_TOKEN = "local-api.token"
+
     /** Shared defaults for settings shown in the UI and consumed by config generation. */
     const val DEFAULT_SOCKS_ENABLE_UDP = true
     const val DEFAULT_IPV6_ENABLED = true
