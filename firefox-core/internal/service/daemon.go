@@ -284,9 +284,15 @@ func (d *Daemon) Run() error {
 	defer close(d.finished)
 	cfg := d.config()
 	logx.Info("service starting version=%s data_dir=%s accounts=%d switch_threshold=%g%%", version.Current, d.paths.Dir, d.mgr.Len(), cfg.Accounts.SwitchThresholdPercent)
-	token, err := newLocalToken()
-	if err != nil {
-		return err
+	// The app hands this engine the login it will use to call it. Without one, a token is made and
+	// published for a client on this machine (the tray); on a phone the app cannot read a token it was
+	// not given, so a start without one would be an engine nothing could sign in to.
+	token := strings.TrimSpace(d.config().Dashboard.LocalToken)
+	if token == "" {
+		var err error
+		if token, err = newLocalToken(); err != nil {
+			return err
+		}
 	}
 	d.localToken = token
 	if cfg.Dashboard.Enabled {

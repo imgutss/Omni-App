@@ -25,6 +25,11 @@ const (
 	signInRetention = 10 * time.Minute
 	// maxCodeAttempts bounds retries of a wrong verification code.
 	maxCodeAttempts = 5
+
+	// emailLinkAttempts and emailLinkPause are how long a sign-in waits, after the person said they
+	// opened the confirmation link Mozilla emailed, for Mozilla to report that sign-in as confirmed.
+	emailLinkAttempts = 40
+	emailLinkPause    = 3 * time.Second
 )
 
 // Sign-in steps reported to the dashboard. The "need_*" steps wait for input.
@@ -400,10 +405,38 @@ func (s *signIn) signIn(ctx context.Context, d *Daemon, email, password string) 
 	return acc.ID, nil
 }
 
+// awaitVerifiedEmail waits, after the person opened the link FxA emailed, for that sign-in to read as
+// confirmed. The answer that opened the link is not a code, so it is not checked as one; what is checked
+// is the sign-in itself, which FxA reports as verified once the link was used.
+func (s *signIn) awaitVerifiedEmail(ctx context.Context, sessionToken, email string) error {
+	for attempt := 0; attempt < emailLinkAttempts; attempt++ {
+		verified, err := fxa.SessionVerified(ctx, sessionToken)
+		if err == nil && verified {
+			return nil
+		}
+		// Waiting on a person's browser, not on the network: the pause keeps this cheap.
+		select {
+		case <-ctx.Done():
+			return errSignInTimedOut
+		case <-time.After(emailLinkPause):
+		}
+	}
+	return errSignInTimedOut
+}
+
 // verify completes the sign-in confirmation FxA asks for.
 func (s *signIn) verify(ctx context.Context, email string, resp *fxa.LoginResponse) error {
 	if resp.VerificationMethod == "email" {
+		// The address is not confirmed yet: FxA emailed a link, and the sign-in goes on once it is opened.
+		// The step waits for the person to say they opened it — the same code path a confirmation code
+		// takes, so a "continue" is an answer rather than a dead end. It used to say "continue", which
+		// was the only thing it offered, and to read an empty answer as a wrong code.
 		if _, err := s.ask(ctx, stepEmailLink, fmt.Sprintf("Open the confirmation link sent to %s, then continue.", email), signInProblem{}, ""); err != nil {
+			return err
+		}
+		// Verified out of band: FxA reissues the verification session for the same sign-in, which the
+		// status call reads as confirmed once the link was opened in any browser.
+		if err := s.awaitVerifiedEmail(ctx, resp.SessionToken, email); err != nil {
 			return err
 		}
 		return nil

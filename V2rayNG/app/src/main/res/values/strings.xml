@@ -448,7 +448,7 @@
     <string name="firefox_engine_not_started">The Firefox account engine did not start. %1$s</string>
     <string name="firefox_no_account">No Firefox account is signed in on this phone yet. Open ☰ › Firefox, sign in with your own account, and connect again.</string>
     <string name="firefox_engine_reason_unknown">reason unknown</string>
-    <string name="firefox_engine_reason_missing_file">this build has no engine for this phone&#39;s processor</string>
+    <string name="firefox_engine_reason_missing_file">this build has no engine for this phone</string>
     <string name="firefox_engine_reason_not_executable">the app may not run the engine it was installed with</string>
     <string name="firefox_engine_reason_no_folder">the app could not create a folder for the account</string>
     <string name="firefox_engine_not_listening">The Firefox account engine is not answering on port %1$d.</string>

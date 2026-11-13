@@ -248,6 +248,10 @@ type Dashboard struct {
 	Listen       string `json:"listen"`
 	Username     string `json:"username"`
 	PasswordHash string `json:"password_hash"`
+	// LocalToken is the login the app sets on a phone, where the API answers this one client and
+	// nothing else. Empty means the engine makes a random one and publishes it in the data folder,
+	// which is what the desktop tray reads.
+	LocalToken string `json:"local_token,omitempty"`
 }
 
 // Network configures control-plane access.

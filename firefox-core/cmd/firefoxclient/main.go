@@ -24,6 +24,7 @@ import (
 	"github.com/armanlife/arman-vpn-client/core/internal/config"
 	"github.com/armanlife/arman-vpn-client/core/internal/logx"
 	"github.com/armanlife/arman-vpn-client/core/internal/service"
+	"github.com/armanlife/arman-vpn-client/core/internal/sockprotect"
 )
 
 // shutdownGrace is how long the daemon gets to close its listeners and sessions before this process
@@ -33,21 +34,33 @@ const shutdownGrace = 10 * time.Second
 
 func main() {
 	dataDir := flag.String("data-dir", "", "Data folder of the engine (required); created when missing")
+	// The app's login for this engine's loopback API. Given here, it replaces whatever the data folder
+	// kept from an earlier run, so only the app that started the engine can call it.
+	localToken := flag.String("local-token", "", "Login for the loopback API (the app sets its own)")
 	socks := flag.String("socks", config.DefaultProxyListen, "Local SOCKS5 address the Xray outbound dials")
 	api := flag.String("api", config.DefaultDashboardListen, "Local API address, guarded by the local token")
 	on := flag.Bool("on", true, "Carry traffic as soon as an account can; false starts it stopped")
+	// A phone whose whole traffic goes through this process must not also send its sockets out through
+	// the same tunnel: VpnService takes them apart, and every connection to Mozilla would go through
+	// Mozilla. The app protects the engine's own sockets through the abstract socket it names here
+	// (the same SCM_RIGHTS handshake the other engines in this app use).
+	protectPath := flag.String("protect-socket", "", "Abstract Unix socket of the app's VpnService protect server")
+	// The app runs this engine as its own child, in a process where nothing reads standard input: the
+	// default "stop when input ends" would stop the engine the moment it started. Asked for explicitly,
+	// it is how a terminal user closes the engine, and how the app can close it too.
+	stopOnEOF := flag.Bool("stop-on-eof", false, "Stop when standard input ends (the default when no data folder is given)")
 	logDir := flag.Bool("log-file", false, "Also keep the daily log files in the data folder")
 	flag.Parse()
 
 	logx.SetOutput(os.Stderr)
 
-	if err := run(*dataDir, *socks, *api, *on, *logDir); err != nil {
+	if err := run(*dataDir, *socks, *api, *on, *logDir, *protectPath, *localToken, *stopOnEOF || *dataDir == ""); err != nil {
 		logx.Error("firefoxclient: %v", err)
 		os.Exit(1)
 	}
 }
 
-func run(dataDir, socks, api string, on, withLogFile bool) error {
+func run(dataDir, socks, api string, on, withLogFile bool, protectSocket, localToken string, stopOnEOF bool) error {
 	if dataDir == "" {
 		return errors.New("-data-dir is required")
 	}
@@ -64,8 +77,15 @@ func run(dataDir, socks, api string, on, withLogFile bool) error {
 	if err := useDeviceRoots(paths.Dir); err != nil {
 		return err
 	}
-	if err := configure(paths, socks, api); err != nil {
+	if err := configure(paths, socks, api, localToken); err != nil {
 		return err
+	}
+	// Protected sockets are the reason this engine can run beside the app's own VpnService: every
+	// socket it opens is handed to the app before it is connected, so the traffic of the tunnel does
+	// not go through the tunnel.
+	sockprotect.Install(protectSocket)
+	if sockprotect.Enabled() {
+		logx.Info("firefoxclient: this engine's own sockets leave the phone outside the VPN (%s)", protectSocket)
 	}
 	// A token of an earlier run would let the app trust whatever answers on the API port before this
 	// run has bound it; the daemon writes a fresh one when it has.
@@ -93,7 +113,7 @@ func run(dataDir, socks, api string, on, withLogFile bool) error {
 			return fmt.Errorf("the engine stopped: %w", err)
 		}
 		return nil
-	case <-stopRequested():
+	case <-stopRequested(stopOnEOF):
 	}
 
 	logx.Info("firefoxclient: stopping")
@@ -109,12 +129,19 @@ func run(dataDir, socks, api string, on, withLogFile bool) error {
 	}
 }
 
-// stopRequested answers when the app closes this process's standard input, or when it is signalled,
-// which is the only way this engine is ever asked to stop.
-func stopRequested() <-chan struct{} {
+// stopRequested answers when this process is signalled — which is how the app stops it — or, when asked
+// for, when its standard input ends.
+func stopRequested(watchInput bool) <-chan struct{} {
 	stopped := make(chan struct{})
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+	if !watchInput {
+		go func() {
+			defer close(stopped)
+			<-signals
+		}()
+		return stopped
+	}
 	go func() {
 		defer close(stopped)
 		select {
@@ -138,7 +165,7 @@ func eof(r io.Reader) <-chan struct{} {
 
 // configure puts the two addresses this process was told to use into the configuration the daemon
 // reads, keeping everything else the folder already had.
-func configure(paths service.DataPaths, socks, api string) error {
+func configure(paths service.DataPaths, socks, api, token string) error {
 	cfg, _, err := config.Load(paths.Config)
 	if err != nil {
 		return err
@@ -152,6 +179,9 @@ func configure(paths service.DataPaths, socks, api string) error {
 	// Nobody types a password into a phone's loopback API: the local token is the credential, and a
 	// dashboard login would only be something to lose.
 	cfg.Dashboard.Username = ""
+	if token != "" {
+		cfg.Dashboard.LocalToken = token
+	}
 	// The app turns the whole phone's tunnel on; a proxy that sleeps while it is on would be a
 	// connection that dies in the pocket.
 	cfg.Proxy.IdleSleep = 0

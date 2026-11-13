@@ -21,6 +21,8 @@ import (
 	"sync/atomic"
 	"syscall"
 	"time"
+
+	"github.com/armanlife/arman-vpn-client/core/internal/sockprotect"
 )
 
 // tunState is the running TUN adapter.
@@ -119,17 +121,21 @@ func local(addr netip.Addr) bool {
 // TUN may start or stop between them.
 func Dialer(timeout time.Duration) *net.Dialer {
 	d := ClientDialer(timeout)
-	d.Control = func(network, address string, c syscall.RawConn) error {
+	d.Control = sockprotect.Compose(func(network, address string, c syscall.RawConn) error {
 		noteOwn(address)
 		return Control(network, address, c)
-	}
+	})
 	return d
 }
 
 // ClientDialer is Dialer for a client's connection (a direct route), which
 // is not noted as this program's own.
+//
+// Both dialers carry the protect hook too: on a phone the socket is handed to
+// the app's VpnService before it is connected, or the engine's own traffic would
+// fall back into the tunnel it is carrying.
 func ClientDialer(timeout time.Duration) *net.Dialer {
-	d := &net.Dialer{Timeout: timeout, Control: Control}
+	d := &net.Dialer{Timeout: timeout, Control: sockprotect.Compose(Control)}
 	if current.Load() != nil {
 		d.Resolver = physicalResolver
 	}
@@ -233,9 +239,9 @@ func ListenUDP(dst netip.Addr) (*net.UDPConn, error) {
 	if dst.Is6() {
 		network = "udp6"
 	}
-	lc := net.ListenConfig{Control: func(network, _ string, c syscall.RawConn) error {
+	lc := net.ListenConfig{Control: sockprotect.Compose(func(network, _ string, c syscall.RawConn) error {
 		return Control(network, netip.AddrPortFrom(dst, 0).String(), c)
-	}}
+	})}
 	pc, err := lc.ListenPacket(context.Background(), network, ":0")
 	if err != nil {
 		return nil, err
@@ -261,6 +267,6 @@ func dialDNS(ctx context.Context, network, _ string) (net.Conn, error) {
 		return nil, errors.New("the network outside the TUN adapter has no DNS servers")
 	}
 	server := servers[int(dnsTurn.Add(1))%len(servers)]
-	d := net.Dialer{Control: Control}
+	d := net.Dialer{Control: sockprotect.Compose(Control)}
 	return d.DialContext(ctx, network, server.String())
 }
