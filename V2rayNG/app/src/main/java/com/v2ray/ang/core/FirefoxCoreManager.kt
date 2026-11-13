@@ -15,6 +15,7 @@ import java.io.File
 import java.net.InetSocketAddress
 import java.net.Socket
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.min
 
 /**
@@ -49,8 +50,24 @@ object FirefoxCoreManager {
     /** How long one probe of a loopback port waits before calling it closed. */
     private const val PROBE_TIMEOUT_MS = 400
 
+    /** How long the account question may take; it is answered from memory by the engine. */
+    private const val ACCOUNT_QUERY_TIMEOUT_MS = 1_500
+
     /** The prefix the app's own ELF libraries carry, which the installer keeps for the engine too. */
     private const val LIBRARY_PREFIX = "lib"
+
+    /** The engine's own folder inside [AppConfig.FIREFOX_ENGINE_DIRECTORY], which holds its store. */
+    private const val DATA_SUBDIRECTORY = "data"
+
+    /** The abstract socket name a session's protect server listens on; random per start. */
+    private const val PROTECT_SOCKET_PREFIX = "omni-firefox-"
+
+    /** The engine's flag naming that socket; see firefox-core/cmd/firefoxclient. */
+    private const val PROTECT_SOCKET_FLAG = "-protect-socket"
+
+    /** Where the engine keeps its store, and the login its loopback API answers this app with. */
+    private const val DATA_DIR_FLAG = "-data-dir"
+    private const val TOKEN_FLAG = "-local-token"
 
     /** Owns the log pump alone, so a failing reader cannot take anything else down with it. */
     private val logScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -60,6 +77,38 @@ object FirefoxCoreManager {
     @Volatile private var childJob: kotlinx.coroutines.Job? = null
 
     @Volatile private var apiPort: Int = 0
+
+    /**
+     * The protect server this engine's session was started with, when the app runs as a VPN.
+     *
+     * The engine carries the phone's traffic; the sockets it opens to Mozilla must therefore come out
+     * of the phone's own network and not back into the tunnel it is carrying. Only the app that owns the
+     * VpnService can take a socket out of it, so the app serves this handshake and the engine hands it
+     * every socket before connecting.
+     */
+    @Volatile private var protectServer: MasterDnsProtectServer? = null
+
+    /** How many sockets the engine asked the app to protect, and how many of those were refused. */
+    private val protectRequests = AtomicInteger()
+    private val protectRefusals = AtomicInteger()
+
+    /** The last line the engine printed, which is how a start that failed says why. */
+    @Volatile private var lastEngineLine: String = ""
+
+    private fun engineSaid(): String = lastEngineLine.ifBlank { "no output" }
+
+    /** Why the last start did not come up, as the screen should say it; empty after a start that did. */
+    @Volatile private var lastFailure: String? = null
+
+    /**
+     * The reason the last start failed, in the app's language.
+     *
+     * A start that failed for a reason the engine itself printed (no account yet, a port taken, a
+     * certificate store it could not read) used to reach the screen as "did not start": true, and of no
+     * use to anybody. The engine's own last line is kept and returned instead.
+     */
+    fun lastFailure(context: Context): String =
+        lastFailure ?: context.getString(com.v2ray.ang.R.string.firefox_engine_reason_unknown)
 
     /** Whether this app was installed with an engine for this device, and can start it. */
     fun isSupported(context: Context): Boolean = nativeLibrary(context) != null
@@ -72,7 +121,7 @@ object FirefoxCoreManager {
 
     /** Where the engine keeps its store and its token, inside this app's private files. */
     fun dataDir(context: Context): File =
-        File(context.filesDir, AppConfig.FIREFOX_ENGINE_DIRECTORY)
+        File(File(context.filesDir, AppConfig.FIREFOX_ENGINE_DIRECTORY), DATA_SUBDIRECTORY)
 
     /**
      * The engine's loopback origin, for callers that want to name it rather than have it named for
@@ -92,38 +141,92 @@ object FirefoxCoreManager {
      * @return whether the engine is listening on [apiPort] when this returns.
      */
     @Suppress("ReturnCount")
-    fun start(context: Context, socksPort: Int, apiPort: Int): Boolean {
+    fun start(
+        context: Context,
+        socksPort: Int,
+        apiPort: Int,
+        protect: ((Int) -> Boolean)? = null,
+    ): Boolean {
         if (isAlive(context) && this.apiPort == apiPort) return true
         stop()
 
+        lastFailure = null
         val library = nativeLibrary(context) ?: run {
             LogUtil.w(AppConfig.TAG, "The Firefox account engine is not installed for this device")
+            lastFailure = context.getString(com.v2ray.ang.R.string.firefox_engine_reason_missing_file)
             return false
         }
         if (!library.canExecute() && !library.setExecutable(true)) {
             LogUtil.e(AppConfig.TAG, "The Firefox account engine cannot be made executable")
+            lastFailure = context.getString(com.v2ray.ang.R.string.firefox_engine_reason_not_executable)
             return false
         }
 
         val dataDir = dataDir(context).apply {
             if (!exists() && !mkdirs()) {
                 LogUtil.e(AppConfig.TAG, "The account engine's data folder cannot be created")
+                lastFailure = context.getString(com.v2ray.ang.R.string.firefox_engine_reason_no_folder)
                 return false
             }
+        }
+
+        // The protect server lives exactly as long as this start: a server left behind would be a socket
+        // name another app could knock on, and a session without one would send the engine's own traffic
+        // into the tunnel it carries.
+        val server = protect?.let { callback ->
+            runCatching {
+                MasterDnsProtectServer(
+                    name = PROTECT_SOCKET_PREFIX + android.os.Process.myPid() + "-" + System.nanoTime(),
+                    protect = { descriptor ->
+                        protectRequests.incrementAndGet()
+                        val allowed = callback(descriptor)
+                        if (!allowed) protectRefusals.incrementAndGet()
+                        allowed
+                    },
+                    onError = { error -> LogUtil.w(AppConfig.TAG, "Firefox: protect request failed", error) },
+                )
+            }.onFailure { error ->
+                LogUtil.e(AppConfig.TAG, "Firefox: the protect server could not be opened", error)
+            }.getOrNull()
+        }
+        protectServer = server
+
+        // The login the engine will require, written before it starts: a start without one answers nothing.
+        if (writeEngineToken(context, dataDir).not()) {
+            LogUtil.e(AppConfig.TAG, "The account engine's login could not be written")
+            closeProtectServer()
+            lastFailure = context.getString(com.v2ray.ang.R.string.firefox_engine_reason_no_folder)
+            return false
         }
 
         val launched = runCatching {
             // A child is given nothing of this app but a directory of its own and the loopback it binds
             // to. HOME points inside that directory so a TLS stack that wants a place to cache roots
             // writes where it is permitted to rather than anywhere else.
-            ProcessBuilder(library.absolutePath)
+            ProcessBuilder(
+                buildList {
+                    add(library.absolutePath)
+                    // The engine's data folder, and the login that opens its loopback API: without it the
+                    // engine answers nothing, and this app used to start it with neither.
+                    add(DATA_DIR_FLAG)
+                    add(dataDir.absolutePath)
+                    add(TOKEN_FLAG)
+                    add(token(context).orEmpty())
+                    // Without the engine cannot run: it refuses the start rather than carrying the phone's
+                    // traffic into its own tunnel.
+                    server?.let { add(PROTECT_SOCKET_FLAG); add(it.configAddress) }
+                }
+            )
                 .apply { environment()["HOME"] = dataDir.absolutePath }
                 .directory(dataDir)
                 .redirectErrorStream(true)
                 .start()
         }.onFailure { error ->
             LogUtil.e(AppConfig.TAG, "The Firefox account engine did not launch", error)
-        }.getOrNull() ?: return false
+        }.getOrNull() ?: run {
+            closeProtectServer()
+            return false
+        }
 
         synchronized(this) {
             process = launched
@@ -134,6 +237,7 @@ object FirefoxCoreManager {
         val listening = awaitListeningBlocking(apiPort, STARTUP_TIMEOUT_MS)
         if (!listening) {
             LogUtil.e(AppConfig.TAG, "The Firefox account engine started but never answered on loopback")
+            lastFailure = "engine started, no loopback answer; ${engineSaid()}"
             stop()
             return false
         }
@@ -142,8 +246,12 @@ object FirefoxCoreManager {
     }
 
     /** [start] for callers on the main thread: the same work, off it. */
-    suspend fun ensureStarted(context: Context, socksPort: Int, apiPort: Int): Boolean =
-        withContext(Dispatchers.IO) { start(context, socksPort, apiPort) }
+    suspend fun ensureStarted(
+        context: Context,
+        socksPort: Int,
+        apiPort: Int,
+        protect: ((Int) -> Boolean)? = null,
+    ): Boolean = withContext(Dispatchers.IO) { start(context, socksPort, apiPort, protect) }
 
     /**
      * Stops the engine if it is running, and forgets it.
@@ -159,6 +267,7 @@ object FirefoxCoreManager {
             apiPort = 0
             taken
         }
+        closeProtectServer()
         pump?.cancel()
         val running = child ?: return
         LogUtil.d(AppConfig.TAG, "Stopping the Firefox account engine")
@@ -180,6 +289,75 @@ object FirefoxCoreManager {
         val port = currentApiPort(context)
         return port != 0 && listeningOn(port)
     }
+
+    /**
+     * Writes the login the engine's loopback API answers this app with, once per install.
+     *
+     * It is a random value in the app's private folder: any other app on the phone can reach loopback,
+     * and none of them may add an account or spend somebody's monthly allowance. A token left over from
+     * an earlier install is replaced, so a copied folder cannot open a fresh engine.
+     */
+    private fun writeEngineToken(context: Context, dataDir: File): Boolean {
+        val file = File(dataDir, AppConfig.FIREFOX_ENGINE_TOKEN)
+        val existing = runCatching { file.readText().trim() }.getOrNull()
+        if (!existing.isNullOrEmpty() && existing.all { it.isLetterOrDigit() } && existing.length in 32..256) {
+            return true
+        }
+        return runCatching {
+            if (!dataDir.isDirectory && !dataDir.mkdirs()) return false
+            val bytes = ByteArray(32).also { java.security.SecureRandom().nextBytes(it) }
+            val token = bytes.joinToString("") { "%02x".format(it) }
+            file.writeText(token)
+            runCatching { file.setReadable(false, false); file.setReadable(true, true) }
+            true
+        }.getOrDefault(false)
+    }
+
+    /** Closes the protect server of the last start, if one is still open. */
+    private fun closeProtectServer() {
+        val server = synchronized(this) {
+            val taken = protectServer
+            protectServer = null
+            taken
+        }
+        runCatching { server?.close() }
+    }
+
+    /**
+     * Whether the engine holds at least one account, asked over its loopback API.
+     *
+     * The engine answers "no account" as a phase once it is up, so the question is how many it keeps:
+     * a row whose engine has none answers every request with nothing, and the daemon says so instead
+     * of starting the link.
+     */
+    fun hasAccount(context: Context): Boolean {
+        val token = token(context) ?: return false
+        val port = currentApiPort(context)
+        if (port == 0) return false
+        val body = runCatching {
+            val url = java.net.URL("http://${AppConfig.LOOPBACK}:$port/api/accounts")
+            val connection = (url.openConnection() as java.net.HttpURLConnection).apply {
+                connectTimeout = ACCOUNT_QUERY_TIMEOUT_MS
+                readTimeout = ACCOUNT_QUERY_TIMEOUT_MS
+                setRequestProperty("X-Local-Token", token)
+                setRequestProperty("Accept", "application/json")
+            }
+            try {
+                if (connection.responseCode != 200) return false
+                connection.inputStream.bufferedReader().use { it.readText() }
+            } finally {
+                connection.disconnect()
+            }
+        }.getOrNull() ?: return false
+        // `{"accounts":[...]}` — one entry means there is an account to carry traffic with.
+        val accounts = org.json.JSONObject(body).optJSONArray("accounts") ?: return false
+        return accounts.length() > 0
+    }
+
+    /** How the engine was protected in this start, for the log and for a person reading it. */
+    fun protectionReport(): String =
+        "protect requests=${protectRequests.get()} refused=${protectRefusals.get()} " +
+            "server=${if (protectServer != null) "up" else "none"}"
 
     /** Whether something is accepting connections on [port] on loopback. */
     fun awaitListeningBlocking(port: Int, timeoutMs: Long): Boolean {
@@ -262,13 +440,16 @@ object FirefoxCoreManager {
             child.inputStream.bufferedReader().useLines { lines ->
                 for (line in lines) {
                     if (!logScope.isActive) break
-                    LogUtil.d(AppConfig.TAG, "firefox core: ${redact(line, token)}")
+                    val clean = redact(line, token)
+                    LogUtil.d(AppConfig.TAG, "firefox core: $clean")
+                    if (clean.isNotBlank()) lastEngineLine = clean
                 }
             }
         }.onFailure { error ->
             LogUtil.d(AppConfig.TAG, "The account engine's log stopped: ${error.message}")
         }
     }
+
 
     /** Keeps a secret and an address out of a child's log line. */
     private fun redact(line: String, token: String?): String {

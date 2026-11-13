@@ -99,10 +99,18 @@ fun FirefoxScreen(
                                 Spacer(Modifier.height(10.dp))
                                 Text(
                                     "موتور حساب روی این گوشی بالا نیامد؛ بدون آن ردیف «فایرفاکس» ترافیک " +
-                                        "را عبور نمی‌دهد. یک بار دوباره امتحان کن.",
+                                        "را عبور نمی‌دهد.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.error,
                                 )
+                                if (state.problem.isNotBlank()) {
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        state.problem,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
+                                }
                                 Spacer(Modifier.height(8.dp))
                                 OutlinedButton(onClick = { viewModel.refresh() }, enabled = !state.busy) {
                                     Text("تلاش دوباره")
@@ -243,6 +251,13 @@ private fun AddAccountCard(
                 Spacer(Modifier.height(10.dp))
                 Text(
                     "حساب نداری؟ یک حساب Firefox رایگان در سایت خود موزیلا بساز و برگرد.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "موزیلا معمولاً بعد از رمز، یک کد به ایمیل یا یک تصویر امنیتی می‌خواهد؛ همان لحظه " +
+                        "همین‌جا از تو پرسیده می‌شود. اگر ورود از این شبکه مسدود باشد، صفحه مسیر دیگری " +
+                        "پیشنهاد می‌کند.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }

@@ -302,23 +302,26 @@ class MainViewModel(
         is MainStatus.ConnectionTest -> formatConnectionTestResult(status.result)
     }
 
+    /**
+     * What the status bar says about the measurement it was asked for.
+     *
+     * It describes the same figure the rows do — the fastest real response, next to the typical and the
+     * slowest one — through the same renderer, so tapping the bar and reading a row cannot show two
+     * different pings for one link. Before this, the bar showed the median and the rows showed the
+     * minimum, which is precisely what made the two disagree.
+     */
     private fun formatConnectionTestResult(result: ConnectionTestResult): String {
+        val readout = PingReadout(
+            delayMillis = result.delayMillis,
+            medianMillis = result.medianMillis,
+            maxMillis = result.maxMillis,
+            sampleCount = result.sampleCount,
+            successfulSamples = result.successfulSamples,
+            kind = result.kind,
+            partial = result.partial,
+        )
         val status = when {
-            result.delayMillis > 0L -> {
-                val delay = if (result.sampleCount > 0 && result.kind.isNotBlank()) {
-                    dataSource.getString(
-                        R.string.server_test_delay_detailed_value,
-                        result.kind,
-                        result.delayMillis,
-                        result.successfulSamples,
-                        result.sampleCount,
-                        result.jitterMillis,
-                    )
-                } else {
-                    dataSource.getString(R.string.server_test_delay_value, result.delayMillis)
-                }
-                dataSource.getString(R.string.connection_test_available, delay)
-            }
+            readout.fastest != null -> PingReadout.describeForStatusBar(localizedContext, readout)
             result.delayMillis == 0L -> dataSource.getString(R.string.connection_test_untested)
             else -> {
                 val detail = result.errorMessage.ifBlank {
@@ -1125,10 +1128,28 @@ class MainViewModel(
         // A tap while a measurement is already on its way asks for the same number twice; the second one
         // is dropped so the bar cannot be left waiting for an answer to a question it stopped owning.
         if (uiState.value.isTesting) return
-        val requestId = testRequests.beginCurrent()
-        _uiState.update { it.copy(isTesting = true, status = MainStatus.Testing) }
-        dataSource.testCurrentServerRealPing(requestId)
-        scheduleCurrentTestTimeout(requestId)
+        // Everything this tap touches — the request registry, the state the bar draws from, the ordered
+        // broadcast to the daemon — runs inside one guard: a throw here used to travel out of the click
+        // handler on the main thread, which is the app gone and the tunnel with it. A tap that cannot be
+        // answered now says so on the bar and leaves the app running.
+        try {
+            val requestId = testRequests.beginCurrent()
+            _uiState.update { it.copy(isTesting = true, status = MainStatus.Testing) }
+            dataSource.testCurrentServerRealPing(requestId)
+            scheduleCurrentTestTimeout(requestId)
+        } catch (error: Throwable) {
+            if (error is CancellationException) throw error
+            LogUtil.e(AppConfig.TAG, "The status bar's test could not be started", error)
+            testRequests.invalidateCurrent()
+            cancelCurrentTestTimeout()
+            val unanswered = ConnectionTestResult(
+                delayMillis = -1L,
+                errorMessage = dataSource.getString(R.string.connection_test_no_answer_from_service),
+            )
+            _uiState.update {
+                it.copy(isTesting = false, status = MainStatus.ConnectionTest(unanswered))
+            }
+        }
     }
 
     /**
@@ -1147,10 +1168,34 @@ class MainViewModel(
                 delayMillis = -1L,
                 errorMessage = dataSource.getString(R.string.connection_test_no_answer_from_service),
             )
+            // A daemon that went away while the bar waited: the bar says the service is not there any
+            // more, rather than leaving "connected" over a number that never came.
+            val stillRunning = askServiceIfRunning()
             _uiState.update {
-                it.copy(isTesting = testRequests.isTesting, status = MainStatus.ConnectionTest(unanswered))
+                it.copy(
+                    isTesting = testRequests.isTesting,
+                    isRunning = it.isRunning && stillRunning,
+                    status = if (stillRunning) {
+                        MainStatus.ConnectionTest(unanswered)
+                    } else {
+                        MainStatus.Disconnected
+                    },
+                )
             }
         }
+    }
+
+    /**
+     * Whether the daemon is still running, as the newest state it reported says.
+     *
+     * The query is fire-and-forget: a daemon that died meanwhile cannot answer it, and the event it
+     * would have sent is what changes [uiState]. So this asks, waits a moment for the answer to arrive,
+     * and believes the state it then has — rather than running a second clock of its own.
+     */
+    private suspend fun askServiceIfRunning(): Boolean {
+        dataSource.queryServiceState()
+        delay(SERVICE_QUERY_SETTLE_MS)
+        return uiState.value.isRunning
     }
 
     private fun cancelCurrentTestTimeout() {
@@ -1241,6 +1286,9 @@ class MainViewModel(
 
     companion object {
         private const val TEST_RESULT_FLUSH_INTERVAL_MS = 500L
+
+        /** How long the status bar waits for a state answer before believing the state it already has. */
+        private const val SERVICE_QUERY_SETTLE_MS = 400L
 
         /**
          * How long the status bar waits for the daemon to answer one measurement.

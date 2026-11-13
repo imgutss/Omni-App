@@ -2,6 +2,7 @@ package com.v2ray.ang.firefox
 
 import android.content.Context
 import com.v2ray.ang.AppConfig
+import com.v2ray.ang.core.CoreVpnProtect
 import com.v2ray.ang.core.FirefoxCoreManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -110,6 +111,9 @@ object FirefoxEngineApi {
             context,
             socksPort = FirefoxBridge.port(),
             apiPort = FirefoxBridge.DEFAULT_API_PORT,
+            // Started from the account screen, before any connection: the VPN may already be carrying the
+            // app's own traffic, and the engine's sign-in must not be tunneled through itself.
+            protect = CoreVpnProtect.current(),
         ) && token(context) != null && status(context) != null
     }
 

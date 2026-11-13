@@ -34,6 +34,9 @@ object FirefoxBridge {
 
     private const val TAG = "FirefoxBridge"
 
+    /** How long one probe of a loopback port waits before calling it closed. */
+    private const val PROBE_TIMEOUT_MS = 400
+
     enum class Engine {
         /** A local proxy answered on the configured port: the account path can carry traffic now. */
         AVAILABLE,
@@ -58,16 +61,24 @@ object FirefoxBridge {
         MmkvManager.encodeSettings(AppConfig.PREF_FIREFOX_ENABLED, enabled.toString())
     }
 
-    /** True when a socket on the loopback port of the account engine accepts a connection. */
-    fun isListening(): Boolean = try {
-        ServerSocket().use { probe ->
-            probe.reuseAddress = true
-            probe.bind(InetSocketAddress("127.0.0.1", port()))
+    /**
+     * Whether the account engine is up and answering on loopback right now.
+     *
+     * Two ports matter and the engine binds both: [port] is the SOCKS listener the profile is built on,
+     * and [DEFAULT_API_PORT] is the account API the screen calls. This used to bind the SOCKS port
+     * itself and call a refusal a running engine — so an Xray outbound or any other app holding that
+     * port made the screen say "ready" while nothing was answering.
+     */
+    fun isListening(): Boolean = listening(port()) && listening(DEFAULT_API_PORT)
+
+    /** Whether something accepts a connection on [port] on loopback, without taking the port. */
+    private fun listening(port: Int): Boolean = try {
+        java.net.Socket().use { probe ->
+            probe.connect(InetSocketAddress(AppConfig.LOOPBACK, port), PROBE_TIMEOUT_MS)
         }
+        true
+    } catch (_: Exception) {
         false
-    } catch (e: Exception) {
-        // The port is taken, which is what a listening engine looks like; anything else is not our business.
-        e is java.io.IOException
     }
 
     /**
@@ -76,23 +87,13 @@ object FirefoxBridge {
      * A missing engine is reported as [Engine.MISSING] and never approximated: routing the row "direct" would
      * leak the person's traffic while the UI claimed a tunnel.
      */
-    fun engine(context: Context): Engine = if (isListening()) Engine.AVAILABLE else Engine.MISSING
-
     /**
-     * The Xray outbound that sends a profile through this phone's account engine.
+     * Whether this build can carry the account path right now.
      *
-     * It is a plain SOCKS outbound to the loopback port: the engine owns the Mozilla session, the account's
-     * allowance and its accounting, so nothing about the account crosses into the Xray config. There is no
-     * username or password to put in the config, because the engine authenticates with the pass it minted
-     * from the person's own tokens.
+     * [Engine.MISSING] is never approximated with a direct route: that would send somebody's traffic out
+     * in the clear while the screen claimed a tunnel.
      */
-    fun socksOutboundJson(port: Int = port()): String = """
-        {
-          "protocol": "socks",
-          "settings": { "servers": [ { "address": "127.0.0.1", "port": $port } ] },
-          "tag": "firefox-account"
-        }
-    """.trimIndent()
+    fun engine(): Engine = if (isListening()) Engine.AVAILABLE else Engine.MISSING
 
     /** Logs, without any account data, why the path is unavailable; the screen shows the same reason. */
     fun describeUnavailable(context: Context): String {
@@ -121,11 +122,13 @@ object FirefoxBridge {
     /**
      * Makes sure the group and its one row exist, and returns the guid of that row.
      *
-     * The row is a real profile in the normal list, so selecting it starts the normal service with the normal
-     * kill-switch, stats and per-app rules. It is a **custom** profile whose whole configuration is one SOCKS
-     * outbound to the loopback port of the account engine: the engine owns the account, the allowance and the
-     * accounting, and Xray only carries the phone's traffic into it. Nothing about the person's tokens enters
-     * an Xray config, and no direct outbound is ever offered as a fallback.
+     * The row is a real profile in the normal list, so selecting it starts the normal service with the
+     * normal kill-switch, stats and per-app rules. It is a **SOCKS profile** whose server is the engine's
+     * own loopback listener: the engine owns the account, the allowance and the accounting, and Xray only
+     * carries the phone's traffic into it. That was the bug in the first version of this screen — the row
+     * was written as a CUSTOM profile with a hand-written configuration, which the speed test reads as a
+     * whole core of its own to start, and a hand-written configuration with no inbound is not a profile
+     * anything can measure or edit.
      */
     fun ensureGroup(): String {
         val name = GROUP_NAME
@@ -137,36 +140,35 @@ object FirefoxBridge {
         val guids = MmkvManager.decodeServerList(subId)
         val guid = guids.firstOrNull() ?: Utils.getUuid()
         val profile = ProfileItem(
-            configType = EConfigType.CUSTOM,
+            configType = EConfigType.SOCKS,
             subscriptionId = subId,
             remarks = "Firefox",
             description = "account on this phone",
+            server = AppConfig.LOOPBACK,
+            serverPort = port().toString(),
             addedTime = System.currentTimeMillis(),
         )
+        MmkvManager.encodeServerConfig(guid, profile)
         if (guids.isEmpty()) {
-            MmkvManager.encodeServerConfigWithRaw(guid, profile, socksConfig(port()))
             MmkvManager.encodeServerList(mutableListOf(guid), subId)
-        } else {
-            // Keep the row's configuration in step with the port the engine actually listens on.
-            MmkvManager.encodeServerConfigWithRaw(guid, profile, socksConfig(port()))
         }
         return guid
     }
 
     /**
-     * The smallest Xray configuration that is honest about this path: one SOCKS outbound to the loopback port
-     * and a routing rule that sends everything to it — no `freedom` outbound, so a missing engine cannot
-     * quietly turn into a direct connection.
+     * Whether the engine holds a signed-in account right now.
+     *
+     * Asked of the engine itself, through the same login file the screen uses, and bounded: an engine
+     * that is not answering means no account, which the daemon then reports instead of starting a link
+     * that would carry nothing.
      */
-    fun socksConfig(port: Int = port()): String = """
-        {
-          "log": { "loglevel": "warning" },
-          "inbounds": [],
-          "outbounds": [
-            { "protocol": "socks", "tag": "firefox-account",
-              "settings": { "servers": [ { "address": "127.0.0.1", "port": $port } ] } }
-          ],
-          "routing": { "domainStrategy": "AsIs", "rules": [] }
-        }
-    """.trimIndent()
+    fun hasAccount(): Boolean = com.v2ray.ang.core.FirefoxCoreManager.hasAccount(
+        com.v2ray.ang.AngApplication.application
+    )
+
+    /**
+     * The engine's loopback SOCKS address as a profile URI, for a person who wants the account row in a
+     * client other than this one. The app itself builds a [ProfileItem] directly (see [ensureGroup]).
+     */
+    fun socksUri(): String = "socks://${AppConfig.LOOPBACK}:${port()}#Firefox"
 }

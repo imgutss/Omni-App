@@ -426,6 +426,8 @@
     <string name="server_test_delay_detailed_value">%1$s %2$d میلی‌ثانیه · ~%5$d · ≤%6$d میلی‌ثانیه</string>
     <string name="server_test_delay_detailed_partial">%1$s %2$d میلی‌ثانیه · ~%5$d · ≤%6$d میلی‌ثانیه · %3$d/%4$d</string>
     <string name="server_test_delay_detailed_partial_no_spread">%1$s %2$d میلی‌ثانیه · %3$d/%4$d</string>
+    <string name="connection_test_ping_value">اتصال برقرار شد، سریع‌ترین پاسخ %1$d میلی‌ثانیه</string>
+    <string name="connection_test_ping_summary">سریع‌ترین %1$d · معمول ~%2$d · کندترین ≤%3$d میلی‌ثانیه</string>
     <string name="firefox_title">فایرفاکس</string>
 
     <string name="title_crash_traces">خطاهای ثبت‌شده</string>
@@ -435,7 +437,12 @@
     <string name="crash_traces_copy">کپی همه</string>
     <string name="crash_traces_clear">پاک کردن</string>
     <string name="firefox_engine_missing">این نسخه موتور حساب فایرفاکس را ندارد؛ پس این ردیف نمی‌تواند ترافیک عبور بدهد.</string>
-    <string name="firefox_engine_not_started">موتور حساب فایرفاکس روشن نشد.</string>
+    <string name="firefox_engine_not_started">موتور حساب فایرفاکس روشن نشد. %1$s</string>
+    <string name="firefox_no_account">هنوز هیچ حساب فایرفاکسی روی این گوشی وارد نشده. از ☰ › فایرفاکس با حساب خودت وارد شو و بعد دوباره وصل شو.</string>
+    <string name="firefox_engine_reason_unknown">دلیلش معلوم نشد</string>
+    <string name="firefox_engine_reason_missing_file">این نسخه برای پردازندهٔ این گوشی موتور ندارد</string>
+    <string name="firefox_engine_reason_not_executable">اندروید اجازهٔ اجرای موتور نصب‌شده را به اپ نداد</string>
+    <string name="firefox_engine_reason_no_folder">اپ نتوانست پوشه‌ای برای حساب بسازد</string>
     <string name="firefox_engine_not_listening">موتور حساب فایرفاکس روی پورت %1$d پاسخ نمی‌دهد.</string>
     <string name="firefox_subtitle">حساب خودت، ماهی ۵۰ گیگ</string>
     <string name="server_test_no_response">بدون پاسخ</string>

@@ -53,6 +53,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -370,39 +371,21 @@ private fun ServerListItem(
     LaunchedEffect(row.testDelayMillis,row.testSampleCount,row.testJitterMillis,row.testKind) {
         if(row.testDelayMillis>0L && observedLatency.lastOrNull()!=row.testDelayMillis) observedLatency=(observedLatency+row.testDelayMillis).takeLast(16)
     }
-    val testResult = when {
-        row.testDelayMillis == 0L -> ""
-        row.testDelayMillis < 0L && row.testSampleCount > 0 -> stringResource(
-            R.string.server_test_no_response_samples,
-            row.testSuccessfulSamples,
-            row.testSampleCount,
-        )
-        row.testDelayMillis < 0L -> stringResource(R.string.server_test_no_response)
-        // Every row says the same three facts about the same measurement: the fastest real response
-        // (the number a user calls "my ping"), the typical one, and the slowest one. A lossy test also
-        // says how many samples answered, so a best-of-two is never presented as if all three had.
-        row.testSampleCount > 0 && row.testKind.isNotBlank() && row.testMaxMillis > 0L -> stringResource(
-            if (row.testPartial) {
-                R.string.server_test_delay_detailed_partial
-            } else {
-                R.string.server_test_delay_detailed_value
-            },
-            row.testKind,
-            row.testDelayMillis,
-            row.testSuccessfulSamples,
-            row.testSampleCount,
-            row.testMedianMillis,
-            row.testMaxMillis,
-        )
-        row.testSampleCount > 0 && row.testKind.isNotBlank() -> stringResource(
-            R.string.server_test_delay_detailed_partial_no_spread,
-            row.testKind,
-            row.testDelayMillis,
-            row.testSuccessfulSamples,
-            row.testSampleCount,
-        )
-        else -> stringResource(R.string.server_test_delay_value, row.testDelayMillis)
-    }
+    // Every row says the same three facts about the same measurement — the fastest real response (the
+    // number a person calls "my ping"), the typical one, and the slowest one — through the renderer the
+    // status bar uses too, so the row and the bar can never describe one link as two different pings.
+    val testResult = PingReadout.describe(
+        LocalContext.current,
+        PingReadout(
+            delayMillis = row.testDelayMillis,
+            medianMillis = row.testMedianMillis,
+            maxMillis = row.testMaxMillis,
+            sampleCount = row.testSampleCount,
+            successfulSamples = row.testSuccessfulSamples,
+            kind = row.testKind,
+            partial = row.testPartial,
+        ),
+    )
     val selectedStateDescription = if (isSelected) {
         stringResource(R.string.acc_selected_server)
     } else {

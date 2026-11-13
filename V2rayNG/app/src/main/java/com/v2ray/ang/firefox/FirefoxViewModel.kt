@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.v2ray.ang.core.FirefoxCoreManager
+import com.v2ray.ang.util.LogUtil
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -64,6 +65,14 @@ class FirefoxViewModel(application: Application) : AndroidViewModel(application)
             val supported = FirefoxCoreManager.isSupported(getApplication())
             val up = supported && FirefoxEngineApi.ensureEngine(getApplication())
             val accounts = if (up) FirefoxEngineApi.accounts(getApplication()).orEmpty() else emptyList()
+            if (up) {
+                // The row the connection list offers is created as soon as the engine can carry it, so a
+                // person who opened this screen finds "Firefox" in their groups instead of having to
+                // wonder where it went.
+                runCatching { FirefoxBridge.ensureGroup() }.onFailure { error ->
+                    LogUtil.w("Firefox", "the account group could not be created", error)
+                }
+            }
             mutableState.update {
                 it.copy(
                     engine = when {
@@ -73,6 +82,8 @@ class FirefoxViewModel(application: Application) : AndroidViewModel(application)
                     },
                     accounts = accounts,
                     busy = false,
+                    // A start that failed says why, in words, instead of only that it failed.
+                    problem = if (up) "" else FirefoxCoreManager.lastFailure(getApplication()),
                 )
             }
         }

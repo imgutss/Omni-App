@@ -214,6 +214,11 @@ object CoreServiceManager {
         ContextCompat.registerReceiver(service, mMsgReceive, mFilter, Utils.receiverFlags())
 
         currentVpnInterface = vpnInterface
+        // The account engine can also be started from the account screen, while this service runs: it
+        // asks here for the VpnService that can take its sockets out of the tunnel.
+        CoreVpnProtect.attach(
+            if (vpnInterface == null) null else { fd -> serviceControl?.get()?.vpnProtect(fd) == true }
+        )
         launchCore(service, vpnInterface)
         startNetworkMonitor(service)
     }
@@ -505,9 +510,29 @@ object CoreServiceManager {
         if (!FirefoxCoreManager.isSupported(service)) {
             throw StartFailure(service.getString(R.string.firefox_engine_missing))
         }
-        if (!FirefoxCoreManager.start(service, socksPort = port, apiPort = FirefoxBridge.DEFAULT_API_PORT)) {
+        // In VPN mode the engine's own traffic has to leave the phone outside the tunnel it is carrying,
+        // and only this app's VpnService can take a socket out of a VPN, so it is served here. In proxy
+        // mode there is no VPN to keep it out of.
+        // An engine with no account in it accepts the SOCKS listener and then answers every request with
+        // "no account": the row would look connected and carry nothing. The reason is said here instead.
+        if (!FirefoxBridge.hasAccount()) {
+            throw StartFailure(service.getString(R.string.firefox_no_account))
+        }
+        val protect: ((Int) -> Boolean)? = CoreVpnProtect.current()
+        if (!FirefoxCoreManager.start(
+                service,
+                socksPort = port,
+                apiPort = FirefoxBridge.DEFAULT_API_PORT,
+                protect = protect,
+            )
+        ) {
             FirefoxCoreManager.stop()
-            throw StartFailure(service.getString(R.string.firefox_engine_not_started))
+            throw StartFailure(
+                service.getString(
+                    R.string.firefox_engine_not_started,
+                    FirefoxCoreManager.lastFailure(service),
+                )
+            )
         }
         if (!FirefoxCoreManager.awaitListeningBlocking(port, AetherDelayTester.TEST_BUDGET_MS)) {
             FirefoxCoreManager.stop()
@@ -924,6 +949,8 @@ object CoreServiceManager {
         networkMonitor?.unregister()
         networkMonitor = null
         currentVpnInterface = null
+        // No VPN is left to take a socket out of, and an engine started after this must not be told one is.
+        CoreVpnProtect.detach()
         // First, so that nothing further down posts the notification again: the proxy-only and the
         // root service tear down in onDestroy, out of the foreground already, where a post outlives them.
         NotificationManager.cancelNotification()
