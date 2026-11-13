@@ -18,110 +18,53 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.produceState
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.v2ray.ang.ui.compose.AppTopBar
+import com.v2ray.ang.ui.compose.NavigationBarsSpacer
 import com.v2ray.ang.ui.compose.OmniButton as Button
 import com.v2ray.ang.ui.compose.OmniCard as Card
 import com.v2ray.ang.ui.compose.OmniOutlinedButton as OutlinedButton
-import com.v2ray.ang.ui.compose.NavigationBarsSpacer
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
- * The Firefox screen: sign in to **your own** account on **this** phone, see **your own** allowance, and
- * choose the account the connection uses.
+ * The Firefox screen: a person signs in to **their own** Mozilla account on **this** phone, reads
+ * **their own** allowance, and picks the account the connection spends.
  *
- * The screen is deliberately explicit about two things people are right to ask about:
+ * Two things are said plainly, because people are right to ask them:
  *
- * - the account stays here. The copy says so, and the code backs it up: nothing is uploaded anywhere except
- *   to Mozilla itself;
- * - this is not an official Mozilla app. The copy says that too, and that an unofficial client can put an
- *   account at risk, so nobody is surprised later.
+ * - the account stays here. The engine keeps it in this app's private storage, the screen never holds
+ *   anything but what it shows, and nothing is sent anywhere except to Mozilla's own servers;
+ * - this is not an official Mozilla app, and an unofficial client can put an account at risk.
  *
- * @param engineAvailable whether this build can actually carry traffic on the selected row. When it cannot,
- *   the screen says so before anyone signs in, rather than failing at connect time.
+ * @param viewModel owns the engine calls and the state they produce.
  */
 @Composable
 fun FirefoxScreen(
-    engineAvailable: Boolean,
-    port: Int,
+    viewModel: FirefoxViewModel,
     onBack: () -> Unit,
 ) {
-    var accounts by remember { mutableStateOf(FirefoxAccountStore.accounts()) }
-    var signingIn by remember { mutableStateOf(false) }
-    var readingQuotaFor by remember { mutableStateOf<String?>(null) }
-    var error by remember { mutableStateOf("") }
-    var showForm by remember { mutableStateOf(accounts.isEmpty()) }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    val scope = rememberCoroutineScope()
-
-    fun refreshAccounts() {
-        accounts = FirefoxAccountStore.accounts()
-    }
-
-    // The row the account path carries traffic on: created here, once, so the person opens the server list and
-    // finds "Firefox" already there instead of importing anything. Its configuration is rewritten each time
-    // this screen opens, so it always points at the port the engine really listens on.
-    val context = LocalContext.current
-    val engineState by produceState(
-        initialValue = engineAvailable to port,
-        key1 = engineAvailable,
-        key2 = port,
-    ) {
-        value = withContext(Dispatchers.IO) {
-            runCatching { FirefoxBridge.ensureGroup() }
-            (FirefoxBridge.engine(context) == FirefoxBridge.Engine.AVAILABLE) to FirefoxBridge.port()
-        }
-    }
-
-    fun readQuota(account: FirefoxAccount) {
-        readingQuotaFor = account.id
-        scope.launch {
-            val result = withContext(Dispatchers.IO) {
-                runCatching { FirefoxSignIn.readQuota(account) }
-            }
-            readingQuotaFor = null
-            result.fold(
-                onSuccess = { quota ->
-                    FirefoxAccountStore.saveQuota(account.id, quota)
-                    refreshAccounts()
-                },
-                onFailure = { failure ->
-                    val reason = (failure as? FirefoxError)?.message ?: failure.message.orEmpty()
-                    FirefoxAccountStore.saveProblem(account.id, reason)
-                    refreshAccounts()
-                },
-            )
-        }
-    }
-
-    LaunchedEffect(accounts.map { it.id }) {
-        // Read each account's own allowance once, so the card is never blank in a fresh install.
-        accounts.filter { it.quotaReadAt == 0L && it.problem.isBlank() }.take(1).forEach { readQuota(it) }
-    }
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val engineReady = state.engine == FirefoxViewModel.Engine.READY
 
     Scaffold(
         topBar = { AppTopBar(title = "Firefox", onBackClick = onBack) },
     ) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxWidth().padding(padding).padding(horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(padding)
+                .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
@@ -134,224 +77,120 @@ fun FirefoxScreen(
                         )
                         Spacer(Modifier.height(6.dp))
                         Text(
-                            "با حساب Firefox خودت، ماهی تا ۵۰ گیگ ترافیک داری. حساب و رمز فقط روی همین گوشی " +
-                                "می‌مانند و هیچ‌جای دیگری فرستاده نمی‌شوند. هر کسی که این اپ را نصب می‌کند، " +
-                                "فقط از سهمیهٔ حساب خودش استفاده می‌کند.",
+                            "با حساب Firefox خودت، ماهی تا ۵۰ گیگ ترافیک داری. حساب، رمز و توکن‌ها فقط " +
+                                "روی همین گوشی می‌مانند و فقط با سرورهای خودِ موزیلا حرف می‌زنند. " +
+                                "هر کسی که این اپ را نصب می‌کند، فقط از سهمیهٔ حساب خودش استفاده می‌کند.",
                             style = MaterialTheme.typography.bodySmall,
                         )
-                        if (!engineAvailable) {
-                            Spacer(Modifier.height(10.dp))
-                            Text(
-                                "این نسخه هنوز موتور اتصال فایرفاکس را همراه ندارد؛ پس ورود و دیدن سهمیه کار " +
-                                    "می‌کند، اما ردیف «فایرفاکس» تا نسخهٔ بعدی ترافیک را عبور نمی‌دهد.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (accounts.isEmpty() && showForm) {
-                item {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(16.dp)) {
-                            Text("حساب دارم، وارد می‌شوم", fontWeight = FontWeight.SemiBold)
-                            Spacer(Modifier.height(10.dp))
-                            OutlinedTextField(
-                                value = email,
-                                onValueChange = { email = it },
-                                label = { Text("ایمیل حساب Firefox") },
-                                singleLine = true,
-                                enabled = !signingIn,
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Email,
-                                    imeAction = ImeAction.Next,
-                                ),
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            OutlinedTextField(
-                                value = password,
-                                onValueChange = { password = it },
-                                label = { Text("رمز") },
-                                singleLine = true,
-                                enabled = !signingIn,
-                                visualTransformation = PasswordVisualTransformation(),
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Password,
-                                    imeAction = ImeAction.Done,
-                                ),
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                            Spacer(Modifier.height(12.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(
-                                    onClick = {
-                                        if (email.isBlank() || password.isBlank()) {
-                                            error = "ایمیل و رمز را کامل کن."
-                                            return@Button
-                                        }
-                                        error = ""
-                                        signingIn = true
-                                        scope.launch {
-                                            val outcome = withContext(Dispatchers.IO) {
-                                                runCatching { FirefoxSignIn.signIn(email, password) }
-                                            }
-                                            signingIn = false
-                                            outcome.fold(
-                                                onSuccess = { account ->
-                                                    FirefoxAccountStore.save(account)
-                                                    password = ""
-                                                    showForm = false
-                                                    refreshAccounts()
-                                                    readQuota(FirefoxAccountStore.activeAccount() ?: account)
-                                                },
-                                                onFailure = { failure ->
-                                                    error = when ((failure as? FirefoxError)?.kind) {
-                                                        FirefoxError.Kind.CHALLENGE ->
-                                                            "موزیلا یک بررسی امنیتی نشان داد. کمی بعد دوباره امتحان کن، " +
-                                                                "یا وای‌فای/دیتا را عوض کن. اگر حسابت با گوگل یا اپل " +
-                                                                "ساخته شده، باید با مرورگر وارد شوی."
-                                                        FirefoxError.Kind.NETWORK ->
-                                                            "اینترنت وصل نیست یا درخواست از گوشی بیرون نرفت."
-                                                        FirefoxError.Kind.REGION ->
-                                                            "سرویس ورود موزیلا از این شبکه در دسترس نیست."
-                                                        else -> failure.message ?: "ورود انجام نشد."
-                                                    }
-                                                },
-                                            )
-                                        }
-                                    },
-                                    enabled = !signingIn,
-                                ) {
-                                    if (signingIn) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(16.dp),
-                                            strokeWidth = 2.dp,
-                                        )
-                                        Spacer(Modifier.size(8.dp))
-                                    }
-                                    Text("ورود و افزودن حساب")
-                                }
-                                OutlinedButton(onClick = { showForm = false }, enabled = !signingIn) {
-                                    Text("بعداً")
-                                }
-                            }
-                            if (error.isNotBlank()) {
+                        when (state.engine) {
+                            FirefoxViewModel.Engine.STARTING -> {
                                 Spacer(Modifier.height(10.dp))
-                                Text(error, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                            }
-                        }
-                    }
-                }
-                item {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(16.dp)) {
-                            Text("حساب نداری؟", fontWeight = FontWeight.SemiBold)
-                            Spacer(Modifier.height(6.dp))
-                            Text(
-                                "یک حساب Firefox رایگان بساز و برگرد. ساخت حساب در سایت خود موزیلا انجام می‌شود.",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (accounts.isNotEmpty()) {
-                items(accounts, key = { it.id }) { account ->
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(16.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                                    Spacer(Modifier.size(8.dp))
                                     Text(
-                                        account.email.ifBlank { "حساب فایرفاکس" },
-                                        fontWeight = FontWeight.SemiBold,
-                                        maxLines = 1,
-                                        fontSize = 15.sp,
-                                    )
-                                    Text(
-                                        if (account.active) "حساب فعال اتصال" else "آماده",
-                                        style = MaterialTheme.typography.labelSmall,
+                                        "موتور حساب در حال راه‌اندازی است…",
+                                        style = MaterialTheme.typography.bodySmall,
                                     )
                                 }
-                                if (readingQuotaFor == account.id) {
-                                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                                }
                             }
-                            Spacer(Modifier.height(12.dp))
-                            QuotaSummary(account)
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                "برای اتصال: در لیست سرورها گروه «Firefox» را باز کن و ردیف «Firefox» را انتخاب " +
-                                    "کن، بعد دکمهٔ اتصال را بزن. ترافیک فقط از سهمیهٔ همین حساب می‌رود.",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                            if (engineState.first) {
-                                Spacer(Modifier.height(4.dp))
-                                Text(
-                                    "موتور این گوشی روی پورت محلی ${engineState.second} آماده است.",
-                                    style = MaterialTheme.typography.labelSmall,
-                                )
-                            }
-                            Spacer(Modifier.height(12.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                if (!account.active) {
-                                    OutlinedButton(onClick = {
-                                        FirefoxAccountStore.setActive(account.id)
-                                        refreshAccounts()
-                                    }) { Text("انتخاب برای اتصال") }
-                                }
-                                OutlinedButton(onClick = { readQuota(account) }) { Text("به‌روزرسانی سهمیه") }
-                                OutlinedButton(onClick = {
-                                    FirefoxAccountStore.remove(account.id)
-                                    refreshAccounts()
-                                }) { Text("حذف از این گوشی") }
-                            }
-                            if (account.problem.isNotBlank()) {
+
+                            FirefoxViewModel.Engine.MISSING -> {
                                 Spacer(Modifier.height(10.dp))
                                 Text(
-                                    account.problem,
+                                    "موتور حساب روی این گوشی بالا نیامد؛ بدون آن ردیف «فایرفاکس» ترافیک " +
+                                        "را عبور نمی‌دهد. یک بار دوباره امتحان کن.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.error,
                                 )
+                                Spacer(Modifier.height(8.dp))
+                                OutlinedButton(onClick = { viewModel.refresh() }, enabled = !state.busy) {
+                                    Text("تلاش دوباره")
+                                }
+                            }
+
+                            FirefoxViewModel.Engine.READY -> {
+                                Spacer(Modifier.height(10.dp))
+                                Text(
+                                    "موتور آماده است و روی پورت محلی ${state.port} گوش می‌دهد.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
                             }
                         }
                     }
                 }
+            }
 
-                item {
-                    OutlinedButton(onClick = { showForm = true; error = "" }, modifier = Modifier.fillMaxWidth()) {
-                        Text("افزودن حساب دیگرِ خودم")
+            state.signIn?.let { session ->
+                item { SignInCard(session = session, busy = state.busy, viewModel = viewModel) }
+            }
+
+            if (state.signIn == null) {
+                if (state.accounts.isEmpty()) {
+                    item {
+                        AddAccountCard(
+                            enabled = engineReady && !state.busy,
+                            onSubmit = { email, password -> viewModel.signIn(email, password) },
+                        )
+                    }
+                } else {
+                    items(state.accounts, key = { it.id }) { account ->
+                        AccountCard(
+                            account = account,
+                            busy = state.busy,
+                            onActivate = { viewModel.activate(account.id) },
+                            onRefresh = { viewModel.refreshQuota(account.id) },
+                            onRemove = { viewModel.remove(account.id) },
+                        )
+                    }
+                    item {
+                        AddAccountCard(
+                            enabled = engineReady && !state.busy,
+                            submitLabel = "افزودن حساب دیگرِ خودم",
+                            title = null,
+                            onSubmit = { email, password -> viewModel.signIn(email, password) },
+                        )
                     }
                 }
+            }
 
+            if (state.problem.isNotBlank()) {
                 item {
                     Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(16.dp)) {
-                            Text("این حساب کجا می‌رود؟", fontWeight = FontWeight.SemiBold)
-                            Spacer(Modifier.height(6.dp))
-                            Text(
-                                "هیچ‌جا. حساب، رمز و توکن‌ها فقط روی همین گوشی ذخیره می‌شوند و تنها با خودِ " +
-                                    "سرورهای موزیلا حرف می‌زنند. پنل Omni، ربات تلگرام و رله هیچ‌کدام به آن‌ها " +
-                                    "دسترسی ندارند و چیزی از این صفحه به آن‌ها فرستاده نمی‌شود.",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                            Spacer(Modifier.height(10.dp))
-                            Text(
-                                "این اپ رسمی موزیلا نیست. استفاده از سرویس موزیلا با یک کلاینت غیررسمی ممکن " +
-                                    "است حساب را در معرض محدودیت بگذارد؛ سهمیه و شرایط سرویس را خود موزیلا تعیین " +
-                                    "می‌کند.",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                            Spacer(Modifier.height(10.dp))
-                            Text(
-                                "برای اتصال، در لیست سرورها ردیف «فایرفاکس» را انتخاب کن" +
-                                    if (engineAvailable) " (پورت محلی $port)." else ".",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
+                        Text(
+                            state.problem,
+                            modifier = Modifier.padding(16.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+            }
+
+            item {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("این حساب کجا می‌رود؟", fontWeight = FontWeight.SemiBold)
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "هیچ‌جا. حساب، رمز و توکن‌ها فقط روی همین گوشی ذخیره می‌شوند و تنها با خودِ " +
+                                "سرورهای موزیلا حرف می‌زنند. پنل Omni، ربات تلگرام و رله هیچ‌کدام به آن‌ها " +
+                                "دسترسی ندارند و چیزی از این صفحه به آن‌ها فرستاده نمی‌شود.",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            "این اپ رسمی موزیلا نیست. استفاده از سرویس موزیلا با یک کلاینت غیررسمی ممکن " +
+                                "است حساب را در معرض محدودیت بگذارد؛ سهمیه و شرایط سرویس را خود موزیلا تعیین " +
+                                "می‌کند.",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            "برای اتصال: در لیست سرورها گروه «Firefox» را باز کن و ردیف «Firefox» را انتخاب " +
+                                "کن، بعد دکمهٔ اتصال را بزن. ترافیک فقط از سهمیهٔ همین حساب می‌رود.",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
                     }
                 }
             }
@@ -362,32 +201,172 @@ fun FirefoxScreen(
 }
 
 @Composable
-private fun QuotaSummary(account: FirefoxAccount) {
+private fun AddAccountCard(
+    enabled: Boolean,
+    onSubmit: (email: String, password: String) -> Unit,
+    submitLabel: String = "ورود و افزودن حساب",
+    title: String? = "حساب دارم، وارد می‌شوم",
+) {
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp)) {
+            if (title != null) {
+                Text(title, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(10.dp))
+            }
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("ایمیل حساب Firefox") },
+                singleLine = true,
+                enabled = enabled,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("رمز") },
+                singleLine = true,
+                enabled = enabled,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(12.dp))
+            Button(onClick = { onSubmit(email, password) }, enabled = enabled) {
+                Text(submitLabel)
+            }
+            if (title != null) {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "حساب نداری؟ یک حساب Firefox رایگان در سایت خود موزیلا بساز و برگرد.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SignInCard(
+    session: FirefoxEngineApi.SignIn,
+    busy: Boolean,
+    viewModel: FirefoxViewModel,
+) {
+    var answer by rememberSaveable(session.id) { mutableStateOf("") }
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp)) {
+            Text(
+                if (session.needsAnswer) "موزیلا چیزی می‌خواهد" else "در حال ورود…",
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(Modifier.height(6.dp))
+            if (session.message.isNotBlank()) {
+                Text(session.message, style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(8.dp))
+            }
+            if (session.needsAnswer) {
+                OutlinedTextField(
+                    value = answer,
+                    onValueChange = { answer = it },
+                    label = { Text(if (session.captcha.isBlank()) "کد تأیید" else "پاسخ تصویر") },
+                    singleLine = true,
+                    enabled = !busy,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = { viewModel.answer(answer) }, enabled = !busy && answer.isNotBlank()) {
+                        Text("فرستادن")
+                    }
+                    OutlinedButton(onClick = { viewModel.cancelSignIn() }, enabled = !busy) {
+                        Text("انصراف")
+                    }
+                }
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    Spacer(Modifier.size(8.dp))
+                    OutlinedButton(onClick = { viewModel.cancelSignIn() }, enabled = !busy) {
+                        Text("انصراف")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccountCard(
+    account: FirefoxEngineApi.Account,
+    busy: Boolean,
+    onActivate: () -> Unit,
+    onRefresh: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        account.email.ifBlank { "حساب فایرفاکس" },
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        fontSize = 15.sp,
+                    )
+                    Text(
+                        if (account.active) "حساب فعال اتصال" else account.status.ifBlank { "آماده" },
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
+                if (busy) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+            }
+            Spacer(Modifier.height(12.dp))
+            QuotaSummary(account)
+            if (account.reason.isNotBlank()) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    account.reason,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (!account.active) {
+                    OutlinedButton(onClick = onActivate, enabled = !busy) { Text("انتخاب برای اتصال") }
+                }
+                OutlinedButton(onClick = onRefresh, enabled = !busy) { Text("به‌روزرسانی سهمیه") }
+                OutlinedButton(onClick = onRemove, enabled = !busy) { Text("حذف از این گوشی") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuotaSummary(account: FirefoxEngineApi.Account) {
     if (account.unlimited) {
         Text("این حساب محدودیت حجم ندارد.", fontWeight = FontWeight.Medium)
         return
     }
-    if (account.quotaLimitBytes <= 0) {
+    if (account.limitBytes <= 0) {
         Text("سهمیه تا حالا خوانده نشده. «به‌روزرسانی سهمیه» را بزن.", style = MaterialTheme.typography.bodySmall)
         return
     }
     val usedGb = account.usedBytes.toDouble() / GB
-    val limitGb = account.quotaLimitBytes.toDouble() / GB
-    Text(
-        "%.1f از %.0f گیگ استفاده شده".format(usedGb, limitGb),
-        fontWeight = FontWeight.Medium,
-    )
+    val limitGb = account.limitBytes.toDouble() / GB
+    Text("%.1f از %.0f گیگ استفاده شده".format(usedGb, limitGb), fontWeight = FontWeight.Medium)
     Spacer(Modifier.height(8.dp))
     LinearProgressIndicator(
-        progress = { account.usedFraction.toFloat() },
+        progress = { (account.usedPercent / 100.0).coerceIn(0.0, 1.0).toFloat() },
         modifier = Modifier.fillMaxWidth(),
     )
-    if (account.quotaResetsAt > 0L) {
+    if (account.resetAtMillis > 0L) {
         Spacer(Modifier.height(8.dp))
-        Text(
-            "ریست: ${daysUntil(account.quotaResetsAt)} روز دیگر",
-            style = MaterialTheme.typography.bodySmall,
-        )
+        Text("ریست: ${daysUntil(account.resetAtMillis)} روز دیگر", style = MaterialTheme.typography.bodySmall)
     }
 }
 

@@ -73,6 +73,8 @@ import com.v2ray.ang.ui.compose.ItemDivider
 import com.v2ray.ang.ui.compose.NavigationBarsBottomPadding
 import com.v2ray.ang.ui.compose.verticalScrollbar
 import com.v2ray.ang.util.LogUtil
+import com.v2ray.ang.util.CrashGuard
+
 import com.v2ray.ang.util.Utils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -182,6 +184,15 @@ fun LogcatScreen(
         if(wipeNonce>0 && motion)wipe.animateTo(1f,tween(320,easing=CubicBezierEasing(.42f,0f,1f,1f)))
         wiping=false;wipe.snapTo(0f)
     }
+    // What the app kept instead of disappearing, read off the main thread: a failure of this app is a
+    // file in its own storage, never a report sent anywhere by itself.
+    var crashTraces by remember { mutableStateOf(emptyList<String>()) }
+    var showCrashTraces by rememberSaveable { mutableStateOf(false) }
+    var crashTracesRead by remember { mutableIntStateOf(0) }
+    LaunchedEffect(crashTracesRead) {
+        crashTraces = withContext(kotlinx.coroutines.Dispatchers.IO) { CrashGuard.traces(context) }
+    }
+
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(live, searchQuery, lifecycle) {
         arrivalRate = null
@@ -279,6 +290,18 @@ fun LogcatScreen(
                 }
             }
         }
+        CrashTracesCard(
+            context = context,
+            traces = crashTraces,
+            expanded = showCrashTraces,
+            onExpandedChange = { showCrashTraces = it },
+            onCopy = { Utils.setClipboard(context, it) },
+            onClear = {
+                CrashGuard.clear(context)
+                crashTracesRead++
+                showCrashTraces = false
+            },
+        )
         OmniButton(onClick=clearLog,modifier=Modifier.fillMaxWidth().height(54.dp).clip(RoundedCornerShape(99.dp)).omniLogClearSheen(),shape=RoundedCornerShape(99.dp)) {
             Text(stringResource(R.string.acc_clear_log),fontSize=16.sp,fontWeight=FontWeight.ExtraBold)
         }

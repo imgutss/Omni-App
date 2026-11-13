@@ -427,6 +427,13 @@
     <string name="server_test_delay_detailed_partial">%1$s %2$d میلی‌ثانیه · ~%5$d · ≤%6$d میلی‌ثانیه · %3$d/%4$d</string>
     <string name="server_test_delay_detailed_partial_no_spread">%1$s %2$d میلی‌ثانیه · %3$d/%4$d</string>
     <string name="firefox_title">فایرفاکس</string>
+
+    <string name="title_crash_traces">خطاهای ثبت‌شده</string>
+    <string name="summary_crash_traces">%1$d خطا که هیچ بخشی از برنامه هندل نکرد. چیزی به جایی فرستاده نشد.</string>
+    <string name="crash_traces_show">نمایش</string>
+    <string name="crash_traces_hide">پنهان</string>
+    <string name="crash_traces_copy">کپی همه</string>
+    <string name="crash_traces_clear">پاک کردن</string>
     <string name="firefox_engine_missing">این نسخه موتور حساب فایرفاکس را ندارد؛ پس این ردیف نمی‌تواند ترافیک عبور بدهد.</string>
     <string name="firefox_engine_not_started">موتور حساب فایرفاکس روشن نشد.</string>
     <string name="firefox_engine_not_listening">موتور حساب فایرفاکس روی پورت %1$d پاسخ نمی‌دهد.</string>

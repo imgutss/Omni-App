@@ -433,6 +433,12 @@
     <string name="server_test_delay_detailed_partial">%1$s %2$d ms · ~%5$d · ≤%6$d ms · %3$d/%4$d</string>
     <string name="server_test_delay_detailed_partial_no_spread">%1$s %2$d ms · %3$d/%4$d</string>
     <string name="firefox_title">Firefox</string>
+    <string name="title_crash_traces">Recorded failures</string>
+    <string name="summary_crash_traces">%1$d failure(s) no part of the app handled. Nothing was sent anywhere.</string>
+    <string name="crash_traces_show">Show</string>
+    <string name="crash_traces_hide">Hide</string>
+    <string name="crash_traces_copy">Copy all</string>
+    <string name="crash_traces_clear">Delete them</string>
     <string name="firefox_engine_missing">This build has no Firefox account engine, so this row cannot carry traffic.</string>
     <string name="firefox_engine_not_started">The Firefox account engine did not start.</string>
     <string name="firefox_engine_not_listening">The Firefox account engine is not answering on port %1$d.</string>
