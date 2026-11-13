@@ -309,6 +309,12 @@
             android:exported="false" />
 
         <service
+            android:name=".service.FirefoxAccountEngineService"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":daemon" />
+
+        <service
             android:name=".service.CoreVpnService"
             android:enabled="true"
             android:exported="false"

@@ -1,6 +1,7 @@
 package com.v2ray.ang.core
 
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.firefox.FirefoxBridge
@@ -19,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.min
 
 /**
- * Keeps the Firefox account engine alive for as long as this process is.
+ * Starts and reconciles the Firefox account engine owned by the VPN daemon process.
  *
  * The engine is a plain ELF the installer drops beside the app's other native libraries. Unlike the
  * library-backed cores, nothing in the app can `System.load` it, so it is executed as a child process
@@ -32,9 +33,9 @@ import kotlin.math.min
  *
  * - **One copy of a secret.** The app never sees the tokens it would otherwise have to hold to call
  *   Mozilla itself; it asks the engine, and the engine answers or does not.
- * - **One lifetime.** The engine is started when something needs it, kept while the service lives,
- *   and stopped with it — a child left behind would be a process holding live credentials that no
- *   one is any longer watching.
+ * - **One lifetime.** A small service in `:daemon` owns the child for the account screen and the
+ *   VpnService alike, so the UI and the VPN never start competing copies or disagree about whether
+ *   an account exists.
  */
 object FirefoxCoreManager {
 
@@ -88,6 +89,9 @@ object FirefoxCoreManager {
      */
     @Volatile private var protectServer: MasterDnsProtectServer? = null
 
+    /** Whether the last owned child was started with the active VPN's socket-protect bridge. */
+    @Volatile private var protectedInLastStart: Boolean = false
+
     /** How many sockets the engine asked the app to protect, and how many of those were refused. */
     private val protectRequests = AtomicInteger()
     private val protectRefusals = AtomicInteger()
@@ -113,8 +117,9 @@ object FirefoxCoreManager {
     /** Whether this app was installed with an engine for this device, and can start it. */
     fun isSupported(context: Context): Boolean = nativeLibrary(context) != null
 
-    /** The port the engine's account API answers on once it is up; 0 when it is not. */
-    fun currentApiPort(context: Context): Int = if (process != null) apiPort else 0
+    /** The loopback API port, visible from both the UI and the isolated VPN daemon process. */
+    fun currentApiPort(context: Context): Int =
+        apiPort.takeIf { it != 0 } ?: FirefoxBridge.DEFAULT_API_PORT
 
     /** Whether a child of ours is running at all, without touching the network. */
     val isRunning: Boolean get() = process?.isAlive == true && apiPort != 0
@@ -141,13 +146,28 @@ object FirefoxCoreManager {
      * @return whether the engine is listening on [apiPort] when this returns.
      */
     @Suppress("ReturnCount")
+    @Synchronized
     fun start(
         context: Context,
         socksPort: Int,
         apiPort: Int,
         protect: ((Int) -> Boolean)? = null,
     ): Boolean {
-        if (isAlive(context) && this.apiPort == apiPort) return true
+        val wantsSocketProtection = protect != null
+        if (isAlive(context)) {
+            if (this.apiPort == apiPort && process?.isAlive == true &&
+                protectedInLastStart == wantsSocketProtection
+            ) return true
+            // The account screen and the VpnService are in different Android processes. If this
+            // process has no child but the authenticated API answers, the other process already owns
+            // the one shared loopback listener; never start a competing engine on its port.
+            if (process == null) {
+                this.apiPort = apiPort
+                if (!wantsSocketProtection) return true
+                lastFailure = "Firefox engine is already running in another process without VPN socket protection"
+                return false
+            }
+        }
         stop()
 
         lastFailure = null
@@ -231,6 +251,7 @@ object FirefoxCoreManager {
         synchronized(this) {
             process = launched
             this.apiPort = apiPort
+            protectedInLastStart = wantsSocketProtection
             childJob = logScope.launch { pumpLogs(launched, context) }
         }
 
@@ -250,8 +271,20 @@ object FirefoxCoreManager {
         context: Context,
         socksPort: Int,
         apiPort: Int,
-        protect: ((Int) -> Boolean)? = null,
-    ): Boolean = withContext(Dispatchers.IO) { start(context, socksPort, apiPort, protect) }
+    ): Boolean = withContext(Dispatchers.IO) {
+        if (isAlive(context)) return@withContext true
+        val started = runCatching {
+            context.startService(Intent(context, com.v2ray.ang.service.FirefoxAccountEngineService::class.java))
+        }.getOrNull() != null
+        if (!started) return@withContext false
+
+        val deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(STARTUP_TIMEOUT_MS)
+        while (System.nanoTime() < deadline) {
+            if (isAlive(context) && listeningOn(apiPort)) return@withContext true
+            Thread.sleep(100)
+        }
+        false
+    }
 
     /**
      * Stops the engine if it is running, and forgets it.
@@ -259,12 +292,14 @@ object FirefoxCoreManager {
      * Called when the service stops and whenever the app wants no live credential-bearing process
      * that nothing is watching.
      */
+    @Synchronized
     fun stop() {
         val (child, pump) = synchronized(this) {
             val taken = Pair(process, childJob)
             process = null
             childJob = null
             apiPort = 0
+            protectedInLastStart = false
             taken
         }
         closeProtectServer()
@@ -286,8 +321,22 @@ object FirefoxCoreManager {
      * Touches the network, so it is never called from the main thread.
      */
     fun isAlive(context: Context): Boolean {
+        val token = token(context) ?: return false
         val port = currentApiPort(context)
-        return port != 0 && listeningOn(port)
+        return runCatching {
+            val connection = (java.net.URL("http://${AppConfig.LOOPBACK}:$port/api/status")
+                .openConnection() as java.net.HttpURLConnection).apply {
+                connectTimeout = ACCOUNT_QUERY_TIMEOUT_MS
+                readTimeout = ACCOUNT_QUERY_TIMEOUT_MS
+                setRequestProperty("X-Local-Token", token)
+                setRequestProperty("Accept", "application/json")
+            }
+            try {
+                connection.responseCode == 200
+            } finally {
+                connection.disconnect()
+            }
+        }.getOrDefault(false)
     }
 
     /**

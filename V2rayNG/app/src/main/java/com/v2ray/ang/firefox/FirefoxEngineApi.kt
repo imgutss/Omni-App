@@ -2,7 +2,6 @@ package com.v2ray.ang.firefox
 
 import android.content.Context
 import com.v2ray.ang.AppConfig
-import com.v2ray.ang.core.CoreVpnProtect
 import com.v2ray.ang.core.FirefoxCoreManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -98,8 +97,9 @@ object FirefoxEngineApi {
     /**
      * Starts the engine when it is not up and waits for it to answer.
      *
-     * The account screen works before anything is connected, so it is the screen that starts the
-     * engine; the wait is bounded, and a start that never answers is reported as one.
+     * The account screen requests the engine service in the VPN daemon process, so a later VPN
+     * connection sees the same authenticated engine rather than a process-local false negative.
+     * The wait is bounded, and a start that never answers is reported as one.
      */
     suspend fun ensureEngine(context: Context): Boolean = withContext(Dispatchers.IO) {
         if (FirefoxCoreManager.isSupported(context) && FirefoxCoreManager.isAlive(context) &&
@@ -111,9 +111,6 @@ object FirefoxEngineApi {
             context,
             socksPort = FirefoxBridge.port(),
             apiPort = FirefoxBridge.DEFAULT_API_PORT,
-            // Started from the account screen, before any connection: the VPN may already be carrying the
-            // app's own traffic, and the engine's sign-in must not be tunneled through itself.
-            protect = CoreVpnProtect.current(),
         ) && token(context) != null && status(context) != null
     }
 

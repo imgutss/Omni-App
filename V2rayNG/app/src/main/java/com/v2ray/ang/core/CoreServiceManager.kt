@@ -513,11 +513,9 @@ object CoreServiceManager {
         // In VPN mode the engine's own traffic has to leave the phone outside the tunnel it is carrying,
         // and only this app's VpnService can take a socket out of a VPN, so it is served here. In proxy
         // mode there is no VPN to keep it out of.
-        // An engine with no account in it accepts the SOCKS listener and then answers every request with
-        // "no account": the row would look connected and carry nothing. The reason is said here instead.
-        if (!FirefoxBridge.hasAccount()) {
-            throw StartFailure(service.getString(R.string.firefox_no_account))
-        }
+        // The account engine is owned by :daemon, the same isolated process as this VpnService.
+        // Start/reconcile it before asking for accounts: an Activity-process manager has no child
+        // Process handle here, even though its UI can already have completed sign-in.
         val protect: ((Int) -> Boolean)? = CoreVpnProtect.current()
         if (!FirefoxCoreManager.start(
                 service,
@@ -533,6 +531,12 @@ object CoreServiceManager {
                     FirefoxCoreManager.lastFailure(service),
                 )
             )
+        }
+        // An engine with no account in it accepts the SOCKS listener and then answers every request with
+        // "no account": the row would look connected and carry nothing. The reason is said here instead.
+        if (!FirefoxBridge.hasAccount()) {
+            FirefoxCoreManager.stop()
+            throw StartFailure(service.getString(R.string.firefox_no_account))
         }
         if (!FirefoxCoreManager.awaitListeningBlocking(port, AetherDelayTester.TEST_BUDGET_MS)) {
             FirefoxCoreManager.stop()

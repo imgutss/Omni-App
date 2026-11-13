@@ -41,6 +41,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.util.IllegalFormatException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.regex.PatternSyntaxException
@@ -299,7 +300,15 @@ class MainViewModel(
             status.progress
         )
 
-        is MainStatus.ConnectionTest -> formatConnectionTestResult(status.result)
+        is MainStatus.ConnectionTest -> try {
+            formatConnectionTestResult(status.result)
+        } catch (error: IllegalFormatException) {
+            // A translated Android string can have a stale/mismatched positional placeholder. A
+            // status-bar refresh must never crash the home screen; retain the actual measured minimum.
+            LogUtil.e(AppConfig.TAG, "Connection-test status string has incompatible format arguments", error)
+            status.result.delayMillis.takeIf { it > 0L }?.let { "$it ms" }
+                ?: status.result.errorMessage.ifBlank { "Connection test unavailable" }
+        }
     }
 
     /**

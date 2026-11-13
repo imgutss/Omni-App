@@ -3,6 +3,7 @@ package com.v2ray.ang.ui.main
 import android.content.Context
 import com.v2ray.ang.R
 import com.v2ray.ang.dto.entities.ServersCache
+import java.util.IllegalFormatException
 import kotlin.math.abs
 
 /**
@@ -63,35 +64,42 @@ internal data class PingReadout(
         )
 
         /** The text for [readout], empty when there is nothing worth saying. */
-        fun describe(context: Context, readout: PingReadout): String = when {
-            readout.untested -> ""
-            readout.unanswered && readout.sampleCount > 0 -> context.getString(
-                R.string.server_test_no_response_samples,
-                readout.successfulSamples,
-                readout.sampleCount,
-            )
-            readout.unanswered -> context.getString(R.string.server_test_no_response)
-            readout.sampleCount > 0 && readout.kind.isNotBlank() && readout.maxMillis > 0L -> context.getString(
-                if (readout.partial) {
-                    R.string.server_test_delay_detailed_partial
-                } else {
-                    R.string.server_test_delay_detailed_value
-                },
-                readout.kind,
-                readout.delayMillis,
-                readout.successfulSamples,
-                readout.sampleCount,
-                readout.medianMillis,
-                readout.maxMillis,
-            )
-            readout.sampleCount > 0 && readout.kind.isNotBlank() -> context.getString(
-                R.string.server_test_delay_detailed_partial_no_spread,
-                readout.kind,
-                readout.delayMillis,
-                readout.successfulSamples,
-                readout.sampleCount,
-            )
-            else -> context.getString(R.string.server_test_delay_value, readout.delayMillis)
+        fun describe(context: Context, readout: PingReadout): String = try {
+            when {
+                readout.untested -> ""
+                readout.unanswered && readout.sampleCount > 0 -> context.getString(
+                    R.string.server_test_no_response_samples,
+                    readout.successfulSamples,
+                    readout.sampleCount,
+                )
+                readout.unanswered -> context.getString(R.string.server_test_no_response)
+                readout.sampleCount > 0 && readout.kind.isNotBlank() && readout.maxMillis > 0L -> context.getString(
+                    if (readout.partial) {
+                        R.string.server_test_delay_detailed_partial
+                    } else {
+                        R.string.server_test_delay_detailed_value
+                    },
+                    readout.kind,
+                    readout.delayMillis,
+                    readout.successfulSamples,
+                    readout.sampleCount,
+                    readout.medianMillis,
+                    readout.maxMillis,
+                )
+                readout.sampleCount > 0 && readout.kind.isNotBlank() -> context.getString(
+                    R.string.server_test_delay_detailed_partial_no_spread,
+                    readout.kind,
+                    readout.delayMillis,
+                    readout.successfulSamples,
+                    readout.sampleCount,
+                )
+                else -> context.getString(R.string.server_test_delay_value, readout.delayMillis)
+            }
+        } catch (_: IllegalFormatException) {
+            // A bad positional placeholder in a translated resource must not crash row rendering.
+            readout.fastest?.let {
+                "${readout.kind.takeIf(String::isNotBlank)?.plus(" ").orEmpty()}$it ms"
+            } ?: readout.delayMillis.toString()
         }
 
         /**
@@ -99,25 +107,30 @@ internal data class PingReadout(
          * samples answered. It deliberately does not repeat the word for "connection succeeded" that the
          * row's number carries, because the bar already says what it is describing.
          */
-        fun describeForStatusBar(context: Context, readout: PingReadout): String = when {
-            readout.untested -> context.getString(R.string.connection_test_untested)
-            readout.unanswered && readout.sampleCount > 0 -> context.getString(
-                R.string.server_test_no_response_samples,
-                readout.successfulSamples,
-                readout.sampleCount,
-            )
-            readout.unanswered -> context.getString(
-                R.string.connection_test_error,
-                context.getString(R.string.connection_test_empty_message),
-            )
-            readout.sampleCount > 0 && readout.kind.isNotBlank() -> context.getString(
-                R.string.connection_test_ping_summary,
-                readout.delayMillis,
-                readout.medianMillis.coerceAtLeast(readout.delayMillis),
-                readout.maxMillis.coerceAtLeast(readout.delayMillis),
-            )
-            else -> context.getString(R.string.connection_test_ping_value, readout.delayMillis)
+        fun describeForStatusBar(context: Context, readout: PingReadout): String = try {
+            when {
+                readout.untested -> context.getString(R.string.connection_test_untested)
+                readout.unanswered && readout.sampleCount > 0 -> context.getString(
+                    R.string.server_test_no_response_samples,
+                    readout.successfulSamples,
+                    readout.sampleCount,
+                )
+                readout.unanswered -> context.getString(
+                    R.string.connection_test_error,
+                    context.getString(R.string.connection_test_empty_message),
+                )
+                readout.sampleCount > 0 && readout.kind.isNotBlank() -> context.getString(
+                    R.string.connection_test_ping_summary,
+                    readout.delayMillis,
+                    readout.medianMillis.coerceAtLeast(readout.delayMillis),
+                    readout.maxMillis.coerceAtLeast(readout.delayMillis),
+                )
+                else -> context.getString(R.string.connection_test_ping_value, readout.delayMillis)
+            }
+        } catch (_: IllegalFormatException) {
+            readout.fastest?.let { "$it ms" } ?: readout.delayMillis.toString()
         }
+
     }
 }
 
