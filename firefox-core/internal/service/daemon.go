@@ -916,18 +916,15 @@ func (d *Daemon) refreshAccountUsage(id string, manual bool) error {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), proxy.PassRenewTimeout)
 	defer cancel()
-	auth, err := d.pool.AuthFor(acc)
-	if err != nil {
-		return err
-	}
-	if auth, err = proxy.FreshRuntimeAuth(ctx, auth); err != nil {
-		return err
-	}
-	fetchUsage := guardian.FetchProxyUsage
+	var usage *guardian.ProxyUsage
 	if manual {
-		fetchUsage = guardian.RefreshProxyUsage
+		// An explicit refresh must recover the same 401/403 Guardian responses
+		// as connection setup: renew OAuth credentials or activate entitlement,
+		// then retry the pass request before reporting quota unavailable.
+		usage, err = d.pool.RefreshUsage(ctx, d.config().Network.GuardianEndpoint, acc)
+	} else {
+		usage, err = d.pool.ReadUsage(ctx, d.config().Network.GuardianEndpoint, acc)
 	}
-	usage, err := fetchUsage(ctx, d.config().Network.GuardianEndpoint, auth.Token.AccessToken)
 	if err != nil {
 		return err
 	}

@@ -63,6 +63,55 @@ func (p *AccountPool) AuthFor(acc accounts.Account) (*runtimeAuth, error) {
 	return auth, nil
 }
 
+// ReadUsage performs a passive quota read after an account is added. It
+// refreshes an expired OAuth credential but does not activate Guardian or
+// request a connection pass.
+func (p *AccountPool) ReadUsage(ctx context.Context, endpoint string, acc accounts.Account) (*guardian.ProxyUsage, error) {
+	auth, err := p.AuthFor(acc)
+	if err != nil {
+		return nil, fmt.Errorf("loading account credentials: %w", err)
+	}
+	auth, err = FreshRuntimeAuth(ctx, auth)
+	if err != nil {
+		return nil, err
+	}
+	return guardian.FetchProxyUsage(ctx, endpoint, auth.Token.AccessToken)
+}
+
+// RefreshUsage reads quota for an account using the same Guardian recovery as
+// connection setup. A just-signed-in Firefox account may not yet have a proxy
+// entitlement; Guardian returns 403 until /activate grants it. A stale access
+// token similarly needs an OAuth refresh before the quota can be read.
+func (p *AccountPool) RefreshUsage(ctx context.Context, endpoint string, acc accounts.Account) (*guardian.ProxyUsage, error) {
+	auth, err := p.AuthFor(acc)
+	if err != nil {
+		return nil, fmt.Errorf("loading account credentials: %w", err)
+	}
+	auth, err = FreshRuntimeAuth(ctx, auth)
+	if err != nil {
+		return nil, err
+	}
+	usage, err := guardian.RefreshProxyUsage(ctx, endpoint, auth.Token.AccessToken)
+	if err == nil {
+		return usage, nil
+	}
+	if !errors.Is(err, guardian.ErrTokenInvalid) && !errors.Is(err, guardian.ErrNotEntitled) {
+		return guardian.UsageFromError(err), err
+	}
+
+	// A 401 renews the OAuth token; a valid token with no entitlement (403)
+	// activates Guardian. Both paths retry the actual pass request, just as
+	// Firefox does, and any renewed token is persisted by runtimeAuth.save.
+	_, pass, err := recoverGuardianRejection(ctx, endpoint, auth, err, nil)
+	if err != nil {
+		return guardian.UsageFromError(err), err
+	}
+	if pass == nil || pass.Usage == nil {
+		return nil, errors.New("Guardian granted a proxy pass but returned no quota headers")
+	}
+	return pass.Usage, nil
+}
+
 // persist stores refreshed credentials in the account's own file and keeps
 // them as the cached auth of that account.
 func (p *AccountPool) persist(auth *runtimeAuth) error {

@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/armanlife/arman-vpn-client/core/internal/accounts"
 	"github.com/armanlife/arman-vpn-client/core/internal/fxa"
 	"github.com/armanlife/arman-vpn-client/core/internal/guardian"
 )
@@ -97,6 +98,57 @@ func TestAcquireUsablePassActivatesOnNotEntitledWithoutRefresh(t *testing.T) {
 	gotAuth, got, err := controller.acquireUsablePass(context.Background())
 	if err != nil || got.RawToken != pass || gotAuth != auth || !activated.Load() {
 		t.Fatalf("expected activation then a pass with the same auth, got err=%v activated=%v", err, activated.Load())
+	}
+}
+
+func TestRefreshUsageActivatesGuardianAfterNotEntitled(t *testing.T) {
+	store, err := accounts.OpenStore(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now()
+	acc, _, err := store.Add("owner@example.test", &fxa.SavedTokens{
+		AccessToken: "access", RefreshToken: "refresh", Scope: "vpn",
+		ObtainedAt: now, ExpiresIn: 3600,
+	}, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pool := NewAccountPool(store, nil)
+	var activated atomic.Bool
+	pass := coreFixtureJWT(10 * time.Minute)
+	headCalls, getCalls := 0, 0
+	setCoreControlPlane(t, func(r *http.Request) (*http.Response, error) {
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/api/v1/fpn/token") && r.Method == http.MethodHead:
+			headCalls++
+			return coreResponse(r, http.StatusForbidden, "not entitled", nil), nil
+		case strings.HasSuffix(r.URL.Path, "/api/v1/fpn/token") && r.Method == http.MethodGet && !activated.Load():
+			getCalls++
+			return coreResponse(r, http.StatusForbidden, "not entitled", nil), nil
+		case strings.HasSuffix(r.URL.Path, "/api/v1/fpn/activate") && r.Method == http.MethodPost:
+			activated.Store(true)
+			return coreResponse(r, http.StatusOK, `{"subscribed":true}`, nil), nil
+		case strings.HasSuffix(r.URL.Path, "/api/v1/fpn/token") && r.Method == http.MethodGet:
+			headers := make(http.Header)
+			headers.Set("X-Quota-Limit", "1000")
+			headers.Set("X-Quota-Remaining", "750")
+			headers.Set("X-Quota-Reset", "2026-12-01T00:00:00Z")
+			return coreResponse(r, http.StatusOK, `{"token":"`+pass+`"}`, headers), nil
+		default:
+			return nil, fmt.Errorf("unexpected Guardian request %s %s", r.Method, r.URL.Path)
+		}
+	})
+
+	got, err := pool.RefreshUsage(context.Background(), "https://guardian.invalid", acc)
+	if err != nil {
+		t.Fatalf("refresh should activate the account then read quota: %v", err)
+	}
+	if !activated.Load() || headCalls != 1 || getCalls != 1 {
+		t.Fatalf("activation path was not followed: activated=%v HEAD=%d GET-before-activate=%d", activated.Load(), headCalls, getCalls)
+	}
+	if got == nil || got.Limit != 1000 || got.Remaining != 750 {
+		t.Fatalf("quota = %+v, want 750 of 1000", got)
 	}
 }
 

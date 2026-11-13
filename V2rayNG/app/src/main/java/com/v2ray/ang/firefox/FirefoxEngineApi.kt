@@ -130,7 +130,7 @@ object FirefoxEngineApi {
 
     suspend fun accounts(context: Context): List<Account>? = withContext(Dispatchers.IO) {
         val body = call(context, "GET", "/api/accounts", null) ?: return@withContext null
-        val list: JSONArray = JSONObject(body).optJSONArray("accounts") ?: return@withContext emptyList()
+        val list: JSONArray = JSONObject(body).optJSONArray("accounts") ?: return@withContext null
         buildList {
             for (index in 0 until list.length()) {
                 val item = list.optJSONObject(index) ?: continue
@@ -214,8 +214,8 @@ object FirefoxEngineApi {
     /**
      * One call to the engine's loopback API, with this app's token.
      *
-     * @return the body, or null when the call did not happen: no engine, no token, or an engine that
-     *   refused. A refusal is logged without the body, which can name an account.
+     * @return a success body, a sanitized HTTP error body, or null when the request could not reach
+     *   the engine (for example, no local token or a loopback/network failure).
      */
     private fun call(context: Context, method: String, path: String, body: String?): String? {
         val token = token(context) ?: return null
@@ -238,11 +238,15 @@ object FirefoxEngineApi {
                 when {
                     response.isSuccessful -> text
                     else -> {
+                        val detail = runCatching { JSONObject(text).optString("error") }
+                            .getOrNull()
+                            ?.takeIf { it.isNotBlank() }
+                            ?: "The account engine replied with HTTP ${response.code}."
                         com.v2ray.ang.util.LogUtil.w(
                             "FirefoxApi",
-                            "$method $path answered HTTP ${response.code}"
+                            "$method $path answered HTTP ${response.code}: $detail"
                         )
-                        null
+                        JSONObject().put("error", detail).toString()
                     }
                 }
             }
