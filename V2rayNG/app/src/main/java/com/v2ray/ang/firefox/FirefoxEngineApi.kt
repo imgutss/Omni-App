@@ -176,20 +176,57 @@ object FirefoxEngineApi {
     /** Makes [id] the account the connection uses. */
     suspend fun activate(context: Context, id: String): String? = withContext(Dispatchers.IO) {
         val body = call(context, "POST", "/api/accounts/$id/activate", "")
-        body?.let { JSONObject(it).optString("error").takeIf { message -> message.isNotBlank() } }
+        body?.let { readProblem(it) }
     }
 
     /** Asks the engine to read [id]'s allowance from Mozilla again. */
     suspend fun refreshQuota(context: Context, id: String): String? = withContext(Dispatchers.IO) {
         val body = call(context, "POST", "/api/accounts/$id/refresh", "")
-        body?.let { JSONObject(it).optString("error").takeIf { message -> message.isNotBlank() } }
+        body?.let { readProblem(it) }
     }
 
-    /** Forgets [id] on this phone: the account is deleted from the engine's own storage. */
+    /**
+     * Forgets [id] on this phone: the account is deleted from the engine's own storage.
+     *
+     * The account holds a device registration, which lives with Mozilla rather than here. It is
+     * detached first: a device left behind is one that keeps appearing in the person's own account
+     * list on Mozilla's site, and one fewer of them is one fewer thing that can spend their data.
+     * A failure to detach is not treated as fatal — it is said plainly, so they can remove that
+     * device on Mozilla's site themselves.
+     */
     suspend fun remove(context: Context, id: String): String? = withContext(Dispatchers.IO) {
+        val detached = detachDevice(context, id)
         val body = call(context, "DELETE", "/api/accounts/$id", null)
-        body?.let { JSONObject(it).optString("error").takeIf { message -> message.isNotBlank() } }
+        val problem = body?.let { readProblem(it) }
+        when {
+            !problem.isNullOrBlank() -> problem
+            detached == false ->
+                "The account is no longer on this phone, but its device could not be detached from " +
+                    "Mozilla. Remove it from the devices in that account on Mozilla's own site."
+            else -> null
+        }
     }
+
+    /**
+     * Unregisters this phone's device from [id] on Mozilla's side, before the record here is deleted.
+     *
+     * @return whether the engine said the device was detached, or null when the answer could not be
+     *   read. A refusal is not thrown, because a registration left behind is a nuisance, not a
+     *   failure of the deletion the person asked for.
+     */
+    private fun detachDevice(context: Context, id: String): Boolean? {
+        val body = call(context, "POST", "/api/accounts/$id/device/detach", "") ?: return null
+        val root = runCatching { JSONObject(body) }.getOrNull() ?: return null
+        if (root.optString("error").isNotBlank()) return false
+        // Absence of a problem is success; a field that says so outright is believed when present.
+        if (root.has("ok")) return root.optBoolean("ok", true)
+        return true
+    }
+
+    /** The error field the engine's plain results carry, or null when there was none. */
+    private fun readProblem(body: String): String? = runCatching {
+        JSONObject(body).optString("error").takeIf { it.isNotBlank() }
+    }.getOrNull()
 
     private fun readSignIn(body: String): SignIn = JSONObject(body).let { root ->
         SignIn(

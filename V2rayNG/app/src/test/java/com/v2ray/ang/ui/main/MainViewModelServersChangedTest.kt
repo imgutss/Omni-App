@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import com.v2ray.ang.dto.SubscriptionUpdateResult
+import com.v2ray.ang.dto.RealPingResult
 import com.v2ray.ang.dto.TestServiceMessage
 import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.dto.entities.ServerAffiliationInfo
@@ -82,8 +83,21 @@ class MainViewModelServersChangedTest {
             selectedSubscriptionId = id
         }
 
-        override fun getSelectServer(): String? = null
-        override fun setSelectServer(guid: String) = Unit
+        /** The delay each server answered with, as the storage would keep it after a measurement. */
+        val delays = ConcurrentHashMap<String, Long>()
+
+        /** The server the connection uses, as the screen last chose it. */
+        @Volatile
+        var selectedServer: String? = null
+
+        /** The measurements asked of the test service, as the message and the request it answers to. */
+        val measurements: MutableList<Pair<TestServiceMessage, String?>> =
+            Collections.synchronizedList(mutableListOf())
+
+        override fun getSelectServer(): String? = selectedServer
+        override fun setSelectServer(guid: String) {
+            selectedServer = guid
+        }
         override fun getConfirmRemove() = false
         override fun getDoubleColumnDisplay() = false
         override fun isGroupAllDisplayEnabled() = showAllGroup
@@ -128,7 +142,8 @@ class MainViewModelServersChangedTest {
                 description = guid
             }
 
-        override fun decodeAffiliationInfo(guid: String): ServerAffiliationInfo? = null
+        override fun decodeAffiliationInfo(guid: String): ServerAffiliationInfo? =
+            delays[guid]?.let { ServerAffiliationInfo(testDelayMillis = it) }
 
         override fun moveServer(groupId: String, fromGuid: String, toGuid: String): Boolean {
             val move = asked.getAndIncrement()
@@ -147,7 +162,26 @@ class MainViewModelServersChangedTest {
         override fun removeInvalidServerByGuid(guid: String) = 0
         override fun removeInvalidServersInGroup(groupId: String) = 0
         override fun clearAllTestDelayResults(guids: List<String>) = Unit
-        override fun sortByTestResultsForSub(subId: String) = Unit
+
+        /** Whether the fastest server is picked after a measurement, as the setting has it. */
+        @Volatile
+        var autoPickFastest = true
+
+        /** The groups whose rows were sorted by their measured delay, in the order asked. */
+        val sorted: MutableList<String> = Collections.synchronizedList(mutableListOf())
+
+        /** How many times the service was started again, once for each fastest server picked while connected. */
+        val restarts = AtomicInteger(0)
+
+        override fun sortByTestResultsForSub(subId: String) {
+            sorted += subId
+        }
+
+        override fun autoPickFastestAfterTest() = autoPickFastest
+
+        override fun restartService() {
+            restarts.incrementAndGet()
+        }
         override fun getSubsList() = listOf(SUB)
         override suspend fun importBatchConfig(server: String?, subscriptionId: String, updateUI: Boolean) = 0 to 0
         override fun updateConfigViaSubAll() = SubscriptionUpdateResult()
@@ -157,7 +191,9 @@ class MainViewModelServersChangedTest {
         override fun share2Clipboard(guid: String) = false
         override fun sendMsg2Service(msgId: Int, content: String) = Unit
         override fun queryServiceState() = Unit
-        override fun sendMsg2TestService(msg: TestServiceMessage, requestId: String?) = Unit
+        override fun sendMsg2TestService(msg: TestServiceMessage, requestId: String?) {
+            measurements += msg to requestId
+        }
         override fun cancelAllPing() = Unit
         override fun testCurrentServerRealPing(requestId: String) = Unit
         override fun syncSubscriptions() = Unit
@@ -514,10 +550,93 @@ class MainViewModelServersChangedTest {
 
     private fun MainViewModel.shownServers(groupId: String = SUB) = serverGroupState(groupId).value.servers.map(ServersCache::guid)
 
+    @Test
+    fun aMeasurementPicksTheServerThatAnsweredFastest() = runBlocking {
+        val source = FakeSource()
+        source.serverGuids = listOf("a", "b", "c")
+        source.setSelectedSubscriptionId(SUB)
+        // As the storage keeps them once the measurements are in: one link is clearly the quickest.
+        source.delays["a"] = 300L
+        source.delays["b"] = 80L
+        source.delays["c"] = 150L
+        val viewModel = MainViewModel(mock<Application>(), source)
+        viewModel.awaitServers("a", "b", "c")
+
+        viewModel.testAllRealPing()
+        val requestId = source.awaitMeasurement()
+        source.events.send(MainServiceEvent.MeasureConfigSuccess(RealPingResult(guid = "a", delayMillis = 300L), requestId))
+        source.events.send(MainServiceEvent.MeasureConfigSuccess(RealPingResult(guid = "b", delayMillis = 80L), requestId))
+        source.events.send(MainServiceEvent.MeasureConfigSuccess(RealPingResult(guid = "c", delayMillis = 150L), requestId))
+        source.events.send(MainServiceEvent.MeasureConfigFinish(requestId))
+
+        // The quickest link, chosen and its group sorted by what the measurements found, with nothing
+        // else pressed: the numbers are there to be used, not to wait behind a second tap.
+        assertEquals("b", source.awaitSelection())
+        assertEquals(listOf(SUB), source.sorted.toList())
+    }
+
+    @Test
+    fun aServerThatGotNoAnswerIsNotPickedHoweverTheOthersSort() = runBlocking {
+        val source = FakeSource()
+        source.serverGuids = listOf("a", "b")
+        source.setSelectedSubscriptionId(SUB)
+        // A link that never answered has no delay to compare, so it is never chosen.
+        source.delays["a"] = 0L
+        source.delays["b"] = 250L
+        val viewModel = MainViewModel(mock<Application>(), source)
+        viewModel.awaitServers("a", "b")
+
+        viewModel.testAllRealPing()
+        val requestId = source.awaitMeasurement()
+        source.events.send(MainServiceEvent.MeasureConfigSuccess(RealPingResult(guid = "b", delayMillis = 250L), requestId))
+        source.events.send(MainServiceEvent.MeasureConfigFinish(requestId))
+
+        assertEquals("b", source.awaitSelection())
+    }
+
+    @Test
+    fun nothingIsPickedWhenTheSettingIsOff() = runBlocking {
+        val source = FakeSource()
+        source.serverGuids = listOf("a", "b")
+        source.setSelectedSubscriptionId(SUB)
+        source.autoPickFastest = false
+        source.delays["a"] = 300L
+        source.delays["b"] = 80L
+        val viewModel = MainViewModel(mock<Application>(), source)
+        viewModel.awaitServers("a", "b")
+
+        viewModel.testAllRealPing()
+        val requestId = source.awaitMeasurement()
+        source.events.send(MainServiceEvent.MeasureConfigSuccess(RealPingResult(guid = "a", delayMillis = 300L), requestId))
+        source.events.send(MainServiceEvent.MeasureConfigSuccess(RealPingResult(guid = "b", delayMillis = 80L), requestId))
+        source.events.send(MainServiceEvent.MeasureConfigFinish(requestId))
+
+        // The measurements are shown; the choice stays the person's, as they set it.
+        delay(500)
+        assertNull(source.selectedServer)
+        assertEquals(emptyList<String>(), source.sorted.toList())
+    }
+
     private suspend fun MainViewModel.awaitServers(vararg guids: String, groupId: String = SUB) {
         withTimeout(5_000) {
             serverGroupState(groupId).first { state -> state.servers.map(ServersCache::guid) == guids.toList() }
         }
+    }
+
+    /** The request the test service was last asked to measure, waited for: the bulk is started off the main thread. */
+    private suspend fun FakeSource.awaitMeasurement(): String {
+        withTimeout(5_000) {
+            while (measurements.isEmpty()) delay(20)
+        }
+        return measurements.last().second!!
+    }
+
+    /** The server the screen chose, waited for: the measurements are gathered up after the last one arrives. */
+    private suspend fun FakeSource.awaitSelection(): String? {
+        withTimeout(5_000) {
+            while (selectedServer == null) delay(20)
+        }
+        return selectedServer
     }
 
     private companion object {
