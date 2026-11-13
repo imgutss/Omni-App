@@ -43,12 +43,6 @@ class FirefoxViewModel(application: Application) : AndroidViewModel(application)
         val problem: String = "",
     )
 
-    /** How often a sign-in is asked where it stands while a person goes to the mailbox for a code. */
-    private const val POLL_INTERVAL_MS = 1_500L
-
-    /** How long a sign-in may wait for the person at all. */
-    private const val SIGN_IN_BUDGET_MS = 6 * 60 * 1_000L
-
     private val mutableState = MutableStateFlow(UiState(port = FirefoxBridge.port()))
     val state: StateFlow<UiState> = mutableState.asStateFlow()
 
@@ -176,5 +170,13 @@ class FirefoxViewModel(application: Application) : AndroidViewModel(application)
     override fun onCleared() {
         pollJob?.cancel()
         super.onCleared()
+    }
+
+    companion object {
+        /** How often a sign-in is asked where it stands while a person goes to the mailbox for a code. */
+        private const val POLL_INTERVAL_MS = 1_500L
+
+        /** How long a sign-in may wait for the person at all. */
+        private const val SIGN_IN_BUDGET_MS = 6 * 60 * 1_000L
     }
 }
