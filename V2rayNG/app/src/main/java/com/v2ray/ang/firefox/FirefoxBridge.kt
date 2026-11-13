@@ -29,6 +29,9 @@ object FirefoxBridge {
     /** The default loopback port of the account engine, as the reference client uses it. */
     const val DEFAULT_PORT = 10810
 
+    /** The loopback port of the engine's own API, which only this app may call. */
+    const val DEFAULT_API_PORT = 10820
+
     private const val TAG = "FirefoxBridge"
 
     enum class Engine {
@@ -99,6 +102,21 @@ object FirefoxBridge {
 
     /** The name of the server group the account row lives in, as people see it in the group bar. */
     const val GROUP_NAME = "Firefox"
+
+    /** The guid of the one row of the account group, or null when the group does not exist yet. */
+    fun firefoxGuid(): String? {
+        val subscription = MmkvManager.decodeSubscriptions()
+            .firstOrNull { it.subscription.remarks == GROUP_NAME } ?: return null
+        return MmkvManager.decodeServerList(subscription.guid).firstOrNull()
+    }
+
+    /**
+     * Whether [guid] names the row that carries traffic through the account engine.
+     *
+     * The daemon asks this before it starts a configuration: that row is the one whose traffic depends
+     * on the engine on this phone, so the engine is started for it and for no other.
+     */
+    fun isFirefoxRow(guid: String): Boolean = guid.isNotBlank() && guid == firefoxGuid()
 
     /**
      * Makes sure the group and its one row exist, and returns the guid of that row.

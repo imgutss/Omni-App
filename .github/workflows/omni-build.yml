@@ -294,6 +294,39 @@ jobs:
         path: ${{ github.workspace }}/libs-guts
         key: guts-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('compile-guts.sh', 'guts/**') }}
 
+    # The Firefox account engine: a person's own Mozilla account, carried by this phone. It signs in
+    # to Mozilla's own endpoints, keeps the account in the app's private folder, and opens a SOCKS5
+    # listener the "Firefox" row dials. Its module asks for a newer Go line than the engines above,
+    # so this step lets the toolchain fetch the one its go.mod names instead of pinning it twice.
+    - name: Restore cached Firefox account engine
+      if: ${{ !inputs.ui_only }}
+      id: cache-firefox-restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ github.workspace }}/libs-firefox
+        key: firefox-${{ runner.os }}-${{ hashFiles('compile-firefox.sh', 'firefox-core/cmd/firefoxclient/**', 'firefox-core/internal/**', 'firefox-core/go.mod', 'firefox-core/go.sum') }}
+
+    - name: Build Firefox account engine
+      if: ${{ !inputs.ui_only && (steps.cache-firefox-restore.outputs.cache-hit != 'true') }}
+      env:
+        GOTOOLCHAIN: auto
+      run: bash compile-firefox.sh
+
+    - name: Vet the Firefox engine client
+      if: ${{ !inputs.ui_only }}
+      env:
+        GOTOOLCHAIN: auto
+      run: |
+        cd firefox-core
+        CGO_ENABLED=0 go vet ./cmd/firefoxclient
+
+    - name: Save Firefox account engine
+      if: ${{ !inputs.ui_only && (steps.cache-firefox-restore.outputs.cache-hit != 'true') }}
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ github.workspace }}/libs-firefox
+        key: firefox-${{ runner.os }}-${{ hashFiles('compile-firefox.sh', 'firefox-core/cmd/firefoxclient/**', 'firefox-core/internal/**', 'firefox-core/go.mod', 'firefox-core/go.sum') }}
+
     # sing-box-lx carries TUIC v5 and the AmneziaWG endpoint; the app spawns it as a sidecar and
     # Xray dials its loopback SOCKS listener. Built CGO-free from the pinned fork tag.
     - name: Restore cached sing-box-lx client
@@ -460,6 +493,7 @@ jobs:
           audit_elf "libs-vaydns/$abi/libvaydns.so" EXEC "$machine"
           audit_elf "libs-slipstream/$abi/libslipstream.so" DYN "$machine"
           audit_elf "libs-guts/$abi/libguts.so" EXEC "$machine"
+          audit_elf "libs-firefox/$abi/libfirefox.so" EXEC "$machine"
           audit_elf "libs-singbox/$abi/libsingbox.so" EXEC "$machine"
           audit_elf "libs-shadowquic/$abi/libshadowquic.so" DYN "$machine"
           # Android 16-KiB page-size support applies to 64-bit ABIs. Official 32-bit
@@ -535,6 +569,7 @@ jobs:
         cp -r ${{ github.workspace }}/libs-vaydns/. ${{ github.workspace }}/V2rayNG/app/libs/
         cp -r ${{ github.workspace }}/libs-slipstream/. ${{ github.workspace }}/V2rayNG/app/libs/
         cp -r ${{ github.workspace }}/libs-guts/. ${{ github.workspace }}/V2rayNG/app/libs/
+        cp -r ${{ github.workspace }}/libs-firefox/. ${{ github.workspace }}/V2rayNG/app/libs/
         cp -r ${{ github.workspace }}/libs-singbox/. ${{ github.workspace }}/V2rayNG/app/libs/
         cp -r ${{ github.workspace }}/libs-shadowquic/. ${{ github.workspace }}/V2rayNG/app/libs/
         cp -r ${{ github.workspace }}/libs-naive/. ${{ github.workspace }}/V2rayNG/app/libs/

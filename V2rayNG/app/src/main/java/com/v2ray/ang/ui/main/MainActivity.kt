@@ -212,6 +212,10 @@ class MainActivity : HelperBaseComponentActivity() {
     private fun handleLayoutTestClick() {
         if (mainViewModel.uiState.value.isRunning) {
             mainViewModel.testCurrentServerRealPing()
+        } else {
+            // The bar measures the link this app is carrying; with nothing connected there is no link to
+            // measure, and a tap that answered nothing at all would look exactly like a broken button.
+            toast(R.string.toast_test_needs_connection)
         }
     }
 

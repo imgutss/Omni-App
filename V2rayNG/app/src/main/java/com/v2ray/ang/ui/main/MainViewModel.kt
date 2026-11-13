@@ -208,6 +208,7 @@ class MainViewModel(
             MainServiceEvent.StateStopSuccess -> updateRunningState(false)
             is MainServiceEvent.MeasureDelayResult -> {
                 if (!uiState.value.isRunning || !testRequests.completeCurrent(event.requestId)) return
+                cancelCurrentTestTimeout()
                 _uiState.update { it.copy(isTesting = testRequests.isTesting, status = MainStatus.ConnectionTest(event.result)) }
             }
 
@@ -234,7 +235,10 @@ class MainViewModel(
             }
 
             is MainServiceEvent.MeasureDelayCancelled -> {
-                if (testRequests.completeCurrent(event.requestId)) resetTestStatus()
+                if (testRequests.completeCurrent(event.requestId)) {
+                    cancelCurrentTestTimeout()
+                    resetTestStatus()
+                }
             }
 
             is MainServiceEvent.MeasureConfigCancelled -> {
@@ -1017,6 +1021,7 @@ class MainViewModel(
     fun cancelAllPing() {
         bulkTestJob?.cancel()
         bulkTestJob = null
+        cancelCurrentTestTimeout()
         testRequests.cancelBulk()
         testRequests.invalidateCurrent()
         cancelPendingTestResults()
@@ -1114,17 +1119,73 @@ class MainViewModel(
 
     fun testCurrentServerRealPing() {
         if (!uiState.value.isRunning) return
+        // A tap while a measurement is already on its way asks for the same number twice; the second one
+        // is dropped so the bar cannot be left waiting for an answer to a question it stopped owning.
+        if (uiState.value.isTesting) return
         val requestId = testRequests.beginCurrent()
         _uiState.update { it.copy(isTesting = true, status = MainStatus.Testing) }
         dataSource.testCurrentServerRealPing(requestId)
+        scheduleCurrentTestTimeout(requestId)
+    }
+
+    /**
+     * Puts a bound on how long the status bar may say "Testing…".
+     *
+     * The daemon answers every request it takes, but a request can also reach no daemon at all — the
+     * process died, or the ordered broadcast found nobody — and then nothing would ever come back. This
+     * gives that silence an end and a reason a person can read, instead of a bar that waits forever.
+     */
+    private fun scheduleCurrentTestTimeout(requestId: String) {
+        cancelCurrentTestTimeout()
+        currentTestTimeoutJob = viewModelScope.launch {
+            delay(CURRENT_TEST_TIMEOUT_MS)
+            if (!testRequests.completeCurrent(requestId)) return@launch
+            val unanswered = ConnectionTestResult(
+                delayMillis = -1L,
+                errorMessage = dataSource.getString(R.string.connection_test_no_answer_from_service),
+            )
+            _uiState.update {
+                it.copy(isTesting = testRequests.isTesting, status = MainStatus.ConnectionTest(unanswered))
+            }
+        }
+    }
+
+    private fun cancelCurrentTestTimeout() {
+        currentTestTimeoutJob?.cancel()
+        currentTestTimeoutJob = null
     }
 
     private fun onTestsFinished(requestId: String) {
-        if (testRequests.completeBulk(requestId) == null) return
+        val request = testRequests.completeBulk(requestId) ?: return
         resetTestStatus()
         viewModelScope.launch(ioDispatcher) {
             cacheMutex.withLock { groupDataCache.clear() }
             reloadAllGroups(_uiState.value.groups.map { it.id })
+            putFastestFirst(request.groupId)
+        }
+    }
+
+    /**
+     * Uses what a round of measurements just found, instead of leaving it for a menu to be pressed.
+     *
+     * Every row now carries a real response, so the row with the lowest delay is the link that answered
+     * fastest: it is put first, and it becomes the selection. When the person was connected, the daemon
+     * is started again so they are on that link and not merely looking at it. A server that never
+     * answered has no delay to compare and is never chosen, wherever the sort leaves it.
+     */
+    private suspend fun putFastestFirst(groupId: String) {
+        if (groupId.isBlank() || !dataSource.autoPickFastestAfterTest()) return
+        runCatching {
+            dataSource.sortByTestResultsForSub(groupId)
+            updateGroupUi(groupId, loadGroup(groupId, forceRefresh = true))
+            val fastest = fastestAnsweringServer(mutableServerGroupState(groupId).value.servers) ?: return
+            if (fastest.guid == dataSource.getSelectServer()) return
+            dataSource.setSelectServer(fastest.guid)
+            _uiState.update { it.copy(selectedGuid = fastest.guid) }
+            if (uiState.value.isRunning) dataSource.restartService()
+        }.onFailure { error ->
+            if (error is CancellationException) throw error
+            LogUtil.e(AppConfig.TAG, "Failed to put the fastest server first", error)
         }
     }
 
@@ -1177,6 +1238,24 @@ class MainViewModel(
 
     companion object {
         private const val TEST_RESULT_FLUSH_INTERVAL_MS = 500L
+
+        /**
+         * How long the status bar waits for the daemon to answer one measurement.
+         *
+         * Three real samples over a tunnel that is up take a handful of seconds; a link that takes longer
+         * than this is not going to be described by a number anyway, and the person is owed the reason
+         * instead of a bar that keeps saying "Testing…".
+         */
+        private const val CURRENT_TEST_TIMEOUT_MS = 20_000L
+
+        /**
+         * The server a finished round of measurements puts first: the one whose real response was fastest.
+         *
+         * A server that got no answer has a delay of zero or less, which is not a measurement but the
+         * absence of one, so it is never the fastest however the rows are ordered.
+         */
+        internal fun fastestAnsweringServer(servers: List<ServersCache>): ServersCache? =
+            servers.filter { it.testDelayMillis > 0L }.minByOrNull { it.testDelayMillis }
 
         /**
          * PattNG: what becomes of a reading of a group numbered [number] when the one shown last is [lastShown], taken

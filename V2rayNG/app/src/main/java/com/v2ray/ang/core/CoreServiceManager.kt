@@ -14,6 +14,7 @@ import com.v2ray.ang.AppConfig
 import com.v2ray.ang.R
 import com.v2ray.ang.contracts.IDialerService
 import com.v2ray.ang.contracts.ServiceControl
+import com.v2ray.ang.firefox.FirefoxBridge
 import com.v2ray.ang.dto.ConnectionTestResult
 import com.v2ray.ang.dto.OutboundTrafficStat
 import com.v2ray.ang.dto.SubscriptionUpdateMessage
@@ -34,6 +35,7 @@ import com.v2ray.ang.service.RealPingBatchPlan
 import com.v2ray.ang.util.LogUtil
 import com.v2ray.ang.util.OmniPingStatistics
 import com.v2ray.ang.util.Utils
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -79,7 +81,19 @@ object CoreServiceManager {
     /** Written on the main thread and read by the reload thread, which tells a stop by it. */
     @Volatile
     private var networkMonitor: NetworkMonitor? = null
-    private val connectionTestScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    /**
+     * Owns the delay measurement the status bar asks for.
+     *
+     * The handler is what keeps a failure inside one measurement inside that measurement: without it, a
+     * throw the body did not catch travels out of the root scope to the thread's uncaught handler and
+     * takes the daemon down, which is a dead tunnel for a question about latency. With it, the failure is
+     * logged and the completion handler below tells the screen the test ended.
+     */
+    private val connectionTestScope = CoroutineScope(
+        SupervisorJob() + Dispatchers.IO + CoroutineExceptionHandler { _, throwable ->
+            LogUtil.e(AppConfig.TAG, "StartCore-Manager: delay measurement failed", throwable)
+        }
+    )
 
     /** Owns the Aether warm-up wait; cancelled on every start and stop so a stale wait cannot report. */
     private val aetherScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -292,6 +306,7 @@ object CoreServiceManager {
         DnsttCoreManager.stop()
         GutsCoreManager.stop()
         QuicCoreManager.stop()
+        FirefoxCoreManager.stop()
         if (aether != null) {
             checkAetherPorts(service, guid, aether, result.content, isReload)
         }
@@ -335,6 +350,7 @@ object CoreServiceManager {
             DnsttCoreManager.stop()
             GutsCoreManager.stop()
             QuicCoreManager.stop()
+            FirefoxCoreManager.stop()
             throw e
         }
         return true
@@ -354,6 +370,7 @@ object CoreServiceManager {
         DnsttCoreManager.stop()
         GutsCoreManager.stop()
         QuicCoreManager.stop()
+        FirefoxCoreManager.stop()
         throw StartFailure(message())
     }
 
@@ -473,6 +490,32 @@ object CoreServiceManager {
         }
     }
 
+    /**
+     * Starts the account engine the "Firefox" row depends on, before Xray can dial it.
+     *
+     * The row's configuration is one SOCKS outbound to the engine's loopback port, so a start without
+     * the engine would be a row that answers nothing — and a fallback to a direct outbound would be
+     * worse: it would send the person's traffic out in the clear while the screen said it was carried.
+     * So every way this can fail is refused here, with the reason on the screen, and the session is
+     * not started.
+     */
+    @Throws(Exception::class)
+    private fun startFirefoxEngine(service: Service, guid: String) {
+        val port = FirefoxBridge.port()
+        if (!FirefoxCoreManager.isSupported(service)) {
+            throw StartFailure(service.getString(R.string.firefox_engine_missing))
+        }
+        if (!FirefoxCoreManager.start(service, socksPort = port, apiPort = FirefoxBridge.DEFAULT_API_PORT)) {
+            FirefoxCoreManager.stop()
+            throw StartFailure(service.getString(R.string.firefox_engine_not_started))
+        }
+        if (!FirefoxCoreManager.awaitListeningBlocking(port, AetherDelayTester.TEST_BUDGET_MS)) {
+            FirefoxCoreManager.stop()
+            throw StartFailure(service.getString(R.string.firefox_engine_not_listening, port))
+        }
+        LogUtil.i(AppConfig.TAG, "StartCore-Manager: firefox account engine listening on $port, guid=$guid")
+    }
+
     @Throws(Exception::class)
     private fun launchNativeCore(
         service: Service,
@@ -493,6 +536,9 @@ object CoreServiceManager {
         currentDnstt = dnstt
         currentGuts = guts
         currentQuic = quic
+        // The account row carries traffic through the engine on this phone and not through an Xray
+        // outbound, so the engine is started here, before Xray can dial it.
+        if (FirefoxBridge.isFirefoxRow(guid)) startFirefoxEngine(service, guid)
         var tunFd = vpnInterface?.fd ?: 0
         val dialerMode = BrowserDialerMode.from(config.browserDialerMode)
         val dialerAddr = if (dialerMode != null) {
@@ -1217,7 +1263,9 @@ object CoreServiceManager {
                 }
             }
         }.invokeOnCompletion { cause ->
-            if (cause is CancellationException) {
+            // Whatever ends the measurement, the screen has to leave "Testing…": a person who asked for a
+            // number is owed either the number or the reason there is not one, never a bar that waits.
+            if (cause != null) {
                 MessageHelper.sendMsg2UI(service, AppConfig.MSG_MEASURE_DELAY_CANCEL, "", requestId)
             }
         }

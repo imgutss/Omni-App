@@ -433,12 +433,20 @@
     <string name="server_test_delay_detailed_partial">%1$s %2$d ms · ~%5$d · ≤%6$d ms · %3$d/%4$d</string>
     <string name="server_test_delay_detailed_partial_no_spread">%1$s %2$d ms · %3$d/%4$d</string>
     <string name="firefox_title">Firefox</string>
+    <string name="firefox_engine_missing">This build has no Firefox account engine, so this row cannot carry traffic.</string>
+    <string name="firefox_engine_not_started">The Firefox account engine did not start.</string>
+    <string name="firefox_engine_not_listening">The Firefox account engine is not answering on port %1$d.</string>
     <string name="firefox_subtitle">Your own account, 50 GB a month</string>
     <string name="server_test_no_response">No response</string>
     <string name="connection_test_untested">Not measurable in the current state</string>
     <string name="server_test_no_response_samples">No response · %1$d/%2$d successful samples</string>
     <string name="connection_test_error">Connection test failed: %s</string>
     <string name="connection_test_fail">Internet unavailable</string>
+    <!-- Shown on the status bar when the daemon never answered the measurement it was asked to run. -->
+    <string name="connection_test_no_answer_from_service">no answer from the service; try again</string>
+    <string name="toast_test_needs_connection">Connect first, then tap to check the connection</string>
+    <string name="title_pref_auto_pick_fastest_after_test">Move to the fastest after testing</string>
+    <string name="summary_pref_auto_pick_fastest_after_test">Puts the fastest server that answered first, selects it, and switches the connection to it.</string>
     <string name="connection_test_error_status_code">Error code: #%d</string>
     <string name="connection_connected">Connected. Tap to check connection.</string>
     <string name="connection_not_connected">Not connected</string>

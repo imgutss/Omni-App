@@ -677,6 +677,12 @@ fun SettingsScreen(
                     keyboardNumber = true,
                     onValueChanged = { realPingSamples = it }
                 )
+                SettingsSwitchItem(
+                    title = stringResource(R.string.title_pref_auto_pick_fastest_after_test),
+                    summary = stringResource(R.string.summary_pref_auto_pick_fastest_after_test),
+                    checked = autoPickFastest,
+                    onCheckedChange = { autoPickFastest = it }
+                )
                 SettingsEditItem(
                     title = stringResource(R.string.title_pref_ip_api_url),
                     value = ipApiUrl,

@@ -49,6 +49,12 @@ interface MainDataSource : Closeable {
 
     fun clearAllTestDelayResults(guids: List<String>)
     fun sortByTestResultsForSub(subId: String)
+
+    /** Whether a finished round of measurements may reorder the list and switch the selected server. */
+    fun autoPickFastestAfterTest(): Boolean
+
+    /** Asks a running daemon to start again, which is how a new selection is taken into use. */
+    fun restartService()
     fun getSubsList(): List<String>
 
     suspend fun importBatchConfig(

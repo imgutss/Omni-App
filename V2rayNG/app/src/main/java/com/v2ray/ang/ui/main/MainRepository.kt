@@ -188,6 +188,15 @@ class MainRepository(
         AngConfigManager.sortByTestResultsForSub(subId)
     }
 
+    override fun autoPickFastestAfterTest(): Boolean =
+        MmkvManager.decodeSettingsBool(AppConfig.PREF_AUTO_PICK_FASTEST_AFTER_TEST, true)
+
+    override fun restartService() {
+        // The same ordered broadcast the notification and the settings send: the daemon starts itself
+        // again with the profile the storage says is selected, which is the one just chosen.
+        sendMsg2Service(AppConfig.MSG_STATE_RESTART, "")
+    }
+
     override fun getSubsList(): List<String> = MmkvManager.decodeSubsList()
 
     override suspend fun importBatchConfig(

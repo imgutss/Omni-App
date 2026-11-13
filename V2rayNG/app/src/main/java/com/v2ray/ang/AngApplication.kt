@@ -11,6 +11,7 @@ import com.v2ray.ang.handler.AppLocaleManager
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.SettingsManager
 import com.v2ray.ang.ui.compose.ThemeManager
+import com.v2ray.ang.util.CrashGuard
 
 class AngApplication : Application() {
     companion object {
@@ -35,6 +36,10 @@ class AngApplication : Application() {
      */
     override fun onCreate() {
         super.onCreate()
+
+        // Installed before anything else this process does: a failure in any of it is then recorded
+        // instead of taking the app, and the tunnel it may be carrying, off the screen.
+        CrashGuard.install(this)
 
         MmkvManager.initialize(this)
 
