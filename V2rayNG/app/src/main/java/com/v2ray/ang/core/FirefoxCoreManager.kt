@@ -2,6 +2,7 @@ package com.v2ray.ang.core
 
 import android.content.Context
 import com.v2ray.ang.AppConfig
+import com.v2ray.ang.firefox.FirefoxBridge
 import com.v2ray.ang.util.LogUtil
 import java.io.File
 import java.net.InetSocketAddress

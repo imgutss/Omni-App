@@ -147,6 +147,9 @@ class MainViewModel(
     private var selectedGroupLoadJob: Job? = null
     private var reloadJob: Job? = null
     private var testResultFlushJob: Job? = null
+
+    /** Bound on how long one measurement may keep the status bar waiting, see its schedule. */
+    private var currentTestTimeoutJob: Job? = null
     private val pendingTestResults = linkedMapOf<String, RealPingResult>()
 
     private val testRequests = MainTestRequests()
