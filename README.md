@@ -4,7 +4,7 @@
 
 **Omni** is a native Android client for connections you set up yourself. The tunnel engines run on the phone, your profiles and subscriptions live in one place, and the app ships no servers or subscription of its own.
 
-[Download the latest release](https://github.com/imgutss/Omni-App/releases/latest)&ensp;&ensp;[فارسی](README.fa.md)&ensp;&ensp;[Source](https://github.com/imgutss/omni-android)
+[Download the latest release](https://github.com/imgutss/Omni-App/releases/latest)&ensp;&ensp;[فارسی](README.fa.md)&ensp;&ensp;[Source](https://github.com/imgutss/Omni-App)
 
 ## What's inside
 
@@ -74,7 +74,7 @@ Get-FileHash .\Omni_*_arm64-v8a.apk -Algorithm SHA256
 
 ## Source and credits
 
-Omni's Android core is built on the v2rayNG lineage through PattNG, and it uses Xray-core and the engines above. Upstream history and licenses are kept in [imgutss/omni-android](https://github.com/imgutss/omni-android), where the source is.
+Omni's Android core is built on the v2rayNG lineage through PattNG, and it uses Xray-core and the engines above. The source is in this repository; upstream credits and licenses are preserved in [docs/CREDITS.md](docs/CREDITS.md) and [LICENSE](LICENSE).
 
 ## License
 

@@ -6,7 +6,7 @@
 
 **Omni** یک کلاینت بومی اندروید برای اتصال‌هایی است که خودتان تهیه یا راه‌اندازی می‌کنید. موتورهای تونل مستقیم روی گوشی اجرا می‌شوند، پروفایل‌ها و اشتراک‌هایتان یک‌جا می‌مانند و خود برنامه هیچ سرور یا اشتراکی همراه ندارد.
 
-[دانلود آخرین نسخه](https://github.com/imgutss/Omni-App/releases/latest)&ensp;&ensp;[English](README.md)&ensp;&ensp;[سورس](https://github.com/imgutss/omni-android)
+[دانلود آخرین نسخه](https://github.com/imgutss/Omni-App/releases/latest)&ensp;&ensp;[English](README.md)&ensp;&ensp;[سورس](https://github.com/imgutss/Omni-App)
 
 ## امکانات
 
@@ -80,7 +80,7 @@ Get-FileHash .\Omni_*_arm64-v8a.apk -Algorithm SHA256
 
 ## سورس
 
-هستهٔ اندرویدی Omni روی بستر v2rayNG و از مسیر PattNG ساخته شده و از Xray-core و موتورهای بالا استفاده می‌کند. تاریخچه و مجوز مخازن بالادستی در [imgutss/omni-android](https://github.com/imgutss/omni-android) نگه داشته شده است؛ سورس همان‌جاست.
+هستهٔ اندرویدی Omni روی بستر v2rayNG و از مسیر PattNG ساخته شده و از Xray-core و موتورهای بالا استفاده می‌کند. سورس کامل در همین ریپو است؛ اعتبار و مجوزهای بالادستی در [docs/CREDITS.md](docs/CREDITS.md) و [LICENSE](LICENSE) نگه داشته شده است.
 
 ## مجوز
 
