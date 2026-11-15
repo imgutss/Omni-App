@@ -58,6 +58,23 @@ Omni has no subscription service of its own, so you need a working configuration
 | GUTS Fetch | Goes through your own Google Apps Script deployment, with a personal device certificate. No UDP |
 | MasterDNS | DNS tunnel client. Import a JSON, TOML or Base64 config, or a `masterdns://` link |
 
+## Set up your own server
+
+Four engines need a server you run yourself. Each guide walks through the server, the config and the profile in Omni, step by step, in English and Persian.
+
+| Protocol | What you need | Guide |
+| --- | --- | --- |
+| NaiveProxy | VPS, a domain, a valid TLS certificate and Caddy with forwardproxy | [English](docs/protocols/naiveproxy.md) · [فارسی](docs/protocols/naiveproxy.fa.md) |
+| TUIC v5 | A UDP-reachable VPS, a domain/certificate and a TUIC v5 server | [English](docs/protocols/tuic.md) · [فارسی](docs/protocols/tuic.fa.md) |
+| ShadowQUIC | A UDP-reachable VPS, a ShadowQUIC server and a matching JLS name | [English](docs/protocols/shadowquic.md) · [فارسی](docs/protocols/shadowquic.fa.md) |
+| GUTS Fetch | A Google account, an Apps Script web app and a personal device certificate | [English](docs/protocols/guts.md) · [فارسی](docs/protocols/guts.fa.md) |
+
+The guides come with example server configs you can copy and adapt. They are collected in [docs/protocols](docs/protocols/README.md), along with the ports, firewall notes and safety checks to read before you start.
+
+### GUTS, without a VPS
+
+GUTS Fetch goes through your own Google Apps Script deployment, so there is no VPS and no exit node to run. Download [Code.gs](docs/guts/Code.gs), deploy it to [Google Apps Script](https://script.google.com/), set a private shared key and paste the `/exec` URL into Omni. It carries HTTP/HTTPS for apps that trust your own device certificate, not raw TCP or UDP. Read the [certificate and privacy notes](docs/protocols/guts.md) before you install a CA.
+
 ## Check your download
 
 Every release has a `SHA256SUMS` file and every APK in it is signed. Hash the file you downloaded and compare it with the matching line.

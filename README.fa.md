@@ -60,6 +60,23 @@ Omni اشتراک یا سرویس خودش را ندارد، پس به یک کا
 | GUTS Fetch | از طریق Google Apps Script خودتان و یک گواهی شخصی دستگاه کار می‌کند. UDP ندارد |
 | MasterDNS | کلاینت تونل DNS. کانفیگ JSON، TOML یا Base64 یا لینک `masterdns://` را وارد کنید |
 
+## راه‌اندازی سرور خودتان
+
+چهار موتور به سروری نیاز دارند که خودتان اجرا می‌کنید. هر راهنما قدم‌به‌قدم سرور، کانفیگ و پروفایل در Omni را توضیح می‌دهد، به انگلیسی و فارسی.
+
+| پروتکل | چه چیزی لازم دارید | راهنما |
+| --- | --- | --- |
+| NaiveProxy | VPS، دامنه، گواهی TLS معتبر و Caddy با forwardproxy | [English](docs/protocols/naiveproxy.md) · [فارسی](docs/protocols/naiveproxy.fa.md) |
+| TUIC v5 | VPS با دسترسی UDP، دامنه/گواهی و سرور TUIC v5 | [English](docs/protocols/tuic.md) · [فارسی](docs/protocols/tuic.fa.md) |
+| ShadowQUIC | VPS با دسترسی UDP، سرور ShadowQUIC و نام JLS هماهنگ | [English](docs/protocols/shadowquic.md) · [فارسی](docs/protocols/shadowquic.fa.md) |
+| GUTS Fetch | حساب گوگل، وب‌اپ Apps Script و گواهی شخصی دستگاه | [English](docs/protocols/guts.md) · [فارسی](docs/protocols/guts.fa.md) |
+
+راهنماها کانفیگ نمونهٔ سرور دارند که می‌توانید کپی و متناسب کنید. همه در [docs/protocols](docs/protocols/README.md) جمع شده‌اند، همراه با پورت‌ها، نکته‌های فایروال و بررسی‌های ایمنی که باید پیش از شروع بخوانید.
+
+### GUTS، بدون VPS
+
+GUTS Fetch از طریق استقرار Google Apps Script خودتان کار می‌کند، پس نه VPS لازم است و نه نود خروجی. [Code.gs](docs/guts/Code.gs) را دانلود کنید، در [Google Apps Script](https://script.google.com/) مستقر کنید، یک کلید مشترک خصوصی بگذارید و آدرس `/exec` را در Omni وارد کنید. این روش HTTP/HTTPS را برای برنامه‌هایی که به گواهی شخصی دستگاه شما اعتماد دارند حمل می‌کند، نه TCP یا UDP خام. پیش از نصب CA، [نکته‌های گواهی و حریم خصوصی](docs/protocols/guts.md) را بخوانید.
+
 ## بررسی فایل دانلودشده
 
 هر ریلیز یک فایل `SHA256SUMS` دارد و همهٔ APKها امضا شده‌اند. هش فایلی که دانلود کرده‌اید را حساب کنید و با خط مربوطش مقایسه کنید.
