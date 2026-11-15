@@ -1,0 +1,116 @@
+# guts exit node on a free GitHub Actions runner.
+#
+# Run it from the Actions tab ("guts exit" -> Run workflow). It builds the exit node from the
+# guts branch, exposes it through a free cloudflared quick tunnel, and prints the /g URL to paste
+# into the Apps Script door as EXIT_URL (see guts/SETUP.fa.md).
+#
+# The shared key comes from the GUTS_KEY repository secret when set, so a session is one click
+# and the key never has to be typed into a run; the workflow input still works and wins when
+# given. Nothing is paid for: the runner and the tunnel are both free, and the session lasts up
+# to six hours (the runner limit). Start it again whenever you need the next one.
+name: guts exit
+
+on:
+  workflow_dispatch:
+    inputs:
+      key:
+        description: 'Shared key (leave empty to use the GUTS_KEY repository secret)'
+        required: false
+        type: string
+      minutes:
+        description: 'How long to keep the exit node up (max 350)'
+        required: false
+        default: '330'
+      source_ref:
+        description: 'Ref that carries the guts/ module to build'
+        required: false
+        default: 'guts'
+
+permissions:
+  contents: read
+
+jobs:
+  exit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref }}
+          submodules: false
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+
+      - name: Build the exit node
+        working-directory: guts
+        run: |
+          go build -trimpath -ldflags='-s -w' -o "$RUNNER_TEMP/guts-exit" ./cmd/exitnode
+          "$RUNNER_TEMP/guts-exit" -h || true
+
+      - name: Start the exit node and a free tunnel
+        env:
+          INPUT_KEY: ${{ inputs.key }}
+          SECRET_KEY: ${{ secrets.GUTS_KEY }}
+          MINUTES: ${{ inputs.minutes }}
+        run: |
+          set -euo pipefail
+          GUTS_KEY="${INPUT_KEY:-$SECRET_KEY}"
+          if [ -z "$GUTS_KEY" ]; then
+            echo "::error::no shared key: pass the key input or set the GUTS_KEY repository secret"
+            exit 1
+          fi
+          echo "::add-mask::$GUTS_KEY"
+          "$RUNNER_TEMP/guts-exit" -addr 127.0.0.1:8080 -key "$GUTS_KEY" > exit.log 2>&1 &
+          echo "exit node pid $!"
+          curl -fsSL -o "$RUNNER_TEMP/cloudflared" \
+            https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          chmod +x "$RUNNER_TEMP/cloudflared"
+          "$RUNNER_TEMP/cloudflared" tunnel --no-autoupdate --url http://127.0.0.1:8080 > cf.log 2>&1 &
+
+          url=""
+          for _ in $(seq 1 90); do
+            url=$(grep -Eo 'https://[a-z0-9-]+\.trycloudflare\.com' cf.log | head -1 || true)
+            [ -n "$url" ] && break
+            sleep 2
+          done
+          if [ -z "$url" ]; then
+            echo "::error::the tunnel did not come up"; tail -n 40 cf.log; exit 1
+          fi
+          echo "### guts exit URL" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "$url/g" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "Paste this as EXIT_URL in the Apps Script door (Code.gs), then redeploy a new version." >> "$GITHUB_STEP_SUMMARY"
+          echo "paste this as EXIT_URL in the Apps Script door:  $url/g"
+          echo "GUTS_EXIT_URL=$url/g" >> "$GITHUB_ENV"
+          printf '%s\n' "$url/g" > guts-exit-url.txt
+
+      # The URL as an artifact: the job stays alive for hours by design, and an artifact is the
+      # one output of a still-running job that can be fetched programmatically the moment the
+      # tunnel is up, instead of after the session ends.
+      - name: Publish the exit URL
+        uses: actions/upload-artifact@v4
+        with:
+          name: guts-exit-url
+          path: guts-exit-url.txt
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Keep it alive
+        env:
+          MINUTES: ${{ inputs.minutes }}
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 "$MINUTES"); do
+            sleep 60
+            curl -fsS -m 10 "http://127.0.0.1:8080/healthz" > /dev/null || {
+              echo "::error::the exit node stopped"; tail -n 40 exit.log; exit 1; }
+          done
+
+      - name: Logs
+        if: always()
+        run: |
+          echo "--- exit node ---"; tail -n 50 exit.log || true
+          echo "--- tunnel ---"; tail -n 50 cf.log || true

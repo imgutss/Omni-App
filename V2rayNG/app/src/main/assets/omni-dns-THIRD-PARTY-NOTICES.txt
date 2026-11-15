@@ -1,0 +1,28 @@
+Omni DNS engine provenance and bundled license files
+
+VayDNS
+- Upstream: https://github.com/anonvector/vaydns
+- Pinned revision: 45f18f16af40b6ad666e8119be08701b21395ee2
+- License: CC0 1.0 Universal; see vaydns-LICENSE.txt.
+- Omni adds an independent multi-resolver executable wrapper, Android FD protection, raw/SOCKS wiring and managed-lifecycle integration.
+
+Slipstream
+- Upstream: https://github.com/anonvector/slipstream-rust (upstream repository identity is preserved in source metadata)
+- Pinned revision: 60a5e38c7414b35e4c2fddf8d4d89a4341470c6a
+- License: Apache License 2.0; see slipstream-LICENSE.txt.
+- Omni adds an SCM_RIGHTS Android executable protection path and a local SOCKS5 bridge. Original JNI fallback remains available to library embedders.
+
+picoquic
+- Vendored with the pinned Slipstream source; upstream: https://github.com/private-octopus/picoquic
+- License: MIT; see picoquic-LICENSE.txt.
+
+picotls
+- Upstream: https://github.com/h2o/picotls
+- Pinned by picoquic to 5a4461d8a3948d9d26bf861e7d90cb80d8093515.
+- License: MIT; see picotls-LICENSE.txt. The OpenSSL binding is used, not minicrypto.
+
+OpenSSL
+- Built by the locked Rust openssl-src dependency, version 300.5.5+3.5.5 (OpenSSL 3.5.5).
+- License: Apache License 2.0; see openssl-LICENSE.txt.
+
+No WhiteDNS proprietary source, binary or configuration format is included.

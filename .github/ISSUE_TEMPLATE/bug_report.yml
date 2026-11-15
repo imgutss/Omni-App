@@ -1,0 +1,50 @@
+name: Report a bug / گزارش مشکل
+description: Help improve Omni with clear, redacted reproduction steps.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve **Omni — imgutss**.
+        **Never attach subscription URLs, private keys, tokens, or private backups.**
+        کلید خصوصی، توکن، لینک اشتراک و بکاپ خصوصی را اینجا نگذارید.
+        A server/network failure is not automatically an application defect.
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked existing issues and removed secrets from this report and its attachments.
+          required: true
+  - type: input
+    id: version
+    attributes:
+      label: Omni version and APK variant
+      placeholder: "1.0.0 — full arm64-v8a"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and Android version
+      placeholder: "Manufacturer, model, Android version"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce / مراحل تکرار مشکل
+      placeholder: "1. Open…\n2. Tap…\n3. Observe…"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Optional redacted diagnostics
+      description: Minimal logs/screenshots only. Review every attachment for sensitive data before uploading.

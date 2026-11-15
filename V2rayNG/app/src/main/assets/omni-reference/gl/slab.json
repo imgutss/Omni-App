@@ -1,0 +1,15 @@
+{
+  "vertices": 7044,
+  "groups": [
+    {
+      "start": 0,
+      "count": 492,
+      "materialIndex": 0
+    },
+    {
+      "start": 492,
+      "count": 6552,
+      "materialIndex": 1
+    }
+  ]
+}

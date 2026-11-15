@@ -1,0 +1,828 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Omni</string>
+    <string name="app_widget_name">সুইচ</string>
+    <string name="app_tile_name">সুইচ</string>
+    <string name="app_tile_first_use">এই ফিচারটি প্রথম ব্যবহার করা হচ্ছে, সার্ভার যোগ করতে অ্যাপটি ব্যবহার করুন</string>
+    <string name="navigation_drawer_open">নেভিগেশন ড্রয়ার খোলুন</string>
+    <string name="navigation_drawer_close">নেভিগেশন ড্রয়ার বন্ধ করুন</string>
+    <string name="migration_success">ডেটা স্থানান্তর সফল!</string>
+    <string name="action_stop_service">সেবা বন্ধ করুন</string>
+    <string name="action_ok">ঠিক আছে</string>
+    <string name="action_cancel">বাতিল</string>
+    <string name="migration_fail">ডেটা স্থানান্তর ব্যর্থ!</string>
+    <string name="pull_down_to_refresh">রিফ্রেশ করতে নিচে টানুন!</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_service">Omni সার্ভিস</string>
+    <string name="notification_channel_subscription_updates">সাবস্ক্রিপশন আপডেট</string>
+    <string name="notification_channel_connection_checks">সংযোগ পরীক্ষা</string>
+    <string name="notification_action_stop_v2ray">বন্ধ করুন</string>
+    <string name="toast_permission_denied">অনুমতি পাওয়া যাচ্ছে না</string>
+    <string name="toast_permission_denied_notification">বিজ্ঞপ্তির অনুমতি পাওয়া যায়নি</string>
+    <string name="notification_action_more">আরও দেখতে ক্লিক করুন</string>
+    <string name="toast_services_start">সার্ভিস শুরু করুন</string>
+    <string name="toast_services_stop">সার্ভিস বন্ধ করুন</string>
+    <string name="toast_services_success">সার্ভিস সফলভাবে শুরু হয়েছে</string>
+    <string name="toast_services_failure">সার্ভিস শুরু হতে ব্যর্থ হয়েছে</string>
+
+    <!--ServerActivity-->
+    <string name="title_server">কনফিগারেশন ফাইল</string>
+    <string name="menu_item_add_config">কনফিগারেশন যোগ করুন</string>
+    <string name="menu_item_save_config">কনফিগারেশন সংরক্ষণ করুন</string>
+    <string name="menu_item_edit_config">কনফিগারেশন সম্পাদনা করুন</string>
+    <string name="menu_item_del_config">কনফিগারেশন মুছুন</string>
+    <string name="menu_item_import_config_qrcode">QR কোড থেকে কনফিগারেশন আমদানি করুন</string>
+    <string name="menu_item_import_config_clipboard">ক্লিপবোর্ড থেকে কনফিগারেশন আমদানি করুন</string>
+    <string name="menu_item_import_config_local">ডিভাইস থেকে কনফিগ আমদানি করুন</string>
+    <string name="menu_item_import_config_policy_group">[নীতি গ্রুপ] যোগ করুন</string>
+    <string name="menu_item_import_config_proxy_chain">[প্রক্সি চেইন] যোগ করুন</string>
+    <string name="menu_item_import_config_manually_vmess">[VMess] যোগ করুন</string>
+    <string name="menu_item_import_config_manually_vless">[VLESS] যোগ করুন</string>
+    <string name="menu_item_import_config_manually_ss">[Shadowsocks] যোগ করুন</string>
+    <string name="menu_item_import_config_manually_socks">[SOCKS] যোগ করুন</string>
+    <string name="menu_item_import_config_manually_http">[HTTP] যোগ করুন</string>
+    <string name="menu_item_import_config_manually_trojan">[Trojan] যোগ করুন</string>
+    <string name="menu_item_import_config_manually_wireguard">[WireGuard] যোগ করুন</string>
+    <string name="menu_item_import_config_manually_hysteria2">[Hysteria2] যোগ করুন</string>
+    <string name="confirm_delete_visible_profiles">আপনি কি বর্তমানে প্রদর্শিত সব প্রোফাইল মুছে ফেলতে চান?</string>
+    <string name="confirm_delete_duplicate_profiles">আপনি কি বর্তমানে প্রদর্শিত সব সদৃশ প্রোফাইল মুছে ফেলতে চান?</string>
+    <string name="confirm_delete_invalid_profiles">প্রথমে প্রোফাইলগুলো পরীক্ষা করুন। আপনি কি বর্তমানে প্রদর্শিত সব অবৈধ প্রোফাইল মুছে ফেলতে চান?</string>
+    <string name="confirm_delete_profile">আপনি কি এই প্রোফাইলটি মুছে ফেলতে চান?</string>
+    <string name="confirm_delete_policy_group">আপনি কি এই পলিসি গ্রুপটি মুছে ফেলতে চান?</string>
+    <string name="confirm_delete_proxy_chain_member">আপনি কি এই প্রক্সি চেইন সদস্যটিকে মুছে ফেলতে চান?</string>
+    <string name="confirm_delete_routing_rule">আপনি কি এই রাউটিং নিয়মটি মুছে ফেলতে চান?</string>
+    <string name="confirm_delete_subscription_group">আপনি কি এই সাবস্ক্রিপশন গ্রুপটি মুছে ফেলতে চান?</string>
+    <string name="confirm_delete_asset_file">আপনি কি এই অ্যাসেট ফাইলটি মুছে ফেলতে চান?</string>
+    <string name="confirm_delete_asset_source">আপনি কি এই অ্যাসেট উৎসটি মুছে ফেলতে চান?</string>
+    <string name="server_lab_remarks">মন্তব্য</string>
+    <string name="server_lab_address">ঠিকানা</string>
+    <string name="server_lab_port">পোর্ট</string>
+    <string name="server_lab_id">আইডি</string>
+    <string name="server_lab_alterid">অলটারআইডি</string>
+    <string name="server_lab_security">নিরাপত্তা</string>
+    <string name="server_lab_network">নেটওয়ার্ক</string>
+    <string name="server_lab_more_function">ট্রান্সপোর্ট</string>
+    <string name="server_lab_head_type">হেড টাইপ</string>
+    <string name="server_lab_mode_type">gRPC মোড</string>
+    <string name="server_lab_request_host">হোস্ট</string>
+    <string name="server_lab_request_host_http">http হোস্ট</string>
+    <string name="server_lab_request_host_ws">ws হোস্ট</string>
+    <string name="server_lab_request_host_httpupgrade">httpupgrade হোস্ট</string>
+    <string name="server_lab_request_host_xhttp">xhttp হোস্ট</string>
+    <string name="server_lab_request_host_h2">h2 হোস্ট</string>
+    <string name="server_lab_request_host_quic">QUIC নিরাপত্তা</string>
+    <string name="server_lab_request_host_grpc">gRPC Authority</string>
+    <string name="server_lab_path">পথ</string>
+    <string name="server_lab_path_ws">ws পথ</string>
+    <string name="server_lab_path_httpupgrade">httpupgrade পথ</string>
+    <string name="server_lab_path_xhttp">xhttp পথ</string>
+    <string name="server_lab_path_h2">h2 পথ</string>
+    <string name="server_lab_path_quic">QUIC কী</string>
+    <string name="server_lab_path_kcp">kcp বীজ</string>
+    <string name="server_lab_path_grpc">gRPC সেবার নাম</string>
+    <string name="server_lab_stream_security" translatable="false">TLS</string>
+    <string name="server_lab_stream_fingerprint">ফিঙ্গারপ্রিন্ট</string>
+    <string name="server_lab_stream_alpn" translatable="false">ALPN</string>
+    <string name="server_lab_cipher_suites">সাইফার স্যুট (Cipher Suites)</string>
+    <string name="toast_cipher_suites_need_unsafe">cipherSuites শুধু unsafe fingerprint-এর সঙ্গে কাজ করে। unsafe বেছে নিন, অথবা cipherSuites খালি করুন।</string>
+    <string name="toast_websocket_alpn_http1_only">WebSocket ও HTTPUpgrade শুধু alpn http/1.1 হলে বা alpn না থাকলে সংযুক্ত হয়। http/1.1 বেছে নিন, অথবা alpn খালি রাখুন।</string>
+    <string name="server_lab_allow_insecure">সার্টিফিকেট যাচাই এড়িয়ে যান (allowInsecure)</string>
+    <string name="server_lab_sni" translatable="false">SNI</string>
+    <string name="server_lab_address3">ঠিকানা</string>
+    <string name="server_lab_port3">পোর্ট</string>
+    <string name="server_lab_id3">পাসওয়ার্ড</string>
+    <string name="server_lab_security3">নিরাপত্তা</string>
+    <string name="server_lab_id4">পাসওয়ার্ড (ঐচ্ছিক)</string>
+    <string name="server_lab_security4">ব্যবহারকারী (ঐচ্ছিক)</string>
+    <string name="server_lab_encryption">এনক্রিপশন</string>
+    <string name="server_lab_flow">প্রবাহ (flow)</string>
+    <string name="server_lab_public_key">পাবলিক কী</string>
+    <string name="server_lab_preshared_key">PreSharedKey (ঐচ্ছিক)</string>
+    <string name="server_lab_short_id">শর্ট আইডি</string>
+    <string name="server_lab_spider_x" translatable="false">SpiderX</string>
+    <string name="server_lab_mldsa65_verify" translatable="false">mldsa65Verify</string>
+    <string name="server_lab_secret_key">সিক্রেট কী</string>
+    <string name="server_lab_reserved">Reserved (ঐচ্ছিক, কমা দিয়ে পৃথক)</string>
+    <string name="server_lab_local_address">স্থানীয় ঠিকানা (ঐচ্ছিক IPv4/IPv6, কমা দ্বারা পৃথক করা)</string>
+    <string name="server_lab_local_mtu">MTU (ঐচ্ছিক, ডিফল্ট 1420)</string>
+    <string name="server_lab_remote_dns">remoteDNS (ঐচ্ছিক, কমা দ্বারা পৃথক করা IPv4/IPv6 ঠিকানা)</string>
+    <string name="server_lab_kcp_mtu">mKCP MTU (ঐচ্ছিক, ডিফল্ট 1350)</string>
+    <string name="server_lab_kcp_tti">mKCP TTI (ঐচ্ছিক, ডিফল্ট 50 মিলিসেকেন্ড)</string>
+    <string name="toast_success">সফল</string>
+    <string name="toast_failure">ব্যর্থ</string>
+    <string name="toast_none_data">কোনও তথ্য নেই</string>
+    <string name="toast_incorrect_protocol">ভুল প্রোটোকল</string>
+    <string name="toast_decoding_failed">ডিকোডিং ব্যর্থ</string>
+    <string name="title_file_chooser">একটি কনফিগারেশন ফাইল নির্বাচন করুন</string>
+    <string name="toast_require_file_manager">অনুগ্রহ করে একটি ফাইল ম্যানেজার ইনস্টল করুন।</string>
+    <string name="server_customize_config">কাস্টমাইজ কনফিগারেশন</string>
+    <string name="toast_config_file_invalid">অবৈধ কনফিগারেশন</string>
+    <string name="server_lab_content">কনটেন্ট</string>
+    <string name="toast_none_data_clipboard">ক্লিপবোর্ডে কোনও তথ্য নেই</string>
+    <string name="toast_invalid_url">অবৈধ URL</string>
+    <string name="toast_insecure_url_protocol">অনিরাপদ HTTP প্রোটোকলের সাবস্ক্রিপশন ঠিকানা ব্যবহার করবেন না</string>
+    <string name="server_lab_need_inbound">ইনবাউন্ড পোর্ট নিশ্চিত করুন সেটিংসের সাথে সামঞ্জস্যপূর্ণ</string>
+    <string name="toast_malformed_json">কনফিগারেশন ফরম্যাট সঠিক নয়।</string>
+    <string name="server_lab_request_host6">হোস্ট (SNI) (ঐচ্ছিক)</string>
+    <string name="toast_action_not_allowed">অ্যাকশন অনুমোদিত নয়</string>
+    <string name="server_obfs_password">Obfs পাসওয়ার্ড</string>
+    <string name="server_lab_port_hop">পোর্ট হপিং (পোর্টের মান প্রতিস্থাপন করবে)</string>
+    <string name="server_lab_port_hop_interval">পোর্ট পরিবর্তনের বিরতি (সেকেন্ড)</string>
+    <string name="server_lab_bandwidth_down">ডাউনলোড ব্যান্ডউইডথ (সমর্থিত একক: k/m/g/t)</string>
+    <string name="server_lab_bandwidth_up">আপলোড ব্যান্ডউইডথ (সমর্থিত একক: k/m/g/t)</string>
+    <string name="server_lab_xhttp_mode">XHTTP মোড</string>
+    <string name="server_lab_xhttp_extra">XHTTP Extra-এর কাঁচা JSON, ফরম্যাট: { XHTTPObject }</string>
+    <string name="server_lab_final_mask">finalMask-এর কাঁচা JSON, ফরম্যাট: { FinalMaskObject }</string>
+    <string name="preset_replace_title">%1$s বদলাবেন?</string>
+    <string name="preset_replace_message">বর্তমান %1$s তালিকায় নেই এবং হারিয়ে যাবে। এর বদলে %2$s বসাবেন?</string>
+    <string name="preset_action_replace">বদলান</string>
+    <string name="preset_default">ডিফল্ট</string>
+    <string name="acc_choose_preset">একটি তৈরি %1$s বেছে নিন</string>
+    <string name="server_lab_dial_mode" translatable="false">dialMode</string>
+    <string name="server_lab_ech_config_list" translatable="false">echConfigList</string>
+    <string name="server_lab_ech_outbound">echOutbound-এর কাঁচা JSON, ফরম্যাট: { OutboundObject }</string>
+    <string name="toast_ech_outbound_needs_ech_config_list">echOutbound-এর জন্য echConfigList প্রয়োজন</string>
+    <string name="toast_ech_outbound_invalid_tag">echOutbound-এ একটি খালি নয় এমন \"tag\" থাকতে হবে, যা direct বা block নয় এবং proxy দিয়ে শুরু হয় না</string>
+    <string name="toast_ech_outbound_tag_conflict">echOutbound-এর \"%1$s\" ট্যাগটি ইতিমধ্যে অন্য একটি outbound ব্যবহার করছে</string>
+    <string name="server_lab_verify_peer_cert_by_name">নাম দিয়ে পিয়ার সার্টিফিকেট যাচাই করুন</string>
+    <string name="server_lab_pinned_ca256">সার্টিফিকেট ফিঙ্গারপ্রিন্ট (SHA-256)</string>
+    <string name="server_lab_browser_dialer">Browser Dialer চালু করুন</string>
+    <string name="server_lab_browser_dialer_tip">শুধু xhttp (packet-up) ও ws আউটবাউন্ড সমর্থিত; TLS-সংক্রান্ত সেটিং উপেক্ষিত হতে পারে বা পরস্পরের সঙ্গে বিরোধ করতে পারে</string>
+    <string name="toast_allow_insecure_deprecated">বর্তমান নোডটি এনক্রিপশনবিহীন সংযোগ ব্যবহার করে। কর্তৃত্ববাদী সরকারের নিয়ন্ত্রণাধীন মধ্যবর্তী নেটওয়ার্ক অবকাঠামো আপনার যোগাযোগ সরাসরি দেখতে পারে।\nনিরাপত্তার কারণে Xray কোরের 26.2.6 বা পরবর্তী সংস্করণ দিয়ে এ ধরনের নোডে সংযোগ করা যায় না।\nনোডটি নিজে তৈরি করে থাকলে TLS-এর মতো নিরাপদ এনক্রিপশন চালু করুন অথবা pinnedCA256 সার্টিফিকেট ফিঙ্গারপ্রিন্ট পিন করুন।\nনোডটি কোনো সেবা প্রদানকারীর হলে প্রযুক্তিগত আপগ্রেডের জন্য তাদের সঙ্গে যোগাযোগ করুন। তারা সহযোগিতা না করলে ব্যবহারকারীর নিরাপত্তাকে বেশি গুরুত্ব দেয় এমন প্রদানকারীর কাছে যাওয়ার পরামর্শ দেওয়া হয়।\nআরও তথ্যের জন্য দেখুন https://github.com/2dust/v2rayN/discussions/9460</string>
+    <string name="pinned_ca256_action_fetch">সার্টিফিকেট ফিঙ্গারপ্রিন্ট আনুন</string>
+    <string name="toast_fetch_cert_sha256_success">সার্টিফিকেট ফিঙ্গারপ্রিন্ট সফলভাবে আনা হয়েছে</string>
+    <string name="toast_fetch_cert_sha256_failed">সার্টিফিকেট ফিঙ্গারপ্রিন্ট আনা ব্যর্থ হয়েছে</string>
+
+    <!-- UserAssetActivity -->
+    <string name="toast_asset_copy_failed">ফাইল কপি ব্যর্থ, অনুগ্রহ করে ফাইল ম্যানেজার ব্যবহার করুন</string>
+    <string name="menu_item_add_asset">অ্যাসেট যোগ করুন</string>
+    <string name="menu_item_add_file">ফাইল যোগ করুন</string>
+    <string name="menu_item_add_url">URL যোগ করুন</string>
+    <string name="menu_item_scan_qrcode">QR কোড স্ক্যান করুন</string>
+    <string name="title_url" translatable="false">URL</string>
+    <string name="menu_item_download_file">ফাইল ডাউনলোড করুন</string>
+    <string name="title_user_asset_add_url">অ্যাসেট URL যোগ করুন</string>
+    <string name="msg_file_not_found">ফাইল খুঁজে পাওয়া যায়নি</string>
+    <string name="msg_remark_is_duplicate">মন্তব্য ইতিমধ্যে বিদ্যমান</string>
+    <string name="asset_geo_files_sources">Geo ফাইলের উৎস (ঐচ্ছিক)</string>
+
+    <!-- PerAppProxyActivity -->
+    <string name="msg_dialog_progress">লোড হচ্ছে</string>
+    <string name="menu_item_search">অনুসন্ধান করুন</string>
+    <string name="menu_item_select_all">সবকিছু নির্বাচন করুন</string>
+    <string name="menu_item_invert_selection">নির্বাচন উল্টে দিন</string>
+    <string name="msg_enter_keywords">কিওয়ার্ড লিখুন</string>
+    <string name="switch_bypass_apps_mode">বাইপাস মোড</string>
+    <string name="menu_item_select_proxy_app">প্রক্সি ব্যবহার করবে এমন অ্যাপ স্বয়ংক্রিয়ভাবে নির্বাচন করুন</string>
+    <string name="msg_downloading_content">বিষয়বস্তু ডাউনলোড হচ্ছে</string>
+    <string name="menu_item_export_proxy_app">ক্লিপবোর্ডে রপ্তানি করুন</string>
+    <string name="menu_item_import_proxy_app">ক্লিপবোর্ড থেকে আমদানি করুন</string>
+    <string name="per_app_proxy_settings">অ্যাপভিত্তিক সেটিংস</string>
+    <string name="per_app_proxy_settings_enable">অ্যাপভিত্তিক সেটিংস চালু করুন</string>
+    <string name="app_picker_unknown_app">অজানা অ্যাপ (UID শনাক্ত করা যায়নি)</string>
+
+    <!-- Preferences -->
+    <string name="title_settings">সেটিংস</string>
+    <string name="title_advanced">এডভান্সড সেটিংস</string>
+    <string name="title_core_settings">কোর সেটিংস</string>
+    <string name="title_vpn_settings">VPN সেটিংস</string>
+    <string name="title_pref_per_app_proxy">প্রতি-অ্যাপ প্রক্সি</string>
+    <string name="summary_pref_per_app_proxy">সাধারণ: নির্বাচিত অ্যাপ প্রক্সি ব্যবহার করে, অনির্বাচিত অ্যাপ সরাসরি সংযুক্ত হয়;\nবাইপাস মোড: নির্বাচিত অ্যাপ সরাসরি সংযুক্ত হয়, অনির্বাচিত অ্যাপ প্রক্সি ব্যবহার করে।\nযেসব অ্যাপ প্রক্সি ব্যবহার করবে, সেগুলি স্বয়ংক্রিয়ভাবে নির্বাচনের বিকল্পটি মেনুতে আছে।</string>
+    <string name="title_pref_is_booted">ডিভাইস চালু হওয়ার পর সংযোগ</string>
+    <string name="summary_pref_is_booted">ডিভাইস চালু হওয়ার পর নির্বাচিত সার্ভারে স্বয়ংক্রিয়ভাবে সংযোগ করুন। Android ব্যাকগ্রাউন্ডে চালু হওয়া সীমিত করতে পারে।</string>
+    <string name="title_system_vpn_settings">সিস্টেমের VPN সেটিংস</string>
+    <string name="summary_system_vpn_settings">ডিভাইসে সমর্থিত হলে সর্বদা চালু VPN কনফিগার করতে Android-এর VPN সেটিংস খুলুন।</string>
+    <string name="toast_system_vpn_settings_unavailable">সিস্টেমের VPN সেটিংস উপলভ্য নয়।</string>
+
+
+    <string name="subscription_updater_job_tips">কাজটি ব্যাকগ্রাউন্ডে চলবে এবং অগ্রগতির তথ্য বিজ্ঞপ্তিতে দেখানো হবে।</string>
+    <string name="title_pref_auto_test_after_update_subscription">সাবস্ক্রিপশন আপডেটের পর স্বয়ংক্রিয় পরীক্ষা</string>
+    <string name="summary_pref_auto_test_after_update_subscription">স্বয়ংক্রিয় পরীক্ষায় অনেক সময় লাগে। চালু থাকলে কাজটি ব্যাকগ্রাউন্ডে চলবে; অন্যথায় বর্তমান পৃষ্ঠায় চলবে।</string>
+    <string name="title_pref_auto_remove_invalid_after_test">পরীক্ষার পর অবৈধ কনফিগ স্বয়ংক্রিয়ভাবে মুছুন</string>
+    <string name="summary_pref_auto_remove_invalid_after_test">পরীক্ষার ফল সঠিক নাও হতে পারে; মুছে ফেলা কনফিগ ফেরত আনা যাবে না।</string>
+    <string name="title_pref_auto_sort_after_test">পরীক্ষার পর স্বয়ংক্রিয়ভাবে সাজান</string>
+    <string name="summary_pref_auto_sort_after_test">পরীক্ষার ফল সঠিক নাও হতে পারে;</string>
+
+    <string name="title_mux_settings">Mux সেটিংস</string>
+    <string name="title_pref_mux_enabled">Mux সক্রিয় করুন</string>
+    <string name="summary_pref_mux_enabled">দ্রুত, তবে এটি অস্থিতিশীল সংযোগ সৃষ্টি করতে পারে\nTCP, UDP এবং QUIC পরিচালনা কাস্টমাইজ করুন</string>
+    <string name="title_pref_mux_concurrency">TCP সংযোগ (পরিসর -1 থেকে 1024)</string>
+    <string name="title_pref_mux_xudp_concurrency">XUDP সংযোগ (পরিসর -1 থেকে 1024)</string>
+    <string name="title_pref_mux_xudp_quic">Mux টানেলে QUIC পরিচালনা</string>
+    <string-array name="mux_xudp_quic_entries">
+        <item>অস্বীকার করুন</item>
+        <item>অনুমতি দিন</item>
+        <item>এড়িয়ে যান</item>
+    </string-array>
+
+    <string name="title_pref_speed_enabled">গতি প্রদর্শন সক্রিয় করুন</string>
+    <string name="summary_pref_speed_enabled">বিজ্ঞপ্তিতে বর্তমান সংযোগের গতি দেখান।\nআইকনটি প্রক্সি বা সরাসরি ট্রাফিকের মধ্যে কোনটি বেশি তা দেখায়।</string>
+
+    <string name="title_pref_sniffing_enabled">ট্রাফিকের গন্তব্য ডোমেইন শনাক্তকরণ চালু করুন (Sniffing)</string>
+    <string name="summary_pref_sniffing_enabled">ট্রাফিক থেকে গন্তব্য ডোমেইন শনাক্ত করুন (ডিফল্টভাবে চালু)।</string>
+    <string name="title_pref_route_only_enabled">routeOnly সক্রিয় করুন</string>
+    <string name="summary_pref_route_only_enabled">রুটিংয়ের জন্য শুধুমাত্র স্নিফড ডোমেইন নাম ব্যবহার করুন, এবং লক্ষ্য ঠিকানা হিসেবে আইপি ঠিকানা রাখুন।</string>
+
+    <string name="title_pref_local_dns_enabled">স্থানীয় DNS সক্রিয় করুন</string>
+    <string name="summary_pref_local_dns_enabled">DNS মূল DNS মডিউল দ্বারা প্রক্রিয়া করা হয় (প্রস্তাবিত, যদি LAN এবং মূলভূমি ঠিকানার বাইপাসিং প্রয়োজন হয়)</string>
+
+    <string name="title_pref_fake_dns_enabled">কৃত্রিম DNS চালু করুন (FakeDNS)</string>
+    <string name="summary_pref_fake_dns_enabled">ডোমেইন রেজলভের সময় FakeDNS কৃত্রিম IP ঠিকানা ফেরত দেয় (দ্রুত, তবে কিছু অ্যাপে কাজ নাও করতে পারে)।</string>
+
+    <string name="title_pref_ipv6_enabled">IPv6 সক্রিয় করুন</string>
+    <string name="summary_pref_ipv6_enabled">VPN ইন্টারফেসে IPv6 ঠিকানা এবং রুট যোগ করুন</string>
+
+    <string name="title_pref_prefer_ipv6">IPv6 অগ্রাধিকার দিন</string>
+    <string name="summary_pref_prefer_ipv6">ডোমেইন নাম রেজোলিউশনে IPv6 ঠিকানাকে অগ্রাধিকার দিন</string>
+
+    <string name="title_pref_remote_dns">রিমোট DNS (UDP/TCP/HTTPS/QUIC, ঐচ্ছিক)</string>
+    <string name="summary_pref_remote_dns" translatable="false">DNS</string>
+
+    <string name="title_pref_vpn_dns">VPN DNS (শুধুমাত্র IPv4/IPv6)</string>
+    <string name="title_pref_vpn_bypass_lan">VPN কি LAN এড়িয়ে যাবে?</string>
+
+    <string name="title_pref_vpn_interface_address">VPN ইন্টারফেসের ঠিকানা</string>
+
+    <string name="title_pref_vpn_mtu">VPN MTU (ডিফল্ট 1500)</string>
+
+
+    <string name="title_pref_domestic_dns">সরাসরি DNS (ঐচ্ছিক)</string>
+    <string name="summary_pref_domestic_dns" translatable="false">DNS</string>
+
+    <string name="title_pref_dns_hosts">DNS হোস্ট ম্যাপিং (বিন্যাস: domain:address,…)</string>
+    <string name="summary_pref_dns_hosts">domain:address,…</string>
+
+    <string name="title_pref_delay_test_url">প্রকৃত বিলম্ব পরীক্ষার URL</string>
+    <string name="summary_pref_delay_test_url" translatable="false">URL</string>
+    <string name="title_pref_real_ping_concurrency">একযোগে প্রকৃত বিলম্ব পরীক্ষা</string>
+
+    <string name="title_pref_ip_api_url">বর্তমান সংযোগের তথ্য পরীক্ষার URL</string>
+    <string name="summary_pref_ip_api_url" translatable="false">URL</string>
+
+    <string name="title_pref_proxy_sharing_enabled">LAN থেকে সংযোগ অনুমোদন করুন</string>
+    <string name="summary_pref_proxy_sharing_enabled">অন্যান্য ডিভাইসগুলি আপনার আইপি ঠিকানা ব্যবহার করে প্রক্সিতে সংযুক্ত হতে পারে, শুধুমাত্র বিশ্বস্ত নেটওয়ার্কে সক্রিয় করুন যাতে অনুমোদিত সংযোগ এড়ানো যায়</string>
+    <string name="toast_warning_pref_proxysharing_short">LAN থেকে সংযোগ অনুমোদন করুন, নিশ্চিত করুন যে আপনি একটি বিশ্বস্ত নেটওয়ার্কে আছেন</string>
+
+    <string name="title_pref_socks_port">স্থানীয় প্রক্সি পোর্ট</string>
+    <string name="title_pref_aether_listen_port">Aether-এর লিসেন পোর্ট</string>
+    <string name="title_pref_enable_local_proxy">লোকাল প্রক্সি সক্ষম করুন</string>
+    <string name="summary_pref_enable_local_proxy">বন্ধ থাকলে কোনো SOCKS প্রক্সি পাওয়া যাবে না, তাই সাবস্ক্রিপশন আপডেট ও অনুরূপ কাজ প্রক্সি ব্যবহার করতে পারবে না</string>
+    <string name="title_pref_socks_enable_udp" translatable="false">SOCKS5 UDP</string>
+    <string name="summary_pref_socks_enable_udp">UDP ব্যবহার করার সময় SOCKS5 প্রমাণীকরণ সম্পূর্ণরূপে নিরাপদ নয়।</string>
+    <string name="summary_pref_socks_port">স্থানীয় প্রক্সি পোর্ট</string>
+    <string name="title_pref_dynamic_socks_port">গতিশীল স্থানীয় প্রক্সি পোর্ট চালু করুন</string>
+    <string name="summary_pref_dynamic_socks_port">প্রতিবার inbound তৈরি হলে একটি এলোমেলো স্থানীয় প্রক্সি পোর্ট তৈরি করুন</string>
+    <string name="title_pref_socks_username">স্থানীয় প্রক্সির ব্যবহারকারীর নাম (ঐচ্ছিক)</string>
+    <string name="summary_pref_socks_username">ব্যবহারকারীর নাম</string>
+    <string name="title_pref_socks_password">স্থানীয় প্রক্সির পাসওয়ার্ড (ঐচ্ছিক)</string>
+    <string name="summary_pref_socks_password">পাসওয়ার্ড</string>
+
+    <string name="title_pref_local_dns_port">স্থানীয় DNS পোর্ট</string>
+    <string name="summary_pref_local_dns_port">স্থানীয় DNS পোর্ট</string>
+
+    <string name="title_pref_confirm_remove">কনফিগারেশন ফাইল মুছে ফেলার নিশ্চিতকরণ</string>
+    <string name="summary_pref_confirm_remove">কনফিগারেশন ফাইল মুছে ফেলার জন্য ব্যবহারকারীর দ্বিতীয় নিশ্চিতকরণের প্রয়োজন</string>
+
+
+    <string name="title_pref_append_http_proxy">VPN-এ HTTP প্রক্সি যুক্ত করুন</string>
+    <string name="summary_pref_append_http_proxy">ভার্চুয়াল NIC ডিভাইসের মধ্য দিয়ে না গিয়ে ব্রাউজার ও কিছু সমর্থিত অ্যাপ সরাসরি HTTP প্রক্সি ব্যবহার করবে (Android 10+)</string>
+
+    <string name="title_pref_double_column_display">দুই কলামে প্রদর্শন চালু করুন</string>
+    <string name="summary_pref_double_column_display">প্রোফাইল তালিকা দুই কলামে দেখায়, ফলে পর্দায় আরও বিষয়বস্তু দেখা যায়।</string>
+
+    <string name="title_pref_group_all_display">“সব” গ্রুপ ট্যাব দেখান</string>
+    <string name="summary_pref_group_all_display">সব সাবস্ক্রিপশন গ্রুপের কনফিগ একটি ট্যাবে দেখান।</string>
+
+    <!-- AboutActivity -->
+    <string name="title_pref_feedback">মতামত</string>
+    <string name="summary_pref_feedback">মতামত উন্নয়ন বা বাগগুলি GitHub-এ পাঠান</string>
+    <string name="summary_pref_tg_group">টেলিগ্রাম গ্রুপে যোগদান করুন</string>
+    <string name="toast_tg_app_not_found">টেলিগ্রাম অ্যাপ পাওয়া যায়নি</string>
+    <string name="title_privacy_policy">গোপনীয়তা নীতি</string>
+    <string name="title_qr_code">QR কোড</string>
+    <string name="title_about">সম্পর্কিত</string>
+    <string name="title_source_code">সোর্স কোড</string>
+    <string name="title_oss_license">ওপেন সোর্স লাইসেন্স</string>
+    <string name="title_translators">অনুবাদকগণ</string>
+    <string name="title_tg_channel">টেলিগ্রাম চ্যানেল</string>
+
+    <string name="title_pref_promotion">প্রচার</string>
+
+    <string name="title_pref_auto_update_subscription">স্বয়ংক্রিয় আপডেট সাবস্ক্রিপশন</string>
+    <string name="summary_pref_auto_update_subscription">পটভূমিতে একটি নির্দিষ্ট সময় পর পর আপনার সাবস্ক্রিপশন স্বয়ংক্রিয়ভাবে আপডেট করুন। ডিভাইসের উপর নির্ভর করে, এই বৈশিষ্ট্যটি সবসময় কাজ নাও করতে পারে</string>
+    <string name="title_pref_auto_update_interval">স্বয়ংক্রিয় আপডেটের বিরতি (মিনিট; সর্বনিম্ন ১৫)</string>
+
+    <string name="title_core_loglevel">লগ স্তর</string>
+    <string name="title_outbound_domain_resolve_method">বহির্গামী সংযোগের ডোমেইন রেজলভ পদ্ধতি (outbound)</string>
+    <string name="title_mode">মোড</string>
+    <string name="title_mode_help">আরো সাহায্যের জন্য ক্লিক করুন</string>
+    <string name="title_language">ভাষা</string>
+    <string name="title_ui_settings">ইউআই সেটিংস</string>
+    <string name="title_pref_ui_mode_night">ইউআই মোড সেটিংস</string>
+    <string name="title_pref_dynamic_color">ডায়নামিক রঙ চালু করুন</string>
+    <string name="summary_pref_dynamic_color">শুধুমাত্র Android 12+ ডিভাইসে কাজ করে</string>
+    <string name="title_pref_use_hev_tunnel">Hev TUN সুবিধা চালু করুন</string>
+    <string name="summary_pref_use_hev_tunnel">চালু থাকলে TUN hev-socks5-tunnel ব্যবহার করবে; অন্যথায় xray-core ব্যবহার করবে।</string>
+    <string name="title_pref_hev_tunnel_loglevel">Hev TUN লগ স্তর</string>
+    <string name="title_pref_hev_tunnel_rw_timeout">Hev TUN পড়া/লেখার সময়সীমা (সেকেন্ড; TCP/UDP-এর ডিফল্ট: 300/60)</string>
+    <string name="title_mode_settings">মোড সেটিংস</string>
+    <string name="title_root_mode_enabled">Root মোড চালু (Root ব্যবহারকারীদের জন্য)</string>
+    <string name="summary_root_mode_enabled">Root সুবিধা ব্যবহার করে নিম্ন-স্তরের স্বচ্ছ প্রক্সি চালু করুন। এই মোডটি Android-এর মানক সিস্টেম VPN এড়িয়ে সরাসরি অন্তর্নিহিত সব নেটওয়ার্ক ট্রাফিক নিয়ন্ত্রণ করে। চালু করার পর আগের সাধারণ মোড, অ্যাপভিত্তিক রাউটিং এবং সংশ্লিষ্ট VPN সেটিংস আর কার্যকর থাকবে না।</string>
+    <string name="toast_root_required">এই সুবিধার জন্য Root অ্যাক্সেস প্রয়োজন</string>
+    <string name="title_root_lan_sharing">LAN / টেদার করা ডিভাইসে VPN শেয়ার করুন (Root ব্যবহারকারীদের জন্য)</string>
+    <string name="summary_root_lan_sharing">Wi-Fi হটস্পট ও USB-টেদার করা ডিভাইসের ট্রাফিক VPN-এর মাধ্যমে রাউট করুন।</string>
+
+    <string name="title_logcat" translatable="false">Logcat</string>
+    <string name="logcat_copy">কপি করুন</string>
+    <string name="logcat_clear">পরিষ্কার করুন</string>
+    <string name="logcat_share">লগ শেয়ার করুন</string>
+    <string name="title_service_restart">সার্ভিস পুনরায় চালু করুন</string>
+    <string name="title_del_all_config">সব কনফিগারেশন মুছে ফেলুন</string>
+    <string name="title_del_duplicate_config">ডুপ্লিকেট কনফিগারেশন মুছে ফেলুন</string>
+    <string name="title_del_invalid_config">অবৈধ কনফিগারেশন মুছে ফেলুন (প্রথমে পরীক্ষা করুন)</string>
+    <string name="title_export_all">কনফিগারেশন ক্লিপবোর্ডে রপ্তানি করুন</string>
+    <string name="title_sub_setting">সাবস্ক্রিপশন</string>
+    <string name="sub_setting_remarks">মন্তব্য</string>
+    <string name="sub_setting_url">ঐচ্ছিক URL</string>
+    <string name="sub_setting_user_agent" translatable="false">User Agent</string>
+    <string name="sub_setting_request_headers">রিকোয়েস্ট হেডার (JSON ফরম্যাট)</string>
+    <string name="sub_setting_filter">মন্তব্যের রেগুলার এক্সপ্রেশন ফিল্টার</string>
+    <string name="sub_setting_override_address">ঠিকানা ওভাররাইড</string>
+    <string name="sub_setting_override_port">পোর্ট ওভাররাইড</string>
+    <string name="sub_setting_override_tip">সাবস্ক্রিপশনের মান রাখতে খালি রাখুন</string>
+    <string name="sub_setting_enable">আপডেট সক্রিয় করুন</string>
+    <string name="sub_auto_update">স্বয়ংক্রিয় আপডেট সক্রিয় করুন</string>
+    <string name="sub_allow_insecure_url">অনিরাপদ HTTP ঠিকানা অনুমোদন করুন</string>
+    <string name="sub_setting_pre_profile">প্রবেশ প্রক্সি</string>
+    <string name="sub_setting_next_profile">প্রস্থান প্রক্সি</string>
+    <string name="sub_setting_pre_profile_tip">কনফিগারেশনের মন্তব্যটি বিদ্যমান ও অনন্য হতে হবে</string>
+    <string name="sub_setting_entry_proxy_tip">নির্বাচিত প্রক্সিটি এই সাবস্ক্রিপশনের প্রতিটি প্রোফাইলের আগে সেই প্রোফাইলের প্রক্সি চেইনের প্রবেশ লিঙ্ক হিসেবে যোগ করা হবে।</string>
+    <string name="sub_setting_exit_proxy_tip">নির্বাচিত প্রক্সিটি এই সাবস্ক্রিপশনের প্রতিটি প্রোফাইলের পরে সেই প্রোফাইলের প্রক্সি চেইনের প্রস্থান লিঙ্ক হিসেবে যোগ করা হবে।</string>
+    <string name="toast_invalid_update_interval">আপডেটের বিরতি সঠিক নয়। সর্বনিম্ন ১৫ মিনিট।</string>
+    <string name="toast_invalid_override_port">ওভাররাইড পোর্ট অবৈধ। 1 থেকে 65535 এর মধ্যে একটি মান দিন।</string>
+    <string name="title_sub_update">সাবস্ক্রিপশন আপডেট</string>
+    <string name="title_ping_all_server">TCP বিলম্ব পরীক্ষা করুন (TCPing)</string>
+    <string name="title_real_ping_all_server">প্রকৃত বিলম্ব পরীক্ষা করুন</string>
+    <string name="title_user_asset_setting">অ্যাসেট ফাইল</string>
+    <string name="title_sort_by_test_results">টেস্ট ফলাফল দ্বারা সাজানো</string>
+    <string name="title_filter_config">কনফিগারেশন ফাইল ফিল্টার করুন</string>
+    <string name="filter_config_all">সব</string>
+    <string name="summary_scan_qrcode">ক্যামেরা স্ক্যান খুলতে পর্দায় ট্যাপ করুন</string>
+    <string name="title_del_duplicate_config_count">%d ডুপ্লিকেট কনফিগারেশন মুছে ফেলুন</string>
+    <string name="title_del_config_count">%dটি কনফিগারেশন মুছুন</string>
+    <string name="title_import_config_count">%dটি কনফিগারেশন আমদানি করুন</string>
+    <string name="title_export_config_count">%dটি কনফিগারেশন রপ্তানি করুন</string>
+    <plurals name="title_update_config_count">
+        <item quantity="one">%1$dটি কনফিগারেশন আপডেট হয়েছে</item>
+        <item quantity="other">%1$dটি কনফিগারেশন আপডেট হয়েছে</item>
+    </plurals>
+    <plurals name="title_update_asset_count">
+        <item quantity="one">%1$dটি অ্যাসেট ফাইল আপডেট হয়েছে</item>
+        <item quantity="other">%1$dটি অ্যাসেট ফাইল আপডেট হয়েছে</item>
+    </plurals>
+    <string name="title_update_subscription_result">%1$dটি কনফিগ আপডেট হয়েছে (%2$d সফল, %3$d ব্যর্থ, %4$d এড়ানো)</string>
+    <string name="title_update_subscription_no_subscription">কোনো সাবস্ক্রিপশন নেই</string>
+    <string name="toast_server_not_found_in_group">বর্তমান গ্রুপে নির্বাচিত সার্ভারটি পাওয়া যায়নি</string>
+    <string name="title_locate_selected_config">নির্বাচিত কনফিগটি খুঁজুন</string>
+
+    <string name="tasker_start_service">সার্ভিস শুরু করুন</string>
+    <string name="tasker_setting_confirm">নিশ্চিত করুন</string>
+
+    <!-- RoutingSettingActivity -->
+    <string name="routing_settings_domain_strategy">ডোমেইন কৌশল</string>
+    <string name="routing_settings_title">রাউটিং সেটিংস</string>
+    <string name="routing_settings_tips">সব নির্ধারিত মিলের শর্ত একসঙ্গে পূরণ হলেই কেবল নিয়মটি প্রয়োগ হবে (AND)। নিয়মগুলি ওপর থেকে নিচে পরীক্ষা করা হয়; প্রথম মিলে যাওয়া নিয়মটি প্রয়োগ করা হয়।</string>
+    <string name="routing_settings_comma_tip">একাধিক এন্ট্রি কমা (,) দিয়ে আলাদা করুন।</string>
+    <string name="routing_settings_save">সেভ করুন</string>
+    <string name="routing_settings_delete">মুছে ফেলুন</string>
+    <string name="routing_settings_rule_title">রাউটিং নিয়মের সেটিংস</string>
+    <string name="routing_settings_add_rule">নিয়ম যোগ করুন</string>
+    <string name="routing_settings_import_predefined_rulesets">পূর্বনির্ধারিত নিয়মাবলী আমদানি করুন</string>
+    <string name="routing_settings_import_rulesets_tip">বিদ্যমান নিয়মসমূহ মুছে যাবে। চালিয়ে যেতে চান?</string>
+    <string name="routing_settings_import_rulesets_from_clipboard">ক্লিপবোর্ড থেকে নিয়মসমূহ আমদানি করুন</string>
+    <string name="routing_settings_import_rulesets_from_qrcode">QR কোড থেকে রুলসেট আমদানি করুন</string>
+    <string name="routing_settings_export_rulesets_to_clipboard">নিয়মসমূহ ক্লিপবোর্ডে রপ্তানি করুন</string>
+    <string name="routing_settings_locked">লক করা; প্রিসেট আমদানির সময় এই নিয়মটি রাখুন</string>
+    <string name="routing_settings_domain" translatable="false">domain</string>
+    <string name="routing_settings_ip" translatable="false">ip</string>
+    <string name="routing_settings_process">process (প্যাকেজের নাম — শুধু Xray TUN ব্যবহার, routeOnly চালু এবং Android 10+ হলে সমর্থিত)</string>
+    <string name="routing_settings_process_select">প্যাকেজের নাম নির্বাচন করুন</string>
+    <string name="routing_settings_port" translatable="false">port</string>
+    <string name="routing_settings_protocol" translatable="false">protocol</string>
+    <string name="routing_settings_protocol_tip" translatable="false">[http,tls,bittorrent]</string>
+    <string name="routing_settings_network" translatable="false">network</string>
+    <string name="routing_settings_outbound_tag_hint">proxy / direct / block / &lt;%1$s&gt;</string>
+    <string name="routing_settings_outbound_tag" translatable="false">outboundTag</string>
+
+    <string name="connection_test_pending">সংযোগ পরীক্ষা করুন</string>
+    <string name="connection_test_testing">পরীক্ষা চলছে…</string>
+    <string name="connection_test_testing_count">%dটি কনফিগারেশন পরীক্ষা করা হচ্ছে…</string>
+    <string name="connection_test_available">সংযোগ সফল হয়েছে; সময় লেগেছে %1$s</string>
+    <string name="server_test_delay_value">%1$d মিলিসেকেন্ড</string>
+    <string name="connection_test_error">সংযোগ পরীক্ষা ব্যর্থ: %s</string>
+    <string name="connection_test_fail">ইন্টারনেট উপলব্ধ নয়</string>
+    <string name="connection_test_error_status_code">ত্রুটি কোড: #%d</string>
+    <string name="connection_connected">সংযুক্ত।\nসংযোগ পরীক্ষা করতে ট্যাপ করুন।</string>
+    <string name="connection_not_connected">সংযুক্ত নয়</string>
+    <string name="connection_running_task_left">চলমান পরীক্ষা: %s</string>
+
+    <string name="import_subscription_success">সাবস্ক্রিপশন সফলভাবে আমদানি করা হয়েছে</string>
+    <string name="import_subscription_failure">সাবস্ক্রিপশন আমদানি ব্যর্থ</string>
+    <string name="title_observatory_settings">সংযোগ পর্যবেক্ষণ সেটিংস (Observatory)</string>
+    <string name="title_pref_observatory_least_ping_interval">leastPing ইন্টারভ্যাল</string>
+    <string name="title_pref_observatory_least_load_interval">leastLoad ইন্টারভ্যাল</string>
+    <string name="title_pref_observatory_least_load_method">leastLoad HTTP পদ্ধতি</string>
+    <string name="title_pref_observatory_least_load_sampling">leastLoad স্যাম্পলিং</string>
+    <string name="title_pref_observatory_least_load_timeout">leastLoad টাইমআউট</string>
+    <string name="toast_invalid_observatory_duration">অবৈধ সময়কাল। 3m বা 30s-এর মতো মান ব্যবহার করুন।</string>
+    <string name="toast_invalid_observatory_sampling">অবৈধ স্যাম্পলিং। একটি ধনাত্মক সংখ্যা ব্যবহার করুন।</string>
+    <string name="toast_invalid_aether_listen_port">Aether-এর লিসেন পোর্টের জন্য 1024 থেকে 65532 এর মধ্যে একটি পোর্ট দিন</string>
+    <string name="toast_aether_listen_port_local_proxy">Aether-এর লিসেন পোর্ট ও তার পরের তিনটি পোর্টের মধ্যে স্থানীয় প্রক্সি পোর্ট থাকতে পারবে না</string>
+
+    <string name="update_check_for_update">আপডেট পরীক্ষা করুন</string>
+    <string name="update_already_latest_version">ইতিমধ্যে সর্বশেষ সংস্করণ ব্যবহার করছেন</string>
+    <string name="update_new_version_found">নতুন সংস্করণ পাওয়া গেছে: %s</string>
+    <string name="update_now">এখনই আপডেট করুন</string>
+    <string name="update_check_pre_release">প্রাক্‌-রিলিজ পরীক্ষা করুন</string>
+    <string name="update_checking_for_update">আপডেট পরীক্ষা করা হচ্ছে…</string>
+
+    <string name="title_policy_group_type">নীতি গ্রুপের ধরন</string>
+    <string name="title_policy_group_subscription_id">সাবস্ক্রিপশন গ্রুপ থেকে</string>
+    <string name="title_policy_group_subscription_filter">মন্তব্যের রেগুলার এক্সপ্রেশন ফিল্টার</string>
+    <string name="title_policy_group_test_outbounds">বহির্গামী সংযোগ পরীক্ষা করুন (outbounds)</string>
+    <string name="title_policy_group_fallback">বিকল্প বহির্গামী সংযোগ (outbound, ঐচ্ছিক)</string>
+
+    <string name="server_proxy_chain_members">প্রক্সি চেইনের সদস্য</string>
+    <string name="server_proxy_chain_pick_members">সদস্য বাছতে এখানে ট্যাপ করুন</string>
+    <string name="server_proxy_chain_member_unselected">চেইনের সদস্য নির্বাচন করুন</string>
+    <string name="server_proxy_chain_members_unselected">চেইনের প্রতিটি সারির জন্য সদস্য নির্বাচন করুন</string>
+    <string name="server_proxy_chain_members_insufficient">পর্যাপ্ত সদস্য নেই</string>
+
+    <!-- BackupActivity -->
+    <string name="title_configuration_backup_restore">ব্যাকআপ ও পুনরুদ্ধার</string>
+    <string name="title_configuration_backup">কনফিগারেশন ব্যাকআপ</string>
+    <string name="title_configuration_restore">কনফিগারেশন পুনরুদ্ধার</string>
+    <string name="title_profile_storage_cleanup">প্রোফাইল স্টোরেজ মেরামত করুন</string>
+    <string name="summary_profile_storage_cleanup">অব্যবহৃত প্রোফাইল ডেটা মুছে ফেলুন</string>
+    <string name="message_profile_storage_cleanup">কোনো গ্রুপে আর ব্যবহৃত হয় না এমন প্রোফাইল ডেটা মুছে ফেলবেন? নির্বাচিত প্রোফাইল এবং নিরাপদে অব্যবহৃত বলে নির্ধারণ করা যায় না এমন ডেটা রাখা হবে।</string>
+    <string name="toast_profile_storage_cleanup">অব্যবহৃত প্রোফাইল মুছে ফেলা হয়েছে: %1$d</string>
+    <string name="toast_profile_storage_cleanup_skipped">কোন প্রোফাইল ডেটা অব্যবহৃত তা নিরাপদে নির্ধারণ করা যায়নি। কিছুই মুছে ফেলা হয়নি।</string>
+    <string name="title_configuration_share">কনফিগারেশন শেয়ার করুন</string>
+    <string name="title_webdav_config_setting">WebDAV সেটিংস</string>
+    <string name="title_webdav_config_setting_unknown">প্রথমে WebDAV কনফিগার করুন।</string>
+    <string name="title_webdav_url">WebDAV সার্ভারের URL</string>
+    <string name="title_webdav_user">ব্যবহারকারীর নাম</string>
+    <string name="title_webdav_pass">পাসওয়ার্ড</string>
+    <string name="title_webdav_remote_path">দূরবর্তী ডিরেক্টরি (ঐচ্ছিক)</string>
+
+    <string name="share_method_qrcode">QR কোড</string>
+    <string name="share_method_clipboard">প্রোফাইল লিংক কপি করুন</string>
+    <string name="share_method_full_content">পূর্ণ কনফিগারেশন কপি করুন</string>
+    <string name="action_edit">সম্পাদনা</string>
+    <string name="action_delete">মুছুন</string>
+    <string name="action_close">বন্ধ করুন</string>
+
+    <string name="share_subscription_qrcode">QR কোড</string>
+    <string name="share_subscription_clipboard">ক্লিপবোর্ডে রপ্তানি করুন</string>
+
+    <string-array name="mode_entries">
+        <item>VPN</item>
+        <item>শুধুমাত্র প্রোক্সি</item>
+    </string-array>
+
+    <string-array name="browser_dialer_mode">
+        <item>নিষ্ক্রিয়</item>
+        <item>OkHttp</item>
+        <item>WebView</item>
+    </string-array>
+
+    <string-array name="ui_mode_night">
+        <item>সিস্টেম অনুসরণ করুন</item>
+        <item>লাইট</item>
+        <item>ডার্ক</item>
+    </string-array>
+
+    <string name="routing_preset_china_whitelist">চায়না হোয়াইটলিস্ট</string>
+    <string name="routing_preset_china_blacklist">চায়না ব্ল্যাকলিস্ট</string>
+    <string name="routing_preset_global">গ্লোবাল</string>
+    <string name="routing_preset_iran_whitelist">ইরান হোয়াইটলিস্ট</string>
+    <string name="routing_preset_russia_whitelist">রাশিয়া হোয়াইটলিস্ট</string>
+
+    <string-array name="vpn_bypass_lan">
+        <item>কনফিগ অনুসরণ করুন</item>
+        <item>বাইপাস</item>
+        <item>বাইপাস নয়</item>
+    </string-array>
+
+    <string-array name="outbound_domain_resolve_method">
+        <item>রেজলভ করবেন না</item>
+        <item>রেজলভ করে DNS Hosts-এ যোগ করুন</item>
+        <item>রেজলভ করে ডোমেইন প্রতিস্থাপন করুন</item>
+    </string-array>
+
+    <string-array name="policy_group_type">
+        <item>সর্বনিম্ন পিং (leastPing)</item>
+        <item>সর্বনিম্ন লোড (leastLoad)</item>
+        <item>এলোমেলো (random)</item>
+        <item>রাউন্ড রবিন (roundRobin)</item>
+    </string-array>
+
+    <string name="backup_location_local">স্থানীয়</string>
+    <string name="backup_location_webdav" translatable="false">WebDAV</string>
+
+    <string name="acc_refresh">লগ রিফ্রেশ করুন</string>
+    <string name="toast_permission_denied_for">%1$s ব্যবহারের অনুমতি দেওয়া হয়নি</string>
+    <string name="acc_add_subscription">সাবস্ক্রিপশন যোগ করুন</string>
+    <string name="toast_malformed_json_detail">কনফিগারেশন ফরম্যাট সঠিক নয়: %1$s</string>
+    <string name="acc_add_asset">অ্যাসেট উৎস যোগ করুন</string>
+    <string name="acc_download_file">অ্যাসেট ফাইল ডাউনলোড করুন</string>
+    <string name="acc_qr_code">QR কোড</string>
+    <string name="acc_copy_log">লগ কপি করুন</string>
+    <string name="acc_clear_log">লগ মুছুন</string>
+    <string name="acc_add_rule">রাউটিং নিয়ম যোগ করুন</string>
+    <string name="acc_start">সার্ভিস শুরু করুন</string>
+    <string name="acc_stop">সার্ভিস বন্ধ করুন</string>
+    <string name="acc_back">ফিরে যান</string>
+    <string name="acc_search">অনুসন্ধান করুন</string>
+    <string name="acc_add">কনফিগারেশন যোগ করুন</string>
+    <string name="acc_more">আরও বিকল্প</string>
+    <string name="acc_selected_server">Selected</string>
+    <string name="acc_share_subscription">সাবস্ক্রিপশন লিংক শেয়ার করুন</string>
+    <string name="acc_share_log">লগ শেয়ার করুন</string>
+    <string name="acc_remove">প্রক্সি চেইনের সদস্য সরান</string>
+    <string name="acc_add_member">প্রক্সি চেইনে সদস্য যোগ করুন</string>
+    <string name="acc_start_scanner">QR স্ক্যানার চালু করুন</string>
+    <string name="acc_stop_scanner">QR স্ক্যানার বন্ধ করুন</string>
+    <string name="acc_turn_torch_on">ফ্ল্যাশলাইট চালু করুন</string>
+    <string name="acc_turn_torch_off">ফ্ল্যাশলাইট বন্ধ করুন</string>
+    <string name="acc_select_image">স্ক্যান করার জন্য ছবি নির্বাচন করুন</string>
+    <string name="acc_locked">প্রিসেট আমদানি করলে নিয়মটি রাখা হবে</string>
+    <string name="acc_open_menu">নেভিগেশন মেনু খুলুন</string>
+    <string name="acc_edit">সম্পাদনা করুন</string>
+    <string name="acc_delete">মুছুন</string>
+    <string name="acc_save">সংরক্ষণ করুন</string>
+    <string name="acc_update_subscriptions">সাবস্ক্রিপশন আপডেট করুন</string>
+    <string name="acc_per_app_proxy_information">প্রতি-অ্যাপ প্রক্সির তথ্য</string>
+    <string name="permission_camera">ক্যামেরা</string>
+    <string name="permission_notification">বিজ্ঞপ্তি</string>
+    <string name="permission_local_network">স্থানীয় নেটওয়ার্ক</string>
+    <string name="subscription_update_updating">সাবস্ক্রিপশন আপডেট করা হচ্ছে: %1$s</string>
+    <string name="subscription_update_progress">%2$s পরীক্ষা করা হচ্ছে: %1$s</string>
+    <string name="tasker_blurb_start">%1$s চালু করুন</string>
+    <string name="tasker_blurb_stop">%1$s বন্ধ করুন</string>
+    <string name="connection_test_empty_message">কোনো বিবরণ পাওয়া যায়নি</string>
+    <string name="value_unknown">অজানা</string>
+    <string name="aether_lab_protocol">প্রোটোকল</string>
+    <string name="aether_lab_transport">ট্রান্সপোর্ট</string>
+    <string name="aether_lab_masque_sni">MASQUE সার্ভার নাম (SNI)</string>
+    <string name="aether_lab_scan_mode">স্ক্যান মোড</string>
+    <string name="aether_lab_obfuscation">অবফাসকেশন</string>
+    <string name="aether_lab_ip_version">IP সংস্করণ</string>
+    <string name="aether_lab_exit_final_mask">exit-node-এর finalMask-এর কাঁচা JSON, ফরম্যাট: { FinalMaskObject }</string>
+    <string name="aether_exit_node_freedom">freedom (ডিফল্ট)</string>
+    <string name="label_numbered">%1$s (%2$d)</string>
+    <string name="aether_hint_exit_node">কোর এই প্রোফাইলের আউটবাউন্ডের মধ্য দিয়ে বাইরে সংযোগ করে, যেমন প্রক্সি চেইনের একটি হপের মধ্য দিয়ে; নিচের finalMask ও dialMode শুধু freedom-এর জন্য</string>
+    <string name="aether_exit_node_unusable">exit-node প্রোফাইল \"%1$s\" কোনো আউটবাউন্ড দেয় না; অন্য একটি, বা freedom বেছে নিন</string>
+    <string name="aether_exit_node_ech_unusable">exit-node প্রোফাইল \"%1$s\"-এর echOutbound ব্যবহার করা যায় না; সেই প্রোফাইলে এটি ঠিক করুন, বা অন্য একটি, বা freedom বেছে নিন</string>
+    <string name="toast_profile_name_not_found">\"%1$s\" নামে কোনো প্রোফাইল পাওয়া যায়নি</string>
+    <string name="toast_profile_name_duplicate">\"%1$s\" নামে দুটি প্রোফাইল পাওয়া গেছে; অনুগ্রহ করে একটির নাম পরিবর্তন করুন</string>
+    <string name="toast_profile_no_server">প্রোফাইল \"%1$s\"-এর কোনো সার্ভার ঠিকানা নেই, তাই প্রক্সি চেইন এর মধ্য দিয়ে যেতে পারে না</string>
+    <string name="toast_profile_group_not_fallback">\"%1$s\" একটি নীতি গ্রুপ, এবং নীতি গ্রুপ বিকল্প বহির্গামী সংযোগ হতে পারে না; অন্য একটি প্রোফাইল বেছে নিন</string>
+    <string name="toast_profile_group_not_hop">\"%1$s\" একটি নীতি গ্রুপ, তাই প্রক্সি চেইন এর মধ্য দিয়ে যেতে পারে না; অন্য একটি প্রোফাইল বেছে নিন</string>
+    <string name="toast_profile_chain_not_hop">\"%1$s\" একটি প্রক্সি চেইন, তাই অন্য প্রক্সি চেইন এর মধ্য দিয়ে যেতে পারে না; অন্য একটি প্রোফাইল বেছে নিন</string>
+    <string name="toast_profile_custom_not_hop">\"%1$s\" একটি কাস্টম কনফিগারেশন, তাই প্রক্সি চেইন এর মধ্য দিয়ে যেতে পারে না; অন্য একটি প্রোফাইল বেছে নিন</string>
+    <string name="toast_profile_custom_not_fallback">\"%1$s\" একটি কাস্টম কনফিগারেশন, এবং কাস্টম কনফিগারেশন বিকল্প বহির্গামী সংযোগ হতে পারে না; অন্য একটি প্রোফাইল বেছে নিন</string>
+    <string name="aether_keys_hint_fragment">WARP API-এর অনুরোধের ClientHello টুকরো টুকরো করে পাঠায়, যেসব নেটওয়ার্ক API-এর নাম ফিল্টার করে তাদের জন্য</string>
+    <string name="aether_lab_fragment">ClientHello ভাগ করুন</string>
+    <string name="aether_lab_fragment_size">খণ্ডের আকার (বাইট)</string>
+    <string name="aether_lab_fragment_delay">খণ্ডের মাঝে বিলম্ব (মিলিসেকেন্ড)</string>
+    <string name="aether_lab_wiw_outer">বাইরের হপ</string>
+    <string name="aether_lab_wiw_inner">ভিতরের হপ</string>
+    <string name="aether_hint_endpoint">স্ক্যান করতে খালি রাখুন</string>
+    <string name="aether_hint_gool_peer">WARP যে এন্ডপয়েন্ট দেয় সেটি ব্যবহার করতে খালি রাখুন</string>
+    <string name="aether_action_scan">সার্ভার খুঁজুন</string>
+    <string name="aether_action_scanning">স্ক্যান করা হচ্ছে…</string>
+    <string name="aether_scan_success">সার্ভার পাওয়া গেছে</string>
+    <string name="aether_scan_failed">কোনো সার্ভার পাওয়া যায়নি</string>
+    <string name="aether_invalid_endpoint">একটি IP ঠিকানা ও পোর্ট দিন, অথবা স্ক্যান করতে ঠিকানা খালি রাখুন</string>
+    <string name="aether_invalid_hop">ঠিকানা ও পোর্ট একসাথে লিখুন, যেমন 162.159.192.1:2408</string>
+    <string name="aether_same_hop">দুটি হপের ঠিকানা আলাদা হতে হবে</string>
+    <string name="aether_invalid_fragment">একটি সংখ্যা বা 16-32 এর মতো পরিসর লিখুন: আকার 1–4096 বাইট, বিলম্ব 0–1000 মিলিসেকেন্ড</string>
+    <string name="aether_listen_port_taken">Aether কোর যে পোর্ট %1$d-এ শোনে, সেটি এই কনফিগারেশনের একটি ইনবাউন্ড দখল করে আছে, যেমন স্থানীয় প্রক্সি পোর্ট বা Aether-এর লিসেন পোর্টের চেয়ে তিন বেশি পোর্ট; সেটিংসে Aether-এর লিসেন পোর্ট, অথবা কমান্ডের পোর্টগুলো বদলান</string>
+    <string name="aether_secondary_port_taken">এই কনফিগারেশনের একটি ইনবাউন্ড ইতিমধ্যে %1$d-এ শুনছে, যা Aether-এর লিসেন পোর্টের চেয়ে তিন বেশি এবং যার মধ্য দিয়ে Aether কোর বাইরে সংযোগ করে; সেটিংসে Aether-এর লিসেন পোর্ট বদলান</string>
+    <string name="aether_listen_port_in_use">Aether কোর যে পোর্ট %1$d-এ শোনে, সেটি অন্য একটি অ্যাপ ব্যবহার করছে; সেটিংসে Aether-এর লিসেন পোর্ট, অথবা কমান্ডের পোর্টগুলো বদলান</string>
+    <string name="aether_secondary_port_in_use">পোর্ট %1$d, যা Aether-এর লিসেন পোর্টের চেয়ে তিন বেশি এবং যা Xray খোলে যাতে Aether কোর এটির মধ্য দিয়ে বাইরে সংযোগ করতে পারে, সেটি অন্য একটি অ্যাপ ব্যবহার করছে; সেটিংসে Aether-এর লিসেন পোর্ট বদলান</string>
+    <string name="aether_listen_port_invalid">Aether কমান্ড কোরকে %1$d-এ শুনতে বলে, যা কোনো পোর্ট নয় (1 থেকে 65535); কমান্ডের পোর্টগুলো বদলান</string>
+    <string name="aether_listen_address_invalid">Aether কমান্ড %1$s-কে এমন একটি ঠিকানা দেয় যা কোর নেয় না; এর পরে একটি IP ঠিকানা ও একটি পোর্ট লিখুন, যেমন 127.0.0.1:20808</string>
+    <string name="aether_listen_address_unreachable">Aether কমান্ড %1$s-কে এমন একটি ঠিকানা দেয় যেখানে অ্যাপ সংযোগ করে না: অ্যাপ 127.0.0.1 দিয়ে কোরে সংযোগ করে, তাই এর পরে 127.0.0.1 (বা সব ঠিকানার জন্য 0.0.0.0) ও একটি পোর্ট লিখুন</string>
+    <string name="aether_listen_port_shared">Aether কমান্ড কোরকে তার দুটি লিসেনার দিয়ে %1$d-এ শুনতে বলে (কমান্ড যে লিসেনারের উল্লেখ করে না, সেটিও শোনে: অ্যাপ যেটিতে সংযোগ করে সেটি Aether-এর লিসেন পোর্টে, অন্যগুলো কোরের ডিফল্ট পোর্টে: 1819, 1820 বা 1821); প্রতিটি লিসেনারকে আলাদা পোর্ট দিন</string>
+    <string name="aether_lab_psiphon">Psiphon</string>
+    <string name="aether_lab_psiphon_mode">Psiphon সংযোগ</string>
+    <string name="aether_lab_psiphon_cdn_ips">CDN ফ্রন্টিং IP</string>
+    <string name="aether_lab_psiphon_cdn_sni">CDN ফ্রন্টিং সার্ভার নাম (SNI)</string>
+    <string name="aether_hint_psiphon_list">কমা দিয়ে আলাদা করুন; খালি রাখলে অন্তর্নির্মিত তালিকা ব্যবহৃত হবে</string>
+    <string name="aether_lab_psiphon_region">প্রস্থান দেশ</string>
+    <string name="aether_psiphon_region_any">যেকোনো দেশ</string>
+    <string name="aether_lab_psiphon_bundled_list">অ্যাপের সাথে দেওয়া সার্ভার তালিকা থেকে শুরু</string>
+    <string name="aether_hint_psiphon_bundled_list">চালু: Psiphon সঙ্গে সঙ্গে psiphon_servers.dat-এর সার্ভারগুলো চেষ্টা করে এবং সেগুলো ব্যর্থ হলেই নতুন তালিকা আনে। বন্ধ: প্রথম সংযোগের আগে নতুন তালিকা আনে, তাই তালিকাটি পৌঁছানোর মতো হতে হবে, যেমন WARP-এর পেছন থেকে</string>
+    <string name="aether_action_clear_psiphon">Psiphon ডেটা মুছুন</string>
+    <string name="aether_hint_clear_psiphon">Psiphon যে সার্ভারগুলো শিখেছে এবং যে তালিকাগুলো এনেছে তা ভুলে যায়। পরের বার আবার দেওয়া তালিকা থেকে শুরু হয়, বা উপরের সুইচ বন্ধ থাকলে নতুন ডাউনলোড থেকে</string>
+    <string name="aether_log_psiphon_cleared">Psiphon ডেটা মুছে ফেলা হয়েছে</string>
+    <string name="aether_log_psiphon_clear_failed">Psiphon ডেটা মোছা যায়নি</string>
+    <string name="aether_psiphon_clear_blocked">Psiphon ডেটা মোছার আগে Aether প্রোফাইল সংযোগ বিচ্ছিন্ন করুন; চলমান সংযোগ এটি ব্যবহার করছে</string>
+    <string name="aether_psiphon_unavailable">এই বিল্ডে Psiphon ক্লায়েন্ট নেই, তাই Psiphon সহ প্রোফাইল সংযোগ করতে পারবে না</string>
+    <string name="aether_psiphon_needs_masque">Psiphon → WARP শুধু MASQUE প্রোটোকলের সাথে কাজ করে</string>
+    <string name="aether_next_port_taken">পথে Tor বা Psiphon থাকলে কোর Aether-এর লিসেন পোর্টের পরের পোর্টগুলোও ব্যবহার করে, আর সেগুলোর কোনোটিই অ্যাপের লোকাল প্রক্সি পোর্ট হতে পারবে না; সেটিংসে Aether-এর লিসেন পোর্ট বদলান</string>
+    <string name="aether_lab_tor">Tor</string>
+    <string name="aether_lab_tor_bridges">ব্রিজ</string>
+    <string name="aether_lab_tor_bridge_lines">ব্রিজ লাইন</string>
+    <string name="aether_hint_tor_bridge_lines">প্রতি লাইনে একটি, torrc-এর মতো: obfs4 1.2.3.4:443 FINGERPRINT cert=… iat-mode=0</string>
+    <string name="aether_tor_transports_unavailable">এই বিল্ডে প্লাগেবল ট্রান্সপোর্ট নেই, তাই Tor ব্রিজ ব্যবহার করা যাবে না; Tor শুধু সেখানেই সংযোগ করবে যেখানে এটি ব্লক করা নেই</string>
+    <string name="aether_tor_needs_masque">Tor → WARP শুধু MASQUE প্রোটোকলের সাথে কাজ করে</string>
+    <string name="aether_tor_psiphon_conflict">Tor ও Psiphon একসাথে শুধু তখনই চলে যখন একটি টানেলের ভিতরে আর অন্যটি তার চারপাশে থাকে</string>
+    <string name="aether_tor_bridges_missing">অন্তত একটি ব্রিজ লাইন লিখুন, অথবা অন্য ব্রিজ সেটিং বেছে নিন</string>
+    <string name="aether_lab_ech">Encrypted Client Hello (ECH)</string>
+    <string name="aether_hint_ech">MASQUE হ্যান্ডশেকের সার্ভার নাম লুকায়; ব্যবহারযোগ্য কী ছাড়া Aether সংযোগ করে না</string>
+    <string name="aether_lab_ech_dns">ECH DNS</string>
+    <string name="aether_lab_ech_domain">ECH ডোমেইন</string>
+    <string name="aether_invalid_ech_dns">ECH DNS হতে হবে udp://IP, tcp://IP অথবা কোনো DNS-over-HTTPS সার্ভারের https:// ঠিকানা</string>
+    <string name="aether_invalid_ech_domain">ECH ডোমেইন একটি ডোমেইন নাম হতে হবে, যেমন cloudflare-ech.com</string>
+    <string name="aether_invalid_masque_sni">MASQUE সার্ভার নাম (SNI) একটি ডোমেইন নাম হতে হবে, যেমন www.cloudflare.com</string>
+    <string name="aether_lab_dns">টানেলের ভিতরের DNS</string>
+    <string name="aether_hint_dns">কমা দিয়ে আলাদা করুন; খালি রাখলে 1.1.1.1 ও 1.0.0.1</string>
+    <string name="aether_invalid_dns">1.1.1.1 বা 10.0.0.1:5353-এর মতো রিজলভার ঠিকানা কমা দিয়ে আলাদা করে লিখুন</string>
+    <string name="aether_lab_exit_loc">প্রস্থানের অবস্থান</string>
+    <string name="aether_hint_exit_loc">DE,SE শুধু সেগুলো অনুমোদন করে; !IR,RU সেগুলো প্রত্যাখ্যান করে; খালি রাখলে যেকোনোটি</string>
+    <string name="aether_invalid_exit_loc">কমা দিয়ে আলাদা করা দুই অক্ষরের দেশের কোড লিখুন, প্রত্যাখ্যানের জন্য শুরুতে !</string>
+    <string name="aether_lab_tor_relays">ব্রিজের উৎস</string>
+    <string name="aether_lab_other_settings">অন্যান্য সেটিংস</string>
+    <string name="aether_lab_command">Aether কমান্ড</string>
+    <string name="aether_command_custom">হাতে সম্পাদিত: এই কমান্ড যেমন লেখা তেমনই চলে, Xray-core-এর সেটিংস ছাড়া উপরের সেটিংস প্রয়োগ হয় না</string>
+    <string name="aether_action_use_settings">সেটিংস ব্যবহার করুন</string>
+    <string name="aether_invalid_command">কমান্ডে Aether কোরের আর্গুমেন্ট থাকতে হবে, --bind এর পরে শোনার পোর্টসহ</string>
+    <string name="aether_unsupported_abi">এই ডিভাইসের জন্য Aether কোর উপলব্ধ নয়</string>
+    <string name="aether_core_stopped">Aether কোর চলা বন্ধ হয়ে গেছে</string>
+    <string name="aether_core_stopped_no_ech_key">Aether কোর বন্ধ হয়ে গেছে: ECH চালু আছে, কিন্তু কোনো ব্যবহারযোগ্য ECH কী পাওয়া যায়নি। কী ছাড়া সার্ভারের নাম খোলাখুলি পাঠানো হতো।</string>
+    <string name="aether_core_stopped_chain_ended">Aether টানেলের ভিতরের Tor বা Psiphon বন্ধ হয়ে গেছে, তাই সংযোগ বন্ধ করা হয়েছে: %1$s</string>
+    <string name="aether_core_connecting">Aether কোর এখনও সংযোগ করছে</string>
+    <string name="menu_item_import_config_manually_aether">ম্যানুয়ালি Aether কনফিগ যোগ করুন</string>
+    <string name="aether_action_renew_key">নতুন WARP কী নিন…</string>
+    <string name="aether_action_renewing_key">নতুন WARP কী নেওয়া হচ্ছে…</string>
+    <string name="aether_log_title">লগ</string>
+    <string name="aether_log_empty">স্ক্যানের ফলাফল ও WARP কীর অবস্থা এখানে দেখা যাবে</string>
+    <string name="aether_log_scan_started">সার্ভার খোঁজার জন্য স্ক্যান করা হচ্ছে…</string>
+    <string name="aether_log_scan_found">পাওয়া গেছে: %1$s</string>
+    <string name="aether_log_scan_found_hops">বাইরের হপ %1$s ও ভিতরের হপ %2$s পাওয়া গেছে</string>
+    <string name="aether_log_scan_cancelled">স্ক্যান বাতিল হয়েছে</string>
+    <string name="aether_log_key_renewing">নতুন WARP কী নিবন্ধন করা হচ্ছে; সব নতুন কী প্রস্তুত না হওয়া পর্যন্ত ব্যবহৃত কীগুলো নিজের জায়গায় থাকবে…</string>
+    <string name="aether_log_key_renewed">নতুন WARP কীগুলো জায়গামতো বসানো হয়েছে, পরবর্তী সংযোগ থেকে এগুলো ব্যবহার হবে</string>
+    <string name="aether_log_key_renew_failed">নতুন WARP কী নিবন্ধন ব্যর্থ হয়েছে; বর্তমান কীগুলো রাখা হয়েছে</string>
+    <string name="aether_log_key_renew_cancelled">নতুন WARP কী নেওয়া বাতিল হয়েছে</string>
+    <string name="aether_log_masque_key_ready">MASQUE কী: ডিভাইস %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_masque_key_missing">MASQUE কী: এখনও নিবন্ধিত নয়; প্রথম স্ক্যান বা সংযোগে নিবন্ধিত হবে</string>
+    <string name="aether_log_wireguard_key_ready">WireGuard কী: ডিভাইস %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_wireguard_key_missing">WireGuard কী: এখনও নিবন্ধিত নয়; প্রথম স্ক্যান বা সংযোগে নিবন্ধিত হবে</string>
+    <string name="aether_log_outer_key_ready">বাইরের হপের কী: ডিভাইস %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_outer_key_missing">বাইরের হপের কী: এখনও নিবন্ধিত নয়; প্রথম স্ক্যান বা সংযোগে নিবন্ধিত হবে</string>
+    <string name="aether_log_inner_key_ready">ভিতরের হপের কী: ডিভাইস %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_inner_key_missing">ভিতরের হপের কী: এখনও নিবন্ধিত নয়; প্রথম স্ক্যান বা সংযোগে নিবন্ধিত হবে</string>
+    <string name="aether_log_wireguard_inner_key_ready">WireGuard ভিতরের হপের কী: ডিভাইস %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_wireguard_inner_key_missing">WireGuard ভিতরের হপের কী: এখনও নিবন্ধিত নয়; প্রথম স্ক্যান বা সংযোগে নিবন্ধিত হবে</string>
+    <string name="aether_log_masque_inner_key_ready">MASQUE ভিতরের হপের কী: ডিভাইস %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_masque_inner_key_missing">MASQUE ভিতরের হপের কী: এখনও নিবন্ধিত নয়; প্রথম স্ক্যান বা সংযোগে নিবন্ধিত হবে</string>
+    <string name="aether_log_gool_key_ready">WireGuard over MASQUE কী: ডিভাইস %1$s, IPv4 %2$s, IPv6 %3$s</string>
+    <string name="aether_log_gool_key_missing">WireGuard over MASQUE কী: এখনও নিবন্ধিত নয়; প্রথম স্ক্যান বা সংযোগে নিবন্ধিত হবে</string>
+    <string name="aether_renew_blocked">এই কীগুলো নেওয়ার আগে Aether সংযোগ বিচ্ছিন্ন করুন; চলমান সংযোগ এগুলো ব্যবহার করছে</string>
+    <string name="aether_action_get_keys">নতুন WARP কী নিন</string>
+    <string name="aether_keys_lab_kind">যার জন্য নতুন কী নেওয়া হবে</string>
+    <string name="aether_keys_kind_all">সব</string>
+    <string name="aether_keys_lab_enroll_address">API ঠিকানা</string>
+    <string name="aether_keys_hint_ech">WARP API-এর অনুরোধে সার্ভার নাম লুকায়; ব্যবহারযোগ্য ECH কী ছাড়া কোনো WARP কী চাওয়া হয় না</string>
+    <string name="aether_lab_fingerprint">ফিঙ্গারপ্রিন্ট</string>
+    <string name="aether_keys_invalid_enroll_address">API ঠিকানা একটি IP ঠিকানা বা ডোমেইন নাম হতে হবে, পোর্টসহ বা পোর্ট ছাড়া, যেমন 188.114.97.6:443 বা [2606:4700::1]:8443</string>
+    <string name="aether_keys_lab_api_sni">API সার্ভার নাম (SNI)</string>
+    <string name="aether_keys_lab_api_host">API হোস্ট</string>
+    <string name="aether_keys_hint_enroll_address">API সার্ভার নামের ঠিকানা ব্যবহার করতে খালি রাখুন</string>
+    <string name="aether_keys_hint_api_sni">API হোস্ট ব্যবহার করতে খালি রাখুন</string>
+    <string name="aether_keys_hint_api_host">api.devices.cloudflare.com ব্যবহার করতে খালি রাখুন; সেটি উত্তর না দিলে এবং সার্ভার নামও খালি থাকলে api.cloudflareclient.com ব্যবহার হয়। হোস্ট থেকে আলাদা সার্ভার নাম Cloudflare গ্রহণ করে না</string>
+    <string name="aether_keys_invalid_api_sni">API সার্ভার নাম একটি ডোমেইন নাম হতে হবে, যেমন api.devices.cloudflare.com</string>
+    <string name="aether_keys_invalid_api_host">API হোস্ট একটি ডোমেইন নাম হতে হবে, যেমন api.devices.cloudflare.com</string>
+    <string name="aether_keys_invalid_command">কমান্ডটিকে কী নিবন্ধন করতে হবে: --register, তারপর all, wg, masque, mim, gool-classic (WARP-in-WARP) বা gool (WireGuard over MASQUE)</string>
+    <string name="aether_keys_log_empty">কোরের আউটপুট ও WARP কী এখানে দেখা যাবে</string>
+    <string name="aether_scan_blocked">স্ক্যান করার আগে Aether সংযোগ বিচ্ছিন্ন করুন; স্ক্যান চলমান সংযোগের কী দিয়ে দ্বিতীয় একটি টানেল খুলবে</string>
+    <string name="aether_keys_missing">প্রয়োজনীয় WARP কী আপনার কাছে নেই; আগে সেটি নিন</string>
+    <string name="aether_action_save_anyway">তবুও সংরক্ষণ করুন</string>
+    <string name="aether_action_scan_anyway">তবুও স্ক্যান করুন</string>
+    <string name="aether_chain_one_profile">একটি প্রক্সি চেইনে শুধুমাত্র একটি Aether প্রোফাইল থাকতে পারে</string>
+    <string name="aether_exit_node_name_taken">এখানে রাউটিংয়ে exit-node নামের একটি প্রোফাইল ব্যবহৃত হচ্ছে, আর exit-node হলো সেই আউটবাউন্ডের নাম যার মধ্য দিয়ে Aether কোর বাইরে সংযোগ করে; প্রোফাইলটির নাম বদলান</string>
+    <string name="aether_chain_hop_missing">এই প্রক্সি চেইনে Aether প্রোফাইল যে হপের মধ্য দিয়ে বাইরে সংযোগ করে সেটি তৈরি করা যায়নি, তাই Aether কোর সেটি ছাড়াই ইন্টারনেটে পৌঁছাত</string>
+    <string name="config_main_outbound_missing">নির্বাচিত প্রোফাইলটি তৈরি করা যায়নি, তাই সব ট্রাফিক এটি ছাড়াই সরাসরি ইন্টারনেটে পৌঁছাত; এর সেটিংস পরীক্ষা করুন</string>
+    <string name="config_routing_target_unbuilt">রাউটিং নিয়ম যে প্রোফাইল \"%1$s\"-এ ট্রাফিক পাঠায় সেটি তৈরি করা যায়নি; সেটি ঠিক করুন, অথবা যে নিয়মগুলো এটি ব্যবহার করে সেগুলো বন্ধ করুন</string>
+    <string name="config_group_fallback_unbuilt">নীতি গ্রুপের বিকল্প বহির্গামী সংযোগ প্রোফাইল \"%1$s\" তৈরি করা যায়নি; সেটি ঠিক করুন, অথবা গ্রুপের জন্য অন্য একটি বিকল্প বহির্গামী সংযোগ বেছে নিন</string>
+    <string name="aether_config_single_profile">একটি কনফিগারেশন শুধুমাত্র একটি Aether প্রোফাইল ব্যবহার করতে পারে</string>
+    <string name="aether_config_two_exits">এখানে একটি Aether কোরকে দুইভাবে বাইরে সংযোগ করতে হতো: একই টানেল একা এবং প্রক্সি চেইনের একটি হপের পেছনে, দুটি ভিন্ন হপের পেছনে, বা exit-node-এর দুটি ভিন্ন সেটিং দিয়ে ব্যবহৃত হয়েছে</string>
+    <string name="aether_custom_no_outbound">কনফিগারেশনের কোনো SOCKS আউটবাউন্ড %1$s:%2$d-এ সংযোগ করে না, যেখানে Aether কমান্ড শোনে</string>
+    <string name="aether_custom_exit_node_selected">এই কনফিগারেশনের একটি ব্যালান্সার বা অবজারভেটরি সেই আউটবাউন্ডগুলো বাছে যাদের ট্যাগ %1$s দিয়ে শুরু, যার মধ্যে exit-node-ও পড়ে, যে আউটবাউন্ডের মধ্য দিয়ে Aether কোর বাইরে সংযোগ করে; সেই সিলেক্টর বদলান</string>
+    <string name="aether_custom_invalid_command">aetherCommand অবশ্যই Aether কোরের কমান্ড লাইন টেক্সট হিসেবে হতে হবে, --bind এর পরে যে ঠিকানায় এটি শোনে সেটিসহ: %1$s</string>
+    <string name="title_aether_core">Aether কোর</string>
+    <string name="summary_aether_core">CluvexStudio-এর WARP ক্লায়েন্ট, AGPL-3.0 লাইসেন্সে অন্তর্ভুক্ত। সোর্স কোড খুলতে ট্যাপ করুন।</string>
+    <string-array name="aether_scan_entries">
+        <item>টার্বো</item>
+        <item>ভারসাম্যপূর্ণ</item>
+        <item>পুঙ্খানুপুঙ্খ</item>
+        <item>যাচাইকৃত</item>
+        <item>নিশ্চিত</item>
+    </string-array>
+    <string-array name="aether_psiphon_entries">
+        <item>বন্ধ</item>
+        <item>WARP → Psiphon</item>
+        <item>Psiphon → WARP</item>
+        <item>শুধু Psiphon</item>
+    </string-array>
+    <string name="aether_lab_psiphon_cdn_sets">স্ক্যানের জন্য CDN এজ তালিকা</string>
+    <string name="aether_hint_psiphon_cdn_sets">Psiphon-এর অন্তর্নির্মিত কোন এজ তালিকাগুলো ফ্রন্টিং স্ক্যান চেষ্টা করবে। কিছুই না বাছলে সবগুলো; আপনার নিজের IP-এর পাশে সেগুলোর পরে চেষ্টা করা হয়</string>
+    <string name="aether_psiphon_cdn_sets_all">Psiphon-এর অন্তর্নির্মিত সব তালিকা</string>
+    <string-array name="aether_psiphon_cdn_set_entries">
+        <item>Cloudflare</item>
+        <item>Fastly</item>
+        <item>CloudFront</item>
+        <item>Akamai (Psiphon তালিকা)</item>
+        <item>Bunny (Psiphon তালিকা)</item>
+        <item>Vercel</item>
+        <item>GitHub</item>
+        <item>বাছাই করা ফ্রন্টিং এজ</item>
+        <item>পুরনো Android ওভাররাইড</item>
+    </string-array>
+    <string-array name="aether_psiphon_mode_entries">
+        <item>স্বয়ংক্রিয়</item>
+        <item>শুধু CDN ফ্রন্টিং</item>
+        <item>শুধু সরাসরি</item>
+    </string-array>
+    <string-array name="aether_tor_entries">
+        <item>বন্ধ</item>
+        <item>WARP → Tor</item>
+        <item>Tor → WARP</item>
+        <item>শুধু Tor</item>
+    </string-array>
+    <string-array name="aether_tor_bridges_entries">
+        <item>Tor ব্লক থাকলে</item>
+        <item>শুরু থেকেই</item>
+        <item>কখনো না</item>
+                <item>Smart Connect</item>
+        <item>আমার নিজের ব্রিজ লাইন</item>
+    </string-array>
+    <string-array name="aether_tor_relays_entries">
+        <item>bridgedb ও পাবলিক রিলে</item>
+        <item>শুধু পাবলিক রিলে</item>
+        <item>শুধু bridgedb</item>
+    </string-array>
+    <string-array name="aether_obfuscation_entries">
+        <item>স্বয়ংক্রিয়</item>
+        <item>বন্ধ</item>
+        <item>হালকা</item>
+        <item>ফায়ারওয়াল</item>
+        <item>ভারসাম্যপূর্ণ</item>
+        <item>GFW</item>
+        <item>তীব্র</item>
+    </string-array>
+    <string name="sub_info_open_support">সাপোর্ট লিঙ্ক খুলুন</string>
+    <string name="sub_info_open_page">সাবস্ক্রিপশন তথ্যের পাতা খুলুন</string>
+    <string name="sub_info_unlimited">সীমাহীন</string>
+
+    <string name="masterdns_title">MasterDNS</string>
+    <string name="menu_item_import_config_manually_masterdns">MasterDNS</string>
+    <string name="masterdns_lab_config">Official client configuration (JSON or TOML)</string>
+    <string name="masterdns_hint_config">Paste client_config.json or client_config.toml</string>
+    <string name="masterdns_config_support">Omni passes this document to the official engine and supplies only the local listener and VPN socket protection.</string>
+    <string name="masterdns_lab_resolvers">DNS resolvers (one per line)</string>
+    <string name="masterdns_hint_resolvers">8.8.8.8\n1.1.1.1:5353</string>
+    <string name="masterdns_resolvers_support">IPv4, IPv6 or CIDR ranges, with an optional port.</string>
+    <string name="masterdns_engine_notice">Uses the official MIT-licensed MasterDnsVPN engine. WhiteDNS proprietary files and formats are not reused.</string>
+    <string name="masterdns_error_config_empty">Paste the MasterDNS client configuration.</string>
+    <string name="masterdns_error_config_large">The MasterDNS configuration is too large.</string>
+    <string name="masterdns_error_config">Enter a valid MasterDNS JSON or TOML configuration.</string>
+    <string name="masterdns_error_domains">DOMAINS must contain at least one tunnel domain.</string>
+    <string name="masterdns_error_key">ENCRYPTION_KEY is required unless DATA_ENCRYPTION_METHOD is 0.</string>
+    <string name="masterdns_error_resolvers">Enter valid resolver IP addresses or CIDR ranges, one per line.</string>
+    <string name="masterdns_unsupported_abi">This build has no MasterDNS core for this device.</string>
+    <string name="masterdns_core_connecting">MasterDNS is connecting…</string>
+    <string name="masterdns_core_stopped">The MasterDNS core stopped.</string>
+    <string name="masterdns_port_taken">MasterDNS cannot use local port %1$d because it is already in use.</string>
+    <string name="masterdns_unsupported_combination">MasterDNS currently works only as a standalone primary profile, not inside a chain or policy group.</string>
+
+    <!-- Native Omni appearance -->
+    <string name="omni_appearance_title">চেহারা</string>
+    <string name="omni_effects_title">ইফেক্ট</string>
+    <string name="omni_effects_off">বন্ধ</string>
+    <string name="omni_effects_light">হালকা</string>
+    <string name="omni_effects_full">পূর্ণ</string>
+    <string name="omni_appearance_notice">ডায়নামিক রং চালু থাকলে নির্বাচিত থিমের রং বদলে সিস্টেমের রং ব্যবহৃত হবে।</string>
+    <string name="omni_skin_violet">বেগুনি</string>
+    <string name="omni_skin_blue">নীল</string>
+    <string name="omni_skin_teal">ফিরোজা</string>
+    <string name="omni_skin_pink">গোলাপি</string>
+    <string name="omni_skin_orange">কমলা</string>
+    <string name="omni_skin_green">সবুজ</string>
+    <string name="omni_skin_yellow">হলুদ</string>
+</resources>

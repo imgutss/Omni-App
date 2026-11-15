@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="224" viewBox="0 0 1200 224" role="img" aria-label="Three Omni pillars: native experience, networking tools, your configuration">
+<defs><linearGradient id="c" x2="1" y2="1"><stop stop-color="#15281e"/><stop offset="1" stop-color="#0b1010"/></linearGradient></defs>
+<g font-family="Arial,sans-serif">
+<rect x="1" y="1" width="386" height="222" rx="24" fill="url(#c)" stroke="#2a4b39"/>
+<rect x="407" y="1" width="386" height="222" rx="24" fill="url(#c)" stroke="#2a4b39"/>
+<rect x="813" y="1" width="386" height="222" rx="24" fill="url(#c)" stroke="#2a4b39"/>
+<g fill="#31eb88" font-size="13" letter-spacing="3"><text x="28" y="38">01 / EXPERIENCE</text><text x="434" y="38">02 / TOOLBOX</text><text x="840" y="38">03 / CONTROL</text></g>
+<g fill="#f0fff7" font-size="26" font-weight="700"><text x="28" y="91">Designed for Android.</text><text x="434" y="91">Tools within reach.</text><text x="840" y="91">Set it your way.</text></g>
+<g fill="#a2b9ad" font-size="16"><text x="28" y="131">Compose UI · layered artwork</text><text x="28" y="160">19 themes · light &amp; dark modes</text><text x="28" y="189">A place for every connection.</text><text x="434" y="131">DNS · routing · WARP utilities</text><text x="434" y="160">Logs · profile diagnostics</text><text x="434" y="189">Subscriptions · import &amp; export</text><text x="840" y="131">Per-app rules · protocol editors</text><text x="840" y="160">Local settings · native VPN service</text><text x="840" y="189">Flexible profiles · signed releases</text></g>
+</g></svg>

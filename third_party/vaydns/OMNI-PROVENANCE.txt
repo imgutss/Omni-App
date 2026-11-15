@@ -1,0 +1,8 @@
+Source: https://github.com/anonvector/vaydns
+Pinned upstream commit: 45f18f16af40b6ad666e8119be08701b21395ee2
+License: CC0-1.0; see COPYING.
+
+Omni changes are limited to reusable embedding hooks (custom transport factory,
+optional protected uTLS dialing, MTU cap) and the independently written
+cmd/omni-client Android process wrapper. No vaydns-mobile or SlipNet code or
+binary is included: the vaydns-mobile repository carries no license file.

@@ -1,0 +1,33 @@
+package com.v2ray.ang.enums
+
+import com.v2ray.ang.AppConfig
+
+enum class EConfigType(val value: Int, val protocolScheme: String) {
+    VMESS(1, AppConfig.VMESS),
+    CUSTOM(2, AppConfig.CUSTOM),
+    SHADOWSOCKS(3, AppConfig.SHADOWSOCKS),
+    SOCKS(4, AppConfig.SOCKS),
+    VLESS(5, AppConfig.VLESS),
+    TROJAN(6, AppConfig.TROJAN),
+    WIREGUARD(7, AppConfig.WIREGUARD),
+
+    TUIC(8, AppConfig.TUIC),
+    HYSTERIA2(9, AppConfig.HYSTERIA2),
+    HYSTERIA(900, AppConfig.HYSTERIA),
+    HTTP(10, AppConfig.HTTP),
+
+    // Fork-only type. Its value stays clear of the ranges upstream v2rayNG assigns so that a
+    // type added upstream later cannot collide with it on merge.
+    AETHER(500, AppConfig.AETHER),
+    MASTERDNS(501, AppConfig.MASTERDNS),
+    DNSTT(502, AppConfig.DNSTT),
+    GUTS(503, AppConfig.GUTS),
+    SHADOWQUIC(504, AppConfig.SHADOWQUIC),
+    NAIVE(506, AppConfig.NAIVE),
+    POLICYGROUP(101, AppConfig.CUSTOM),
+    PROXYCHAIN(102, AppConfig.CUSTOM);
+
+    companion object {
+        fun fromInt(value: Int) = entries.firstOrNull { it.value == value }
+    }
+}

@@ -1,0 +1,9 @@
+services:
+  tuic:
+    image: ghcr.io/sagernet/sing-box:latest
+    restart: unless-stopped
+    network_mode: host
+    command: ["run", "-c", "/etc/sing-box/config.json"]
+    volumes:
+      - ./config.json:/etc/sing-box/config.json:ro
+      - ./letsencrypt:/etc/letsencrypt:ro

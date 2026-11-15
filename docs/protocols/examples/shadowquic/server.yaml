@@ -1,0 +1,17 @@
+inbounds:
+  - tag: shadowquic-in
+    type: shadowquic
+    bind-addr: "0.0.0.0:1443"
+    users:
+      - username: "omni"
+        password: "REPLACE_WITH_A_LONG_RANDOM_PASSWORD"
+    jls-upstream:
+      addr: "cloudflare.com:443"
+    alpn: ["h3"]
+    congestion-control: bbr
+    zero-rtt: false
+outbounds:
+  - tag: direct
+    type: direct
+    dns-strategy: prefer-ipv4
+log-level: "info"

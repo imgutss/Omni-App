@@ -1,0 +1,27 @@
+name: Suggest an improvement / پیشنهاد
+description: A focused idea for Omni's interface, tools, or workflow.
+title: "[Idea]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Your proposal
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and trade-offs
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Privacy check
+      options:
+        - label: This request contains no private credentials or sensitive user data.
+          required: true
